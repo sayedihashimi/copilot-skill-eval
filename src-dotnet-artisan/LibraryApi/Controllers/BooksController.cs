@@ -6,72 +6,82 @@ namespace LibraryApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class BooksController : ControllerBase
+public sealed class BooksController(IBookService bookService) : ControllerBase
 {
-    private readonly IBookService _service;
-
-    public BooksController(IBookService service) => _service = service;
-
-    /// <summary>List books with search, availability filter, pagination, sorting</summary>
     [HttpGet]
-    public async Task<ActionResult<PagedResult<BookDto>>> GetAll(
+    public async Task<ActionResult<PaginatedResponse<BookSummaryDto>>> GetAll(
         [FromQuery] string? search,
+        [FromQuery] string? category,
         [FromQuery] bool? available,
         [FromQuery] string? sortBy,
         [FromQuery] string? sortDir,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10)
+        [FromQuery] int pageSize = 10,
+        CancellationToken ct = default)
     {
-        if (page < 1) page = 1;
-        if (pageSize < 1 || pageSize > 100) pageSize = 10;
-        return Ok(await _service.GetAllAsync(search, available, sortBy, sortDir, page, pageSize));
+        var result = await bookService.GetAllAsync(search, category, available, sortBy, sortDir, page, pageSize, ct);
+        return Ok(result);
     }
 
-    /// <summary>Get book details with authors, categories, availability</summary>
-    [HttpGet("{id}")]
-    public async Task<ActionResult<BookDetailDto>> GetById(int id)
+    [HttpGet("{id:int}")]
+    public async Task<ActionResult<BookDetailDto>> GetById(int id, CancellationToken ct = default)
     {
-        var book = await _service.GetByIdAsync(id);
-        return book is null ? NotFound() : Ok(book);
+        var book = await bookService.GetByIdAsync(id, ct);
+        return book is not null ? Ok(book) : NotFound();
     }
 
-    /// <summary>Create a new book with author and category IDs</summary>
     [HttpPost]
-    public async Task<ActionResult<BookDto>> Create(BookCreateDto dto)
+    public async Task<ActionResult<BookDetailDto>> Create([FromBody] CreateBookRequest request, CancellationToken ct = default)
     {
-        var book = await _service.CreateAsync(dto);
+        if (string.IsNullOrWhiteSpace(request.Title))
+            return BadRequest(new ProblemDetails { Title = "Validation Error", Detail = "Title is required." });
+        if (string.IsNullOrWhiteSpace(request.ISBN))
+            return BadRequest(new ProblemDetails { Title = "Validation Error", Detail = "ISBN is required." });
+        if (request.TotalCopies < 1)
+            return BadRequest(new ProblemDetails { Title = "Validation Error", Detail = "TotalCopies must be at least 1." });
+        if (request.AuthorIds is null || request.AuthorIds.Count == 0)
+            return BadRequest(new ProblemDetails { Title = "Validation Error", Detail = "At least one AuthorId is required." });
+        if (request.CategoryIds is null || request.CategoryIds.Count == 0)
+            return BadRequest(new ProblemDetails { Title = "Validation Error", Detail = "At least one CategoryId is required." });
+
+        var book = await bookService.CreateAsync(request, ct);
         return CreatedAtAction(nameof(GetById), new { id = book.Id }, book);
     }
 
-    /// <summary>Update a book</summary>
-    [HttpPut("{id}")]
-    public async Task<ActionResult<BookDto>> Update(int id, BookUpdateDto dto)
+    [HttpPut("{id:int}")]
+    public async Task<ActionResult<BookDetailDto>> Update(int id, [FromBody] UpdateBookRequest request, CancellationToken ct = default)
     {
-        var book = await _service.UpdateAsync(id, dto);
-        return book is null ? NotFound() : Ok(book);
+        if (string.IsNullOrWhiteSpace(request.Title))
+            return BadRequest(new ProblemDetails { Title = "Validation Error", Detail = "Title is required." });
+        if (string.IsNullOrWhiteSpace(request.ISBN))
+            return BadRequest(new ProblemDetails { Title = "Validation Error", Detail = "ISBN is required." });
+        if (request.TotalCopies < 1)
+            return BadRequest(new ProblemDetails { Title = "Validation Error", Detail = "TotalCopies must be at least 1." });
+
+        var book = await bookService.UpdateAsync(id, request, ct);
+        return book is not null ? Ok(book) : NotFound();
     }
 
-    /// <summary>Delete a book (fails if active loans)</summary>
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(int id)
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> Delete(int id, CancellationToken ct = default)
     {
-        await _service.DeleteAsync(id);
+        var (found, hasActiveLoans) = await bookService.DeleteAsync(id, ct);
+        if (!found) return NotFound();
+        if (hasActiveLoans) return Conflict(new ProblemDetails { Title = "Conflict", Detail = "Cannot delete book with active loans." });
         return NoContent();
     }
 
-    /// <summary>Get loan history for a book</summary>
-    [HttpGet("{id}/loans")]
-    public async Task<ActionResult<PagedResult<LoanDto>>> GetLoans(int id, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    [HttpGet("{id:int}/loans")]
+    public async Task<ActionResult<PaginatedResponse<LoanDto>>> GetLoans(int id, [FromQuery] int page = 1, [FromQuery] int pageSize = 10, CancellationToken ct = default)
     {
-        if (page < 1) page = 1;
-        if (pageSize < 1 || pageSize > 100) pageSize = 10;
-        return Ok(await _service.GetLoansAsync(id, page, pageSize));
+        var result = await bookService.GetLoansAsync(id, page, pageSize, ct);
+        return Ok(result);
     }
 
-    /// <summary>Get active reservation queue for a book</summary>
-    [HttpGet("{id}/reservations")]
-    public async Task<ActionResult<List<ReservationDto>>> GetReservations(int id)
+    [HttpGet("{id:int}/reservations")]
+    public async Task<ActionResult<IReadOnlyList<ReservationDto>>> GetReservations(int id, CancellationToken ct = default)
     {
-        return Ok(await _service.GetReservationsAsync(id));
+        var result = await bookService.GetReservationsAsync(id, ct);
+        return Ok(result);
     }
 }

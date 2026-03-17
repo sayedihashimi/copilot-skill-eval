@@ -3,7 +3,7 @@ using VetClinicApi.Models;
 
 namespace VetClinicApi.DTOs;
 
-public record AppointmentDto(
+public sealed record AppointmentDto(
     int Id,
     int PetId,
     string PetName,
@@ -18,7 +18,7 @@ public record AppointmentDto(
     DateTime CreatedAt,
     DateTime UpdatedAt);
 
-public record AppointmentDetailDto(
+public sealed record AppointmentDetailDto(
     int Id,
     int PetId,
     string PetName,
@@ -33,11 +33,11 @@ public record AppointmentDetailDto(
     string Reason,
     string? Notes,
     string? CancellationReason,
+    MedicalRecordDto? MedicalRecord,
     DateTime CreatedAt,
-    DateTime UpdatedAt,
-    MedicalRecordDto? MedicalRecord);
+    DateTime UpdatedAt);
 
-public record CreateAppointmentDto
+public sealed record CreateAppointmentRequest
 {
     [Required]
     public int PetId { get; init; }
@@ -58,7 +58,7 @@ public record CreateAppointmentDto
     public string? Notes { get; init; }
 }
 
-public record UpdateAppointmentDto
+public sealed record UpdateAppointmentRequest
 {
     [Required]
     public int PetId { get; init; }
@@ -79,7 +79,7 @@ public record UpdateAppointmentDto
     public string? Notes { get; init; }
 }
 
-public record UpdateAppointmentStatusDto
+public sealed record UpdateAppointmentStatusRequest
 {
     [Required]
     public AppointmentStatus Status { get; init; }

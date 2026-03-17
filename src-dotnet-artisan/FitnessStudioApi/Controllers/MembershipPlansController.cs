@@ -1,47 +1,47 @@
-using Microsoft.AspNetCore.Mvc;
 using FitnessStudioApi.DTOs;
 using FitnessStudioApi.Services;
+using Microsoft.AspNetCore.Mvc;
 
 namespace FitnessStudioApi.Controllers;
 
 [ApiController]
 [Route("api/membership-plans")]
-public class MembershipPlansController(IMembershipPlanService service) : ControllerBase
+public sealed class MembershipPlansController(IMembershipPlanService service) : ControllerBase
 {
-    /// <summary>List all active membership plans</summary>
-    [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<MembershipPlanDto>>> GetAll()
-        => Ok(await service.GetAllActiveAsync());
+    private readonly IMembershipPlanService _service = service;
 
-    /// <summary>Get membership plan by ID</summary>
-    [HttpGet("{id:int}")]
-    public async Task<ActionResult<MembershipPlanDto>> GetById(int id)
+    [HttpGet]
+    public async Task<ActionResult<IReadOnlyList<MembershipPlanResponse>>> GetAll(CancellationToken ct)
     {
-        var plan = await service.GetByIdAsync(id);
-        return plan is null ? NotFound() : Ok(plan);
+        var plans = await _service.GetAllActivePlansAsync(ct);
+        return Ok(plans);
     }
 
-    /// <summary>Create a new membership plan</summary>
-    [HttpPost]
-    public async Task<ActionResult<MembershipPlanDto>> Create(CreateMembershipPlanDto dto)
+    [HttpGet("{id:int}")]
+    public async Task<ActionResult<MembershipPlanResponse>> GetById(int id, CancellationToken ct)
     {
-        var plan = await service.CreateAsync(dto);
+        var plan = await _service.GetByIdAsync(id, ct);
+        return Ok(plan);
+    }
+
+    [HttpPost]
+    public async Task<ActionResult<MembershipPlanResponse>> Create(CreateMembershipPlanRequest request, CancellationToken ct)
+    {
+        var plan = await _service.CreateAsync(request, ct);
         return CreatedAtAction(nameof(GetById), new { id = plan.Id }, plan);
     }
 
-    /// <summary>Update a membership plan</summary>
     [HttpPut("{id:int}")]
-    public async Task<ActionResult<MembershipPlanDto>> Update(int id, UpdateMembershipPlanDto dto)
+    public async Task<ActionResult<MembershipPlanResponse>> Update(int id, UpdateMembershipPlanRequest request, CancellationToken ct)
     {
-        var plan = await service.UpdateAsync(id, dto);
-        return plan is null ? NotFound() : Ok(plan);
+        var plan = await _service.UpdateAsync(id, request, ct);
+        return Ok(plan);
     }
 
-    /// <summary>Deactivate a membership plan</summary>
     [HttpDelete("{id:int}")]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {
-        var result = await service.DeactivateAsync(id);
-        return result ? NoContent() : NotFound();
+        await _service.DeactivateAsync(id, ct);
+        return NoContent();
     }
 }

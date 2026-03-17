@@ -1,14 +1,22 @@
 using System.Text.Json.Serialization;
-using Microsoft.EntityFrameworkCore;
 using FitnessStudioApi.Data;
 using FitnessStudioApi.Middleware;
 using FitnessStudioApi.Services;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // EF Core + SQLite
 builder.Services.AddDbContext<FitnessDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// JSON enum serialization as strings
+builder.Services.ConfigureHttpJsonOptions(options =>
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 // Services
 builder.Services.AddScoped<IMembershipPlanService, MembershipPlanService>();
@@ -18,40 +26,32 @@ builder.Services.AddScoped<IInstructorService, InstructorService>();
 builder.Services.AddScoped<IClassTypeService, ClassTypeService>();
 builder.Services.AddScoped<IClassScheduleService, ClassScheduleService>();
 builder.Services.AddScoped<IBookingService, BookingService>();
+builder.Services.AddTransient<DataSeeder>();
 
-// Controllers + JSON
-builder.Services.AddControllers()
-    .AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
-
-// OpenAPI / Swagger
-builder.Services.AddOpenApi();
+// Swagger
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c =>
-{
-    c.SwaggerDoc("v1", new() { Title = "Zenith Fitness Studio API", Version = "v1" });
-});
+builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Global error handling
-app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
+// Ensure DB created and seed
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<FitnessDbContext>();
+    await db.Database.EnsureCreatedAsync();
 
-// Swagger
+    var seeder = scope.ServiceProvider.GetRequiredService<DataSeeder>();
+    await seeder.SeedAsync();
+}
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
 app.MapControllers();
-
-// Ensure DB is created and seeded
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<FitnessDbContext>();
-    db.Database.EnsureCreated();
-    DataSeeder.Seed(db);
-}
 
 app.Run();

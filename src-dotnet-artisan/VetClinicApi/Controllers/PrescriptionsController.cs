@@ -6,21 +6,21 @@ namespace VetClinicApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class PrescriptionsController(IPrescriptionService prescriptionService) : ControllerBase
+public sealed class PrescriptionsController(IPrescriptionService prescriptionService) : ControllerBase
 {
-    /// <summary>Get prescription details</summary>
+    private readonly IPrescriptionService _prescriptionService = prescriptionService;
+
     [HttpGet("{id:int}")]
-    public async Task<ActionResult<PrescriptionDto>> GetById(int id)
+    public async Task<ActionResult<PrescriptionDto>> GetById(int id, CancellationToken ct)
     {
-        var prescription = await prescriptionService.GetByIdAsync(id);
-        return prescription is null ? NotFound() : Ok(prescription);
+        var prescription = await _prescriptionService.GetByIdAsync(id, ct);
+        return prescription is not null ? Ok(prescription) : NotFound();
     }
 
-    /// <summary>Create a prescription for a medical record</summary>
     [HttpPost]
-    public async Task<ActionResult<PrescriptionDto>> Create([FromBody] CreatePrescriptionDto dto)
+    public async Task<ActionResult<PrescriptionDto>> Create([FromBody] CreatePrescriptionRequest request, CancellationToken ct)
     {
-        var prescription = await prescriptionService.CreateAsync(dto);
+        var prescription = await _prescriptionService.CreateAsync(request, ct);
         return CreatedAtAction(nameof(GetById), new { id = prescription.Id }, prescription);
     }
 }

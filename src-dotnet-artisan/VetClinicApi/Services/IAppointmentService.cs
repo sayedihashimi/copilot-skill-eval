@@ -5,10 +5,10 @@ namespace VetClinicApi.Services;
 
 public interface IAppointmentService
 {
-    Task<PagedResult<AppointmentDto>> GetAllAsync(DateTime? fromDate, DateTime? toDate, AppointmentStatus? status, int? vetId, int? petId, PaginationParams pagination);
-    Task<AppointmentDetailDto?> GetByIdAsync(int id);
-    Task<AppointmentDto> CreateAsync(CreateAppointmentDto dto);
-    Task<AppointmentDto?> UpdateAsync(int id, UpdateAppointmentDto dto);
-    Task<AppointmentDto?> UpdateStatusAsync(int id, UpdateAppointmentStatusDto dto);
-    Task<IReadOnlyList<AppointmentDto>> GetTodayAsync();
+    Task<PaginatedResponse<AppointmentDto>> GetAllAsync(DateTime? dateFrom, DateTime? dateTo, AppointmentStatus? status, int? vetId, int? petId, int page, int pageSize, CancellationToken ct);
+    Task<AppointmentDetailDto?> GetByIdAsync(int id, CancellationToken ct);
+    Task<AppointmentDto> CreateAsync(CreateAppointmentRequest request, CancellationToken ct);
+    Task<AppointmentDto?> UpdateAsync(int id, UpdateAppointmentRequest request, CancellationToken ct);
+    Task<AppointmentDto?> UpdateStatusAsync(int id, UpdateAppointmentStatusRequest request, CancellationToken ct);
+    Task<IReadOnlyList<AppointmentDto>> GetTodayAsync(CancellationToken ct);
 }

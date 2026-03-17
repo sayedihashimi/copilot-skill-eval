@@ -2,17 +2,20 @@ using System.ComponentModel.DataAnnotations;
 
 namespace VetClinicApi.Models;
 
-public class MedicalRecord
+public sealed class MedicalRecord
 {
     public int Id { get; set; }
 
     public int AppointmentId { get; set; }
+
     public Appointment Appointment { get; set; } = null!;
 
     public int PetId { get; set; }
+
     public Pet Pet { get; set; } = null!;
 
     public int VeterinarianId { get; set; }
+
     public Veterinarian Veterinarian { get; set; } = null!;
 
     [Required, MaxLength(1000)]

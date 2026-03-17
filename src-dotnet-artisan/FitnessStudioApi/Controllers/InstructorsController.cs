@@ -1,46 +1,54 @@
-using Microsoft.AspNetCore.Mvc;
 using FitnessStudioApi.DTOs;
 using FitnessStudioApi.Services;
+using Microsoft.AspNetCore.Mvc;
 
 namespace FitnessStudioApi.Controllers;
 
 [ApiController]
 [Route("api/instructors")]
-public class InstructorsController(IInstructorService service) : ControllerBase
+public sealed class InstructorsController(IInstructorService service) : ControllerBase
 {
-    /// <summary>List instructors with filters</summary>
-    [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<InstructorDto>>> GetAll(
-        [FromQuery] string? specialization, [FromQuery] bool? isActive)
-        => Ok(await service.GetAllAsync(specialization, isActive));
+    private readonly IInstructorService _service = service;
 
-    /// <summary>Get instructor details</summary>
-    [HttpGet("{id:int}")]
-    public async Task<ActionResult<InstructorDto>> GetById(int id)
+    [HttpGet]
+    public async Task<ActionResult<IReadOnlyList<InstructorResponse>>> GetAll(
+        [FromQuery] string? specialization,
+        [FromQuery] bool? isActive,
+        CancellationToken ct)
     {
-        var instructor = await service.GetByIdAsync(id);
-        return instructor is null ? NotFound() : Ok(instructor);
+        var instructors = await _service.GetAllAsync(specialization, isActive, ct);
+        return Ok(instructors);
     }
 
-    /// <summary>Create a new instructor</summary>
-    [HttpPost]
-    public async Task<ActionResult<InstructorDto>> Create(CreateInstructorDto dto)
+    [HttpGet("{id:int}")]
+    public async Task<ActionResult<InstructorResponse>> GetById(int id, CancellationToken ct)
     {
-        var instructor = await service.CreateAsync(dto);
+        var instructor = await _service.GetByIdAsync(id, ct);
+        return Ok(instructor);
+    }
+
+    [HttpPost]
+    public async Task<ActionResult<InstructorResponse>> Create(CreateInstructorRequest request, CancellationToken ct)
+    {
+        var instructor = await _service.CreateAsync(request, ct);
         return CreatedAtAction(nameof(GetById), new { id = instructor.Id }, instructor);
     }
 
-    /// <summary>Update an instructor</summary>
     [HttpPut("{id:int}")]
-    public async Task<ActionResult<InstructorDto>> Update(int id, UpdateInstructorDto dto)
+    public async Task<ActionResult<InstructorResponse>> Update(int id, UpdateInstructorRequest request, CancellationToken ct)
     {
-        var instructor = await service.UpdateAsync(id, dto);
-        return instructor is null ? NotFound() : Ok(instructor);
+        var instructor = await _service.UpdateAsync(id, request, ct);
+        return Ok(instructor);
     }
 
-    /// <summary>Get instructor schedule with date range filter</summary>
     [HttpGet("{id:int}/schedule")]
-    public async Task<ActionResult<IReadOnlyList<ClassScheduleDto>>> GetSchedule(
-        int id, [FromQuery] DateTime? from, [FromQuery] DateTime? to)
-        => Ok(await service.GetScheduleAsync(id, from, to));
+    public async Task<ActionResult<IReadOnlyList<ClassScheduleResponse>>> GetSchedule(
+        int id,
+        [FromQuery] DateTime? from,
+        [FromQuery] DateTime? to,
+        CancellationToken ct)
+    {
+        var schedule = await _service.GetScheduleAsync(id, from, to, ct);
+        return Ok(schedule);
+    }
 }

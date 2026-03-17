@@ -1,76 +1,98 @@
-using Microsoft.EntityFrameworkCore;
 using FitnessStudioApi.Data;
 using FitnessStudioApi.DTOs;
+using FitnessStudioApi.Middleware;
 using FitnessStudioApi.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace FitnessStudioApi.Services;
 
-public class MembershipPlanService(FitnessDbContext db, ILogger<MembershipPlanService> logger) : IMembershipPlanService
+public sealed class MembershipPlanService(FitnessDbContext db, ILogger<MembershipPlanService> logger) : IMembershipPlanService
 {
-    public async Task<IReadOnlyList<MembershipPlanDto>> GetAllActiveAsync()
+    private readonly FitnessDbContext _db = db;
+    private readonly ILogger<MembershipPlanService> _logger = logger;
+
+    public async Task<IReadOnlyList<MembershipPlanResponse>> GetAllActivePlansAsync(CancellationToken ct)
     {
-        return await db.MembershipPlans
+        return await _db.MembershipPlans
+            .AsNoTracking()
             .Where(p => p.IsActive)
-            .Select(p => ToDto(p))
-            .ToListAsync();
+            .OrderBy(p => p.Price)
+            .Select(p => MapToResponse(p))
+            .ToListAsync(ct);
     }
 
-    public async Task<MembershipPlanDto?> GetByIdAsync(int id)
+    public async Task<MembershipPlanResponse> GetByIdAsync(int id, CancellationToken ct)
     {
-        var plan = await db.MembershipPlans.FindAsync(id);
-        return plan is null ? null : ToDto(plan);
+        var plan = await _db.MembershipPlans.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id, ct)
+            ?? throw new KeyNotFoundException($"Membership plan with ID {id} not found.");
+        return MapToResponse(plan);
     }
 
-    public async Task<MembershipPlanDto> CreateAsync(CreateMembershipPlanDto dto)
+    public async Task<MembershipPlanResponse> CreateAsync(CreateMembershipPlanRequest request, CancellationToken ct)
     {
+        if (request.Price <= 0)
+            throw new BusinessRuleException("Price must be positive.");
+
+        var exists = await _db.MembershipPlans.AnyAsync(p => p.Name == request.Name, ct);
+        if (exists)
+            throw new ConflictException($"A plan named '{request.Name}' already exists.");
+
         var plan = new MembershipPlan
         {
-            Name = dto.Name,
-            Description = dto.Description,
-            DurationMonths = dto.DurationMonths,
-            Price = dto.Price,
-            MaxClassBookingsPerWeek = dto.MaxClassBookingsPerWeek,
-            AllowsPremiumClasses = dto.AllowsPremiumClasses
+            Name = request.Name,
+            Description = request.Description,
+            DurationMonths = request.DurationMonths,
+            Price = request.Price,
+            MaxClassBookingsPerWeek = request.MaxClassBookingsPerWeek,
+            AllowsPremiumClasses = request.AllowsPremiumClasses
         };
-        db.MembershipPlans.Add(plan);
-        await db.SaveChangesAsync();
-        logger.LogInformation("Created membership plan {PlanName} (Id={PlanId})", plan.Name, plan.Id);
-        return ToDto(plan);
+
+        _db.MembershipPlans.Add(plan);
+        await _db.SaveChangesAsync(ct);
+
+        _logger.LogInformation("Created membership plan {PlanName} with ID {PlanId}", plan.Name, plan.Id);
+        return MapToResponse(plan);
     }
 
-    public async Task<MembershipPlanDto?> UpdateAsync(int id, UpdateMembershipPlanDto dto)
+    public async Task<MembershipPlanResponse> UpdateAsync(int id, UpdateMembershipPlanRequest request, CancellationToken ct)
     {
-        var plan = await db.MembershipPlans.FindAsync(id);
-        if (plan is null) return null;
+        var plan = await _db.MembershipPlans.FindAsync([id], ct)
+            ?? throw new KeyNotFoundException($"Membership plan with ID {id} not found.");
 
-        plan.Name = dto.Name;
-        plan.Description = dto.Description;
-        plan.DurationMonths = dto.DurationMonths;
-        plan.Price = dto.Price;
-        plan.MaxClassBookingsPerWeek = dto.MaxClassBookingsPerWeek;
-        plan.AllowsPremiumClasses = dto.AllowsPremiumClasses;
-        plan.IsActive = dto.IsActive;
+        if (request.Price <= 0)
+            throw new BusinessRuleException("Price must be positive.");
+
+        var nameConflict = await _db.MembershipPlans.AnyAsync(p => p.Name == request.Name && p.Id != id, ct);
+        if (nameConflict)
+            throw new ConflictException($"A plan named '{request.Name}' already exists.");
+
+        plan.Name = request.Name;
+        plan.Description = request.Description;
+        plan.DurationMonths = request.DurationMonths;
+        plan.Price = request.Price;
+        plan.MaxClassBookingsPerWeek = request.MaxClassBookingsPerWeek;
+        plan.AllowsPremiumClasses = request.AllowsPremiumClasses;
+        plan.IsActive = request.IsActive;
         plan.UpdatedAt = DateTime.UtcNow;
 
-        await db.SaveChangesAsync();
-        logger.LogInformation("Updated membership plan {PlanId}", id);
-        return ToDto(plan);
+        await _db.SaveChangesAsync(ct);
+        return MapToResponse(plan);
     }
 
-    public async Task<bool> DeactivateAsync(int id)
+    public async Task DeactivateAsync(int id, CancellationToken ct)
     {
-        var plan = await db.MembershipPlans.FindAsync(id);
-        if (plan is null) return false;
+        var plan = await _db.MembershipPlans.FindAsync([id], ct)
+            ?? throw new KeyNotFoundException($"Membership plan with ID {id} not found.");
 
         plan.IsActive = false;
         plan.UpdatedAt = DateTime.UtcNow;
-        await db.SaveChangesAsync();
-        logger.LogInformation("Deactivated membership plan {PlanId}", id);
-        return true;
+        await _db.SaveChangesAsync(ct);
+
+        _logger.LogInformation("Deactivated membership plan {PlanId}", id);
     }
 
-    private static MembershipPlanDto ToDto(MembershipPlan p) => new(
+    private static MembershipPlanResponse MapToResponse(MembershipPlan p) => new(
         p.Id, p.Name, p.Description, p.DurationMonths, p.Price,
-        p.MaxClassBookingsPerWeek, p.AllowsPremiumClasses,
-        p.IsActive, p.CreatedAt, p.UpdatedAt);
+        p.MaxClassBookingsPerWeek, p.AllowsPremiumClasses, p.IsActive,
+        p.CreatedAt, p.UpdatedAt);
 }

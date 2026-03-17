@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace FitnessStudioApi.Models;
 
-public class ClassType
+public sealed class ClassType
 {
     public int Id { get; set; }
 
@@ -22,10 +22,13 @@ public class ClassType
 
     public int? CaloriesPerSession { get; set; }
 
-    public DifficultyLevel DifficultyLevel { get; set; }
+    public DifficultyLevel DifficultyLevel { get; set; } = DifficultyLevel.AllLevels;
 
     public bool IsActive { get; set; } = true;
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    public ICollection<ClassSchedule> ClassSchedules { get; set; } = [];
 }

@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace LibraryApi.Models;
 
-public class Patron
+public sealed class Patron
 {
     public int Id { get; set; }
 
@@ -12,7 +12,7 @@ public class Patron
     [Required, MaxLength(100)]
     public string LastName { get; set; } = string.Empty;
 
-    [Required, MaxLength(200), EmailAddress]
+    [Required, EmailAddress, MaxLength(200)]
     public string Email { get; set; } = string.Empty;
 
     [MaxLength(20)]
@@ -28,9 +28,12 @@ public class Patron
     public bool IsActive { get; set; } = true;
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
-    public ICollection<Loan> Loans { get; set; } = new List<Loan>();
-    public ICollection<Reservation> Reservations { get; set; } = new List<Reservation>();
-    public ICollection<Fine> Fines { get; set; } = new List<Fine>();
+    public ICollection<Loan> Loans { get; set; } = [];
+
+    public ICollection<Reservation> Reservations { get; set; } = [];
+
+    public ICollection<Fine> Fines { get; set; } = [];
 }

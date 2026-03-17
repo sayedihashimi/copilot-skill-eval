@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace VetClinicApi.DTOs;
 
-public record VaccinationDto(
+public sealed record VaccinationDto(
     int Id,
     int PetId,
     string PetName,
@@ -11,13 +11,13 @@ public record VaccinationDto(
     DateOnly ExpirationDate,
     string? BatchNumber,
     int AdministeredByVetId,
-    string VetName,
+    string AdministeredByVetName,
     string? Notes,
     bool IsExpired,
     bool IsDueSoon,
     DateTime CreatedAt);
 
-public record CreateVaccinationDto
+public sealed record CreateVaccinationRequest
 {
     [Required]
     public int PetId { get; init; }

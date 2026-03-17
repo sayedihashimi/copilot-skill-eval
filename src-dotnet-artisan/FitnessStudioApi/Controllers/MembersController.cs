@@ -1,67 +1,80 @@
-using Microsoft.AspNetCore.Mvc;
 using FitnessStudioApi.DTOs;
 using FitnessStudioApi.Services;
+using Microsoft.AspNetCore.Mvc;
 
 namespace FitnessStudioApi.Controllers;
 
 [ApiController]
 [Route("api/members")]
-public class MembersController(IMemberService service) : ControllerBase
+public sealed class MembersController(IMemberService service) : ControllerBase
 {
-    /// <summary>List members with search, filter, and pagination</summary>
-    [HttpGet]
-    public async Task<ActionResult<PaginatedResult<MemberDto>>> GetAll(
-        [FromQuery] string? search, [FromQuery] bool? isActive,
-        [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
-        => Ok(await service.GetAllAsync(search, isActive, page, pageSize));
+    private readonly IMemberService _service = service;
 
-    /// <summary>Get member details with active membership and booking stats</summary>
-    [HttpGet("{id:int}")]
-    public async Task<ActionResult<MemberDetailDto>> GetById(int id)
+    [HttpGet]
+    public async Task<ActionResult<PagedResult<MemberListResponse>>> GetAll(
+        [FromQuery] string? search,
+        [FromQuery] bool? isActive,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken ct = default)
     {
-        var member = await service.GetByIdAsync(id);
-        return member is null ? NotFound() : Ok(member);
+        var result = await _service.GetAllAsync(search, isActive, page, pageSize, ct);
+        return Ok(result);
     }
 
-    /// <summary>Register a new member</summary>
-    [HttpPost]
-    public async Task<ActionResult<MemberDto>> Create(CreateMemberDto dto)
+    [HttpGet("{id:int}")]
+    public async Task<ActionResult<MemberResponse>> GetById(int id, CancellationToken ct)
     {
-        var member = await service.CreateAsync(dto);
+        var member = await _service.GetByIdAsync(id, ct);
+        return Ok(member);
+    }
+
+    [HttpPost]
+    public async Task<ActionResult<MemberResponse>> Create(CreateMemberRequest request, CancellationToken ct)
+    {
+        var member = await _service.CreateAsync(request, ct);
         return CreatedAtAction(nameof(GetById), new { id = member.Id }, member);
     }
 
-    /// <summary>Update member profile</summary>
     [HttpPut("{id:int}")]
-    public async Task<ActionResult<MemberDto>> Update(int id, UpdateMemberDto dto)
+    public async Task<ActionResult<MemberResponse>> Update(int id, UpdateMemberRequest request, CancellationToken ct)
     {
-        var member = await service.UpdateAsync(id, dto);
-        return member is null ? NotFound() : Ok(member);
+        var member = await _service.UpdateAsync(id, request, ct);
+        return Ok(member);
     }
 
-    /// <summary>Deactivate member (fails if future bookings exist)</summary>
     [HttpDelete("{id:int}")]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {
-        var (success, error) = await service.DeactivateAsync(id);
-        if (!success) return error == "Member not found." ? NotFound() : BadRequest(new { error });
+        await _service.DeactivateAsync(id, ct);
         return NoContent();
     }
 
-    /// <summary>Get member bookings with filters and pagination</summary>
     [HttpGet("{id:int}/bookings")]
-    public async Task<ActionResult<PaginatedResult<BookingDto>>> GetBookings(
-        int id, [FromQuery] string? status, [FromQuery] DateTime? from,
-        [FromQuery] DateTime? to, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
-        => Ok(await service.GetBookingsAsync(id, status, from, to, page, pageSize));
+    public async Task<ActionResult<PagedResult<BookingResponse>>> GetBookings(
+        int id,
+        [FromQuery] string? status,
+        [FromQuery] DateTime? from,
+        [FromQuery] DateTime? to,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken ct = default)
+    {
+        var result = await _service.GetBookingsAsync(id, status, from, to, page, pageSize, ct);
+        return Ok(result);
+    }
 
-    /// <summary>Get upcoming confirmed bookings</summary>
     [HttpGet("{id:int}/bookings/upcoming")]
-    public async Task<ActionResult<IReadOnlyList<BookingDto>>> GetUpcomingBookings(int id)
-        => Ok(await service.GetUpcomingBookingsAsync(id));
+    public async Task<ActionResult<IReadOnlyList<BookingResponse>>> GetUpcomingBookings(int id, CancellationToken ct)
+    {
+        var bookings = await _service.GetUpcomingBookingsAsync(id, ct);
+        return Ok(bookings);
+    }
 
-    /// <summary>Get membership history</summary>
     [HttpGet("{id:int}/memberships")]
-    public async Task<ActionResult<IReadOnlyList<MembershipDto>>> GetMemberships(int id)
-        => Ok(await service.GetMembershipsAsync(id));
+    public async Task<ActionResult<IReadOnlyList<MembershipResponse>>> GetMemberships(int id, CancellationToken ct)
+    {
+        var memberships = await _service.GetMembershipsAsync(id, ct);
+        return Ok(memberships);
+    }
 }

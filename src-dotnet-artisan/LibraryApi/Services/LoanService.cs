@@ -5,30 +5,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace LibraryApi.Services;
 
-public class LoanService : ILoanService
+public sealed class LoanService(LibraryDbContext db) : ILoanService
 {
-    private readonly LibraryDbContext _db;
-    private readonly ILogger<LoanService> _logger;
-
-    private const decimal FinePerDay = 0.25m;
-    private const decimal FineThreshold = 10.00m;
-    private const int MaxRenewals = 2;
-
-    public LoanService(LibraryDbContext db, ILogger<LoanService> logger)
-    {
-        _db = db;
-        _logger = logger;
-    }
-
-    public static int GetLoanDays(MembershipType type) => type switch
-    {
-        MembershipType.Standard => 14,
-        MembershipType.Premium => 21,
-        MembershipType.Student => 7,
-        _ => 14
-    };
-
-    public static int GetMaxLoans(MembershipType type) => type switch
+    private static int GetMaxLoans(MembershipType type) => type switch
     {
         MembershipType.Standard => 5,
         MembershipType.Premium => 10,
@@ -36,234 +15,187 @@ public class LoanService : ILoanService
         _ => 5
     };
 
-    public async Task<PagedResult<LoanDto>> GetAllAsync(LoanStatus? status, bool? overdue, DateTime? fromDate, DateTime? toDate, int page, int pageSize)
+    private static int GetLoanDays(MembershipType type) => type switch
     {
-        var query = _db.Loans
-            .Include(l => l.Book)
-            .Include(l => l.Patron)
-            .AsQueryable();
+        MembershipType.Standard => 14,
+        MembershipType.Premium => 21,
+        MembershipType.Student => 7,
+        _ => 14
+    };
 
-        if (status.HasValue)
-            query = query.Where(l => l.Status == status.Value);
+    public async Task<PaginatedResponse<LoanDto>> GetAllAsync(string? status, int page, int pageSize, CancellationToken ct)
+    {
+        var query = db.Loans.AsNoTracking().AsQueryable();
 
-        if (overdue == true)
-            query = query.Where(l => l.Status == LoanStatus.Active && l.DueDate < DateTime.UtcNow && l.ReturnDate == null);
+        if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<LoanStatus>(status, true, out var ls))
+            query = query.Where(l => l.Status == ls);
 
-        if (fromDate.HasValue)
-            query = query.Where(l => l.LoanDate >= fromDate.Value);
-
-        if (toDate.HasValue)
-            query = query.Where(l => l.LoanDate <= toDate.Value);
-
-        var totalCount = await query.CountAsync();
-
+        var total = await query.CountAsync(ct);
         var items = await query
             .OrderByDescending(l => l.LoanDate)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(l => MapToDto(l))
-            .ToListAsync();
+            .Select(l => new LoanDto(l.Id, l.BookId, l.Book.Title, l.PatronId,
+                $"{l.Patron.FirstName} {l.Patron.LastName}",
+                l.LoanDate, l.DueDate, l.ReturnDate, l.Status, l.RenewalCount))
+            .ToListAsync(ct);
 
-        return new PagedResult<LoanDto>
-        {
-            Items = items,
-            Page = page,
-            PageSize = pageSize,
-            TotalCount = totalCount
-        };
+        return new PaginatedResponse<LoanDto>(items, total, page, pageSize);
     }
 
-    public async Task<LoanDto?> GetByIdAsync(int id)
+    public async Task<LoanDto?> GetByIdAsync(int id, CancellationToken ct)
     {
-        var loan = await _db.Loans
-            .Include(l => l.Book)
-            .Include(l => l.Patron)
-            .FirstOrDefaultAsync(l => l.Id == id);
-
-        return loan is null ? null : MapToDto(loan);
+        return await db.Loans.AsNoTracking()
+            .Where(l => l.Id == id)
+            .Select(l => new LoanDto(l.Id, l.BookId, l.Book.Title, l.PatronId,
+                $"{l.Patron.FirstName} {l.Patron.LastName}",
+                l.LoanDate, l.DueDate, l.ReturnDate, l.Status, l.RenewalCount))
+            .FirstOrDefaultAsync(ct);
     }
 
-    public async Task<LoanDto> CheckoutAsync(LoanCreateDto dto)
+    public async Task<(LoanDto? Loan, string? Error)> CheckoutAsync(CreateLoanRequest request, CancellationToken ct)
     {
-        var book = await _db.Books.FindAsync(dto.BookId)
-            ?? throw new KeyNotFoundException($"Book with id {dto.BookId} not found");
+        var book = await db.Books.FindAsync([request.BookId], ct);
+        if (book is null) return (null, "Book not found.");
 
-        var patron = await _db.Patrons.FindAsync(dto.PatronId)
-            ?? throw new KeyNotFoundException($"Patron with id {dto.PatronId} not found");
+        var patron = await db.Patrons.FindAsync([request.PatronId], ct);
+        if (patron is null) return (null, "Patron not found.");
 
-        if (!patron.IsActive)
-            throw new InvalidOperationException("Patron account is not active");
+        if (!patron.IsActive) return (null, "Patron account is inactive.");
 
-        if (book.AvailableCopies <= 0)
-            throw new InvalidOperationException("No copies available for checkout");
+        if (book.AvailableCopies <= 0) return (null, "No copies available for checkout.");
 
-        // Check unpaid fines
-        var unpaidFines = await _db.Fines
-            .Where(f => f.PatronId == dto.PatronId && f.Status == FineStatus.Unpaid)
-            .SumAsync(f => (decimal?)f.Amount) ?? 0m;
-
-        if (unpaidFines >= FineThreshold)
-            throw new InvalidOperationException($"Patron has ${unpaidFines:F2} in unpaid fines (threshold: ${FineThreshold:F2}). Please pay fines before checking out.");
-
-        // Check borrowing limit
-        var activeLoans = await _db.Loans.CountAsync(l => l.PatronId == dto.PatronId && l.Status == LoanStatus.Active);
+        var activeLoans = await db.Loans.CountAsync(
+            l => l.PatronId == request.PatronId && (l.Status == LoanStatus.Active || l.Status == LoanStatus.Overdue), ct);
         var maxLoans = GetMaxLoans(patron.MembershipType);
-
         if (activeLoans >= maxLoans)
-            throw new InvalidOperationException($"Patron has reached the maximum of {maxLoans} active loans for {patron.MembershipType} membership");
+            return (null, $"Patron has reached the maximum of {maxLoans} active loans.");
+
+        var unpaidFines = await db.Fines
+            .Where(f => f.PatronId == request.PatronId && f.Status == FineStatus.Unpaid)
+            .SumAsync(f => f.Amount, ct);
+        if (unpaidFines >= 10.00m)
+            return (null, $"Patron has ${unpaidFines:F2} in unpaid fines. Must be below $10.00 to checkout.");
 
         var loanDays = GetLoanDays(patron.MembershipType);
+        var now = DateTime.UtcNow;
         var loan = new Loan
         {
-            BookId = dto.BookId,
-            PatronId = dto.PatronId,
-            LoanDate = DateTime.UtcNow,
-            DueDate = DateTime.UtcNow.AddDays(loanDays),
+            BookId = request.BookId,
+            PatronId = request.PatronId,
+            LoanDate = now,
+            DueDate = now.AddDays(loanDays),
             Status = LoanStatus.Active
         };
 
         book.AvailableCopies--;
-        book.UpdatedAt = DateTime.UtcNow;
+        book.UpdatedAt = now;
 
-        _db.Loans.Add(loan);
-        await _db.SaveChangesAsync();
+        db.Loans.Add(loan);
+        await db.SaveChangesAsync(ct);
 
-        _logger.LogInformation("Checkout: Book {BookId} to Patron {PatronId}, Loan {LoanId}, Due {DueDate}",
-            dto.BookId, dto.PatronId, loan.Id, loan.DueDate);
-
-        // Reload with navigation properties
-        await _db.Entry(loan).Reference(l => l.Book).LoadAsync();
-        await _db.Entry(loan).Reference(l => l.Patron).LoadAsync();
-
-        return MapToDto(loan);
+        return (await GetByIdAsync(loan.Id, ct), null);
     }
 
-    public async Task<LoanDto> ReturnAsync(int id)
+    public async Task<(LoanDto? Loan, string? Error)> ReturnAsync(int id, CancellationToken ct)
     {
-        var loan = await _db.Loans
+        var loan = await db.Loans
             .Include(l => l.Book)
             .Include(l => l.Patron)
-            .FirstOrDefaultAsync(l => l.Id == id)
-            ?? throw new KeyNotFoundException($"Loan with id {id} not found");
+            .FirstOrDefaultAsync(l => l.Id == id, ct);
 
-        if (loan.Status == LoanStatus.Returned)
-            throw new InvalidOperationException("This loan has already been returned");
+        if (loan is null) return (null, "Loan not found.");
+        if (loan.Status == LoanStatus.Returned) return (null, "Loan has already been returned.");
 
-        loan.ReturnDate = DateTime.UtcNow;
+        var now = DateTime.UtcNow;
+        loan.ReturnDate = now;
         loan.Status = LoanStatus.Returned;
-
-        // Increment available copies
         loan.Book.AvailableCopies++;
-        loan.Book.UpdatedAt = DateTime.UtcNow;
+        loan.Book.UpdatedAt = now;
 
-        // Check if overdue and generate fine
-        if (loan.DueDate < DateTime.UtcNow)
+        // Auto-generate fine if overdue
+        if (now > loan.DueDate)
         {
-            var daysOverdue = (int)(DateTime.UtcNow - loan.DueDate).TotalDays;
-            if (daysOverdue > 0)
+            var daysOverdue = (int)Math.Ceiling((now - loan.DueDate).TotalDays);
+            var fineAmount = daysOverdue * 0.25m;
+            db.Fines.Add(new Fine
             {
-                var fineAmount = daysOverdue * FinePerDay;
-                var fine = new Fine
-                {
-                    PatronId = loan.PatronId,
-                    LoanId = loan.Id,
-                    Amount = fineAmount,
-                    Reason = $"Overdue by {daysOverdue} day(s) at ${FinePerDay}/day",
-                    IssuedDate = DateTime.UtcNow,
-                    Status = FineStatus.Unpaid
-                };
-                _db.Fines.Add(fine);
-                _logger.LogInformation("Generated fine of ${Amount} for overdue loan {LoanId}", fineAmount, id);
-            }
+                PatronId = loan.PatronId,
+                LoanId = loan.Id,
+                Amount = fineAmount,
+                Reason = $"Overdue: {daysOverdue} day(s) late on '{loan.Book.Title}'",
+                IssuedDate = now,
+                Status = FineStatus.Unpaid
+            });
         }
 
-        // Check pending reservations for this book and promote first to Ready
-        var nextReservation = await _db.Reservations
+        // Check pending reservations for this book → first one transitions to Ready
+        var nextReservation = await db.Reservations
             .Where(r => r.BookId == loan.BookId && r.Status == ReservationStatus.Pending)
             .OrderBy(r => r.QueuePosition)
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(ct);
 
         if (nextReservation is not null)
         {
             nextReservation.Status = ReservationStatus.Ready;
-            nextReservation.ExpirationDate = DateTime.UtcNow.AddDays(3);
-            _logger.LogInformation("Reservation {ReservationId} is now Ready, expires {Expiration}",
-                nextReservation.Id, nextReservation.ExpirationDate);
+            nextReservation.ExpirationDate = now.AddDays(3);
         }
 
-        await _db.SaveChangesAsync();
-        _logger.LogInformation("Returned: Loan {LoanId}, Book {BookId}", id, loan.BookId);
-
-        return MapToDto(loan);
+        await db.SaveChangesAsync(ct);
+        return (await GetByIdAsync(loan.Id, ct), null);
     }
 
-    public async Task<LoanDto> RenewAsync(int id)
+    public async Task<(LoanDto? Loan, string? Error)> RenewAsync(int id, CancellationToken ct)
     {
-        var loan = await _db.Loans
-            .Include(l => l.Book)
-            .Include(l => l.Patron)
-            .FirstOrDefaultAsync(l => l.Id == id)
-            ?? throw new KeyNotFoundException($"Loan with id {id} not found");
+        var loan = await db.Loans.Include(l => l.Patron).FirstOrDefaultAsync(l => l.Id == id, ct);
+        if (loan is null) return (null, "Loan not found.");
 
-        if (loan.Status != LoanStatus.Active)
-            throw new InvalidOperationException("Only active loans can be renewed");
+        if (loan.Status == LoanStatus.Returned) return (null, "Cannot renew a returned loan.");
+        if (loan.Status == LoanStatus.Overdue) return (null, "Cannot renew an overdue loan.");
+        if (loan.RenewalCount >= 2) return (null, "Maximum renewals (2) reached.");
 
-        if (loan.DueDate < DateTime.UtcNow)
-            throw new InvalidOperationException("Cannot renew an overdue loan");
-
-        if (loan.RenewalCount >= MaxRenewals)
-            throw new InvalidOperationException($"Maximum of {MaxRenewals} renewals reached");
-
-        // Check if there are pending reservations for this book
-        var hasPendingReservations = await _db.Reservations
-            .AnyAsync(r => r.BookId == loan.BookId &&
-                          (r.Status == ReservationStatus.Pending || r.Status == ReservationStatus.Ready));
-
-        if (hasPendingReservations)
-            throw new InvalidOperationException("Cannot renew because there are pending reservations for this book");
-
-        // Check unpaid fines
-        var unpaidFines = await _db.Fines
+        // Check fine threshold
+        var unpaidFines = await db.Fines
             .Where(f => f.PatronId == loan.PatronId && f.Status == FineStatus.Unpaid)
-            .SumAsync(f => (decimal?)f.Amount) ?? 0m;
+            .SumAsync(f => f.Amount, ct);
+        if (unpaidFines >= 10.00m)
+            return (null, $"Patron has ${unpaidFines:F2} in unpaid fines. Must be below $10.00 to renew.");
 
-        if (unpaidFines >= FineThreshold)
-            throw new InvalidOperationException($"Patron has ${unpaidFines:F2} in unpaid fines. Please pay fines before renewing.");
+        // Check pending reservations
+        var hasPendingReservations = await db.Reservations
+            .AnyAsync(r => r.BookId == loan.BookId &&
+                          (r.Status == ReservationStatus.Pending || r.Status == ReservationStatus.Ready), ct);
+        if (hasPendingReservations) return (null, "Cannot renew — there are pending reservations for this book.");
 
         var loanDays = GetLoanDays(loan.Patron.MembershipType);
         loan.DueDate = DateTime.UtcNow.AddDays(loanDays);
         loan.RenewalCount++;
 
-        await _db.SaveChangesAsync();
-        _logger.LogInformation("Renewed: Loan {LoanId}, new due date {DueDate}, renewal #{Count}", id, loan.DueDate, loan.RenewalCount);
-
-        return MapToDto(loan);
+        await db.SaveChangesAsync(ct);
+        return (await GetByIdAsync(loan.Id, ct), null);
     }
 
-    public async Task<List<LoanDto>> GetOverdueAsync()
+    public async Task<IReadOnlyList<LoanDto>> GetOverdueAsync(CancellationToken ct)
     {
-        return await _db.Loans
-            .Include(l => l.Book)
-            .Include(l => l.Patron)
-            .Where(l => l.Status == LoanStatus.Active && l.DueDate < DateTime.UtcNow && l.ReturnDate == null)
+        var now = DateTime.UtcNow;
+
+        // Also update status for newly overdue loans
+        var newlyOverdue = await db.Loans
+            .Where(l => l.Status == LoanStatus.Active && l.DueDate < now && l.ReturnDate == null)
+            .ToListAsync(ct);
+
+        foreach (var loan in newlyOverdue)
+            loan.Status = LoanStatus.Overdue;
+
+        if (newlyOverdue.Count > 0)
+            await db.SaveChangesAsync(ct);
+
+        return await db.Loans.AsNoTracking()
+            .Where(l => l.Status == LoanStatus.Overdue)
             .OrderBy(l => l.DueDate)
-            .Select(l => MapToDto(l))
-            .ToListAsync();
+            .Select(l => new LoanDto(l.Id, l.BookId, l.Book.Title, l.PatronId,
+                $"{l.Patron.FirstName} {l.Patron.LastName}",
+                l.LoanDate, l.DueDate, l.ReturnDate, l.Status, l.RenewalCount))
+            .ToListAsync(ct);
     }
-
-    public static LoanDto MapToDto(Loan l) => new()
-    {
-        Id = l.Id,
-        BookId = l.BookId,
-        BookTitle = l.Book.Title,
-        BookISBN = l.Book.ISBN,
-        PatronId = l.PatronId,
-        PatronName = $"{l.Patron.FirstName} {l.Patron.LastName}",
-        LoanDate = l.LoanDate,
-        DueDate = l.DueDate,
-        ReturnDate = l.ReturnDate,
-        Status = l.Status,
-        RenewalCount = l.RenewalCount,
-        CreatedAt = l.CreatedAt
-    };
 }

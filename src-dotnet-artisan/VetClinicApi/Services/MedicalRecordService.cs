@@ -5,82 +5,95 @@ using VetClinicApi.Models;
 
 namespace VetClinicApi.Services;
 
-public class MedicalRecordService(VetClinicDbContext db, ILogger<MedicalRecordService> logger) : IMedicalRecordService
+public sealed class MedicalRecordService(VetClinicDbContext context) : IMedicalRecordService
 {
-    public async Task<MedicalRecordDetailDto?> GetByIdAsync(int id)
+    private readonly VetClinicDbContext _context = context;
+
+    public async Task<MedicalRecordDto?> GetByIdAsync(int id, CancellationToken ct)
     {
-        var mr = await db.MedicalRecords
+        return await _context.MedicalRecords
+            .AsNoTracking()
             .Include(m => m.Pet)
             .Include(m => m.Veterinarian)
             .Include(m => m.Prescriptions)
-            .FirstOrDefaultAsync(m => m.Id == id);
-
-        if (mr is null) return null;
-
-        var prescriptions = mr.Prescriptions.Select(p =>
-            new PrescriptionDto(p.Id, p.MedicalRecordId, p.MedicationName, p.Dosage, p.DurationDays, p.StartDate, p.EndDate, p.IsActive, p.Instructions, p.CreatedAt)).ToList();
-
-        return new MedicalRecordDetailDto(
-            mr.Id, mr.AppointmentId, mr.PetId, mr.Pet.Name, mr.VeterinarianId,
-            mr.Veterinarian.FirstName + " " + mr.Veterinarian.LastName,
-            mr.Diagnosis, mr.Treatment, mr.Notes, mr.FollowUpDate, mr.CreatedAt, prescriptions);
+            .Where(m => m.Id == id)
+            .Select(m => MapToDto(m))
+            .FirstOrDefaultAsync(ct);
     }
 
-    public async Task<MedicalRecordDto> CreateAsync(CreateMedicalRecordDto dto)
+    public async Task<MedicalRecordDto> CreateAsync(CreateMedicalRecordRequest request, CancellationToken ct)
     {
-        var appointment = await db.Appointments.FindAsync(dto.AppointmentId)
-            ?? throw new InvalidOperationException("Appointment not found.");
+        var appointment = await _context.Appointments
+            .AsNoTracking()
+            .Include(a => a.Pet)
+            .Include(a => a.Veterinarian)
+            .FirstOrDefaultAsync(a => a.Id == request.AppointmentId, ct);
+
+        if (appointment is null)
+            throw new KeyNotFoundException($"Appointment with ID {request.AppointmentId} not found.");
 
         if (appointment.Status is not (AppointmentStatus.Completed or AppointmentStatus.InProgress))
-            throw new InvalidOperationException("Medical records can only be created for completed or in-progress appointments.");
+            throw new InvalidOperationException(
+                $"Medical records can only be created for appointments with status 'Completed' or 'InProgress'. Current status: '{appointment.Status}'.");
 
-        if (await db.MedicalRecords.AnyAsync(m => m.AppointmentId == dto.AppointmentId))
-            throw new InvalidOperationException("A medical record already exists for this appointment.");
+        var existingRecord = await _context.MedicalRecords.AsNoTracking()
+            .AnyAsync(m => m.AppointmentId == request.AppointmentId, ct);
+        if (existingRecord)
+            throw new InvalidOperationException(
+                $"A medical record already exists for appointment {request.AppointmentId}.");
 
         var record = new MedicalRecord
         {
-            AppointmentId = dto.AppointmentId,
-            PetId = dto.PetId,
-            VeterinarianId = dto.VeterinarianId,
-            Diagnosis = dto.Diagnosis,
-            Treatment = dto.Treatment,
-            Notes = dto.Notes,
-            FollowUpDate = dto.FollowUpDate
+            AppointmentId = request.AppointmentId,
+            PetId = appointment.PetId,
+            VeterinarianId = appointment.VeterinarianId,
+            Diagnosis = request.Diagnosis,
+            Treatment = request.Treatment,
+            Notes = request.Notes,
+            FollowUpDate = request.FollowUpDate
         };
 
-        db.MedicalRecords.Add(record);
-        await db.SaveChangesAsync();
+        _context.MedicalRecords.Add(record);
+        await _context.SaveChangesAsync(ct);
 
-        await db.Entry(record).Reference(m => m.Pet).LoadAsync();
-        await db.Entry(record).Reference(m => m.Veterinarian).LoadAsync();
+        var created = await _context.MedicalRecords
+            .AsNoTracking()
+            .Include(m => m.Pet)
+            .Include(m => m.Veterinarian)
+            .Include(m => m.Prescriptions)
+            .FirstAsync(m => m.Id == record.Id, ct);
 
-        logger.LogInformation("Created medical record {RecordId} for appointment {AppointmentId}", record.Id, dto.AppointmentId);
-
-        return new MedicalRecordDto(
-            record.Id, record.AppointmentId, record.PetId, record.Pet.Name, record.VeterinarianId,
-            record.Veterinarian.FirstName + " " + record.Veterinarian.LastName,
-            record.Diagnosis, record.Treatment, record.Notes, record.FollowUpDate, record.CreatedAt);
+        return MapToDto(created);
     }
 
-    public async Task<MedicalRecordDto?> UpdateAsync(int id, UpdateMedicalRecordDto dto)
+    public async Task<MedicalRecordDto?> UpdateAsync(int id, UpdateMedicalRecordRequest request, CancellationToken ct)
     {
-        var record = await db.MedicalRecords
-            .Include(m => m.Pet).Include(m => m.Veterinarian)
-            .FirstOrDefaultAsync(m => m.Id == id);
-
+        var record = await _context.MedicalRecords.FindAsync([id], ct);
         if (record is null) return null;
 
-        record.Diagnosis = dto.Diagnosis;
-        record.Treatment = dto.Treatment;
-        record.Notes = dto.Notes;
-        record.FollowUpDate = dto.FollowUpDate;
+        record.Diagnosis = request.Diagnosis;
+        record.Treatment = request.Treatment;
+        record.Notes = request.Notes;
+        record.FollowUpDate = request.FollowUpDate;
 
-        await db.SaveChangesAsync();
-        logger.LogInformation("Updated medical record {RecordId}", id);
+        await _context.SaveChangesAsync(ct);
 
-        return new MedicalRecordDto(
-            record.Id, record.AppointmentId, record.PetId, record.Pet.Name, record.VeterinarianId,
-            record.Veterinarian.FirstName + " " + record.Veterinarian.LastName,
-            record.Diagnosis, record.Treatment, record.Notes, record.FollowUpDate, record.CreatedAt);
+        var updated = await _context.MedicalRecords
+            .AsNoTracking()
+            .Include(m => m.Pet)
+            .Include(m => m.Veterinarian)
+            .Include(m => m.Prescriptions)
+            .FirstAsync(m => m.Id == id, ct);
+
+        return MapToDto(updated);
     }
+
+    private static MedicalRecordDto MapToDto(MedicalRecord m) =>
+        new(m.Id, m.AppointmentId, m.PetId, m.Pet.Name,
+            m.VeterinarianId, $"{m.Veterinarian.FirstName} {m.Veterinarian.LastName}",
+            m.Diagnosis, m.Treatment, m.Notes, m.FollowUpDate, m.CreatedAt,
+            m.Prescriptions.Select(p => new PrescriptionDto(
+                p.Id, p.MedicalRecordId, p.MedicationName, p.Dosage,
+                p.DurationDays, p.StartDate, p.EndDate, p.Instructions,
+                p.EndDate >= DateOnly.FromDateTime(DateTime.UtcNow), p.CreatedAt)).ToList());
 }

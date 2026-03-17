@@ -1,5 +1,4 @@
 using LibraryApi.DTOs;
-using LibraryApi.Models;
 using LibraryApi.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,81 +6,78 @@ namespace LibraryApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class PatronsController : ControllerBase
+public sealed class PatronsController(IPatronService patronService) : ControllerBase
 {
-    private readonly IPatronService _service;
-
-    public PatronsController(IPatronService service) => _service = service;
-
-    /// <summary>List patrons with search, membership filter, pagination</summary>
     [HttpGet]
-    public async Task<ActionResult<PagedResult<PatronDto>>> GetAll(
+    public async Task<ActionResult<PaginatedResponse<PatronDto>>> GetAll(
         [FromQuery] string? search,
-        [FromQuery] MembershipType? membershipType,
+        [FromQuery] string? membershipType,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10)
+        [FromQuery] int pageSize = 10,
+        CancellationToken ct = default)
     {
-        if (page < 1) page = 1;
-        if (pageSize < 1 || pageSize > 100) pageSize = 10;
-        return Ok(await _service.GetAllAsync(search, membershipType, page, pageSize));
+        var result = await patronService.GetAllAsync(search, membershipType, page, pageSize, ct);
+        return Ok(result);
     }
 
-    /// <summary>Get patron details with active loans count and unpaid fines</summary>
-    [HttpGet("{id}")]
-    public async Task<ActionResult<PatronDetailDto>> GetById(int id)
+    [HttpGet("{id:int}")]
+    public async Task<ActionResult<PatronDetailDto>> GetById(int id, CancellationToken ct = default)
     {
-        var patron = await _service.GetByIdAsync(id);
-        return patron is null ? NotFound() : Ok(patron);
+        var patron = await patronService.GetByIdAsync(id, ct);
+        return patron is not null ? Ok(patron) : NotFound();
     }
 
-    /// <summary>Create a new patron</summary>
     [HttpPost]
-    public async Task<ActionResult<PatronDto>> Create(PatronCreateDto dto)
+    public async Task<ActionResult<PatronDto>> Create([FromBody] CreatePatronRequest request, CancellationToken ct = default)
     {
-        var patron = await _service.CreateAsync(dto);
+        if (string.IsNullOrWhiteSpace(request.FirstName) || string.IsNullOrWhiteSpace(request.LastName))
+            return BadRequest(new ProblemDetails { Title = "Validation Error", Detail = "FirstName and LastName are required." });
+        if (string.IsNullOrWhiteSpace(request.Email))
+            return BadRequest(new ProblemDetails { Title = "Validation Error", Detail = "Email is required." });
+
+        var patron = await patronService.CreateAsync(request, ct);
         return CreatedAtAction(nameof(GetById), new { id = patron.Id }, patron);
     }
 
-    /// <summary>Update a patron</summary>
-    [HttpPut("{id}")]
-    public async Task<ActionResult<PatronDto>> Update(int id, PatronUpdateDto dto)
+    [HttpPut("{id:int}")]
+    public async Task<ActionResult<PatronDto>> Update(int id, [FromBody] UpdatePatronRequest request, CancellationToken ct = default)
     {
-        var patron = await _service.UpdateAsync(id, dto);
-        return patron is null ? NotFound() : Ok(patron);
+        if (string.IsNullOrWhiteSpace(request.FirstName) || string.IsNullOrWhiteSpace(request.LastName))
+            return BadRequest(new ProblemDetails { Title = "Validation Error", Detail = "FirstName and LastName are required." });
+        if (string.IsNullOrWhiteSpace(request.Email))
+            return BadRequest(new ProblemDetails { Title = "Validation Error", Detail = "Email is required." });
+
+        var patron = await patronService.UpdateAsync(id, request, ct);
+        return patron is not null ? Ok(patron) : NotFound();
     }
 
-    /// <summary>Deactivate a patron (fails if active loans)</summary>
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(int id)
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> Deactivate(int id, CancellationToken ct = default)
     {
-        await _service.DeleteAsync(id);
+        var (found, hasActiveLoans) = await patronService.DeactivateAsync(id, ct);
+        if (!found) return NotFound();
+        if (hasActiveLoans) return Conflict(new ProblemDetails { Title = "Conflict", Detail = "Cannot deactivate patron with active loans." });
         return NoContent();
     }
 
-    /// <summary>Get patron's loans with optional status filter</summary>
-    [HttpGet("{id}/loans")]
-    public async Task<ActionResult<PagedResult<LoanDto>>> GetLoans(
-        int id,
-        [FromQuery] LoanStatus? status,
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10)
+    [HttpGet("{id:int}/loans")]
+    public async Task<ActionResult<PaginatedResponse<LoanDto>>> GetLoans(int id, [FromQuery] string? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 10, CancellationToken ct = default)
     {
-        if (page < 1) page = 1;
-        if (pageSize < 1 || pageSize > 100) pageSize = 10;
-        return Ok(await _service.GetLoansAsync(id, status, page, pageSize));
+        var result = await patronService.GetLoansAsync(id, status, page, pageSize, ct);
+        return Ok(result);
     }
 
-    /// <summary>Get patron's active reservations</summary>
-    [HttpGet("{id}/reservations")]
-    public async Task<ActionResult<List<ReservationDto>>> GetReservations(int id)
+    [HttpGet("{id:int}/reservations")]
+    public async Task<ActionResult<IReadOnlyList<ReservationDto>>> GetReservations(int id, CancellationToken ct = default)
     {
-        return Ok(await _service.GetReservationsAsync(id));
+        var result = await patronService.GetReservationsAsync(id, ct);
+        return Ok(result);
     }
 
-    /// <summary>Get patron's fines with optional status filter</summary>
-    [HttpGet("{id}/fines")]
-    public async Task<ActionResult<List<FineDto>>> GetFines(int id, [FromQuery] FineStatus? status)
+    [HttpGet("{id:int}/fines")]
+    public async Task<ActionResult<IReadOnlyList<FineDto>>> GetFines(int id, [FromQuery] string? status, CancellationToken ct = default)
     {
-        return Ok(await _service.GetFinesAsync(id, status));
+        var result = await patronService.GetFinesAsync(id, status, ct);
+        return Ok(result);
     }
 }

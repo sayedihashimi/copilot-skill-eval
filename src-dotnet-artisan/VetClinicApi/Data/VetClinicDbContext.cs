@@ -3,7 +3,7 @@ using VetClinicApi.Models;
 
 namespace VetClinicApi.Data;
 
-public class VetClinicDbContext(DbContextOptions<VetClinicDbContext> options) : DbContext(options)
+public sealed class VetClinicDbContext(DbContextOptions<VetClinicDbContext> options) : DbContext(options)
 {
     public DbSet<Owner> Owners => Set<Owner>();
     public DbSet<Pet> Pets => Set<Pet>();
@@ -15,50 +15,89 @@ public class VetClinicDbContext(DbContextOptions<VetClinicDbContext> options) : 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<Owner>(e =>
+        modelBuilder.Entity<Owner>(entity =>
         {
-            e.HasIndex(o => o.Email).IsUnique();
+            entity.HasIndex(o => o.Email).IsUnique();
+            entity.HasMany(o => o.Pets)
+                  .WithOne(p => p.Owner)
+                  .HasForeignKey(p => p.OwnerId)
+                  .OnDelete(DeleteBehavior.Restrict);
         });
 
-        modelBuilder.Entity<Pet>(e =>
+        modelBuilder.Entity<Pet>(entity =>
         {
-            e.HasIndex(p => p.MicrochipNumber).IsUnique().HasFilter("MicrochipNumber IS NOT NULL");
-            e.HasOne(p => p.Owner).WithMany(o => o.Pets).HasForeignKey(p => p.OwnerId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasIndex(p => p.MicrochipNumber).IsUnique().HasFilter("MicrochipNumber IS NOT NULL");
+            entity.Property(p => p.Weight).HasColumnType("decimal(8,2)");
+            entity.Property(p => p.Species).HasMaxLength(50);
         });
 
-        modelBuilder.Entity<Veterinarian>(e =>
+        modelBuilder.Entity<Veterinarian>(entity =>
         {
-            e.HasIndex(v => v.Email).IsUnique();
-            e.HasIndex(v => v.LicenseNumber).IsUnique();
+            entity.HasIndex(v => v.Email).IsUnique();
+            entity.HasIndex(v => v.LicenseNumber).IsUnique();
         });
 
-        modelBuilder.Entity<Appointment>(e =>
+        modelBuilder.Entity<Appointment>(entity =>
         {
-            e.HasOne(a => a.Pet).WithMany(p => p.Appointments).HasForeignKey(a => a.PetId).OnDelete(DeleteBehavior.Restrict);
-            e.HasOne(a => a.Veterinarian).WithMany(v => v.Appointments).HasForeignKey(a => a.VeterinarianId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(a => a.Pet)
+                  .WithMany(p => p.Appointments)
+                  .HasForeignKey(a => a.PetId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(a => a.Veterinarian)
+                  .WithMany(v => v.Appointments)
+                  .HasForeignKey(a => a.VeterinarianId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            entity.Property(a => a.Status)
+                  .HasConversion<string>()
+                  .HasMaxLength(20);
         });
 
-        modelBuilder.Entity<MedicalRecord>(e =>
+        modelBuilder.Entity<MedicalRecord>(entity =>
         {
-            e.HasIndex(m => m.AppointmentId).IsUnique();
-            e.HasOne(m => m.Appointment).WithOne(a => a.MedicalRecord).HasForeignKey<MedicalRecord>(m => m.AppointmentId).OnDelete(DeleteBehavior.Restrict);
-            e.HasOne(m => m.Pet).WithMany(p => p.MedicalRecords).HasForeignKey(m => m.PetId).OnDelete(DeleteBehavior.Restrict);
-            e.HasOne(m => m.Veterinarian).WithMany().HasForeignKey(m => m.VeterinarianId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasIndex(m => m.AppointmentId).IsUnique();
+
+            entity.HasOne(m => m.Appointment)
+                  .WithOne(a => a.MedicalRecord)
+                  .HasForeignKey<MedicalRecord>(m => m.AppointmentId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(m => m.Pet)
+                  .WithMany(p => p.MedicalRecords)
+                  .HasForeignKey(m => m.PetId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(m => m.Veterinarian)
+                  .WithMany()
+                  .HasForeignKey(m => m.VeterinarianId)
+                  .OnDelete(DeleteBehavior.Restrict);
         });
 
-        modelBuilder.Entity<Prescription>(e =>
+        modelBuilder.Entity<Prescription>(entity =>
         {
-            e.HasOne(p => p.MedicalRecord).WithMany(m => m.Prescriptions).HasForeignKey(p => p.MedicalRecordId).OnDelete(DeleteBehavior.Cascade);
-            e.Ignore(p => p.EndDate);
-            e.Ignore(p => p.IsActive);
+            entity.HasOne(p => p.MedicalRecord)
+                  .WithMany(m => m.Prescriptions)
+                  .HasForeignKey(p => p.MedicalRecordId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.Ignore(p => p.IsActive);
         });
 
-        modelBuilder.Entity<Vaccination>(e =>
+        modelBuilder.Entity<Vaccination>(entity =>
         {
-            e.HasOne(v => v.Pet).WithMany(p => p.Vaccinations).HasForeignKey(v => v.PetId).OnDelete(DeleteBehavior.Restrict);
-            e.HasOne(v => v.AdministeredByVet).WithMany().HasForeignKey(v => v.AdministeredByVetId).OnDelete(DeleteBehavior.Restrict);
-            e.Ignore(v => v.IsExpired);
-            e.Ignore(v => v.IsDueSoon);
+            entity.HasOne(v => v.Pet)
+                  .WithMany(p => p.Vaccinations)
+                  .HasForeignKey(v => v.PetId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(v => v.AdministeredByVet)
+                  .WithMany()
+                  .HasForeignKey(v => v.AdministeredByVetId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            entity.Ignore(v => v.IsExpired);
+            entity.Ignore(v => v.IsDueSoon);
         });
     }
 }

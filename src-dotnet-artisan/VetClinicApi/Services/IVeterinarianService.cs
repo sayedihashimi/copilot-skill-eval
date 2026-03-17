@@ -4,10 +4,10 @@ namespace VetClinicApi.Services;
 
 public interface IVeterinarianService
 {
-    Task<PagedResult<VeterinarianDto>> GetAllAsync(string? specialization, bool? isAvailable, PaginationParams pagination);
-    Task<VeterinarianDto?> GetByIdAsync(int id);
-    Task<VeterinarianDto> CreateAsync(CreateVeterinarianDto dto);
-    Task<VeterinarianDto?> UpdateAsync(int id, UpdateVeterinarianDto dto);
-    Task<IReadOnlyList<AppointmentDto>> GetScheduleAsync(int vetId, DateOnly date);
-    Task<PagedResult<AppointmentDto>> GetAppointmentsAsync(int vetId, string? status, PaginationParams pagination);
+    Task<PaginatedResponse<VeterinarianDto>> GetAllAsync(string? specialization, bool? isAvailable, int page, int pageSize, CancellationToken ct);
+    Task<VeterinarianDto?> GetByIdAsync(int id, CancellationToken ct);
+    Task<VeterinarianDto> CreateAsync(CreateVeterinarianRequest request, CancellationToken ct);
+    Task<VeterinarianDto?> UpdateAsync(int id, UpdateVeterinarianRequest request, CancellationToken ct);
+    Task<IReadOnlyList<AppointmentDto>> GetScheduleAsync(int vetId, DateOnly date, CancellationToken ct);
+    Task<PaginatedResponse<AppointmentDto>> GetAppointmentsAsync(int vetId, string? status, int page, int pageSize, CancellationToken ct);
 }

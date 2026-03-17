@@ -6,21 +6,11 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// EF Core SQLite
+// ── Database ──
 builder.Services.AddDbContext<LibraryDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Controllers with JSON enum-as-string serialization
-builder.Services.AddControllers()
-    .AddJsonOptions(options =>
-    {
-        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-    });
-
-// OpenAPI / Swagger
-builder.Services.AddOpenApi();
-
-// DI for services
+// ── Services ──
 builder.Services.AddScoped<IAuthorService, AuthorService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IBookService, BookService>();
@@ -28,26 +18,45 @@ builder.Services.AddScoped<IPatronService, PatronService>();
 builder.Services.AddScoped<ILoanService, LoanService>();
 builder.Services.AddScoped<IReservationService, ReservationService>();
 builder.Services.AddScoped<IFineService, FineService>();
+builder.Services.AddTransient<DataSeeder>();
+
+// ── JSON enum serialization ──
+builder.Services.ConfigureHttpJsonOptions(options =>
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+
+// ── Middleware ──
+builder.Services.AddTransient<GlobalExceptionHandler>();
+
+// ── OpenAPI + Swagger ──
+builder.Services.AddOpenApi();
+builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Global error handling
-app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
-
-// OpenAPI
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
-
-app.MapControllers();
-
-// Ensure DB is created and seeded
+// ── Create DB + Seed ──
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<LibraryDbContext>();
     await db.Database.EnsureCreatedAsync();
-    await SeedData.InitializeAsync(db);
+
+    var seeder = scope.ServiceProvider.GetRequiredService<DataSeeder>();
+    await seeder.SeedAsync();
 }
+
+// ── Pipeline ──
+app.UseMiddleware<GlobalExceptionHandler>();
+
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+app.MapControllers();
 
 app.Run();

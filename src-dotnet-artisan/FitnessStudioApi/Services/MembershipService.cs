@@ -1,134 +1,162 @@
-using Microsoft.EntityFrameworkCore;
 using FitnessStudioApi.Data;
 using FitnessStudioApi.DTOs;
+using FitnessStudioApi.Middleware;
 using FitnessStudioApi.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace FitnessStudioApi.Services;
 
-public class MembershipService(FitnessDbContext db, ILogger<MembershipService> logger) : IMembershipService
+public sealed class MembershipService(FitnessDbContext db, ILogger<MembershipService> logger) : IMembershipService
 {
-    public async Task<MembershipDto?> GetByIdAsync(int id)
+    private readonly FitnessDbContext _db = db;
+    private readonly ILogger<MembershipService> _logger = logger;
+
+    public async Task<MembershipResponse> CreateAsync(CreateMembershipRequest request, CancellationToken ct)
     {
-        var ms = await db.Memberships
-            .Include(m => m.Member).Include(m => m.MembershipPlan)
-            .FirstOrDefaultAsync(m => m.Id == id);
-        return ms is null ? null : ToDto(ms);
-    }
+        var member = await _db.Members.FindAsync([request.MemberId], ct)
+            ?? throw new KeyNotFoundException($"Member with ID {request.MemberId} not found.");
 
-    public async Task<(MembershipDto? Result, string? Error)> CreateAsync(CreateMembershipDto dto)
-    {
-        var member = await db.Members.FindAsync(dto.MemberId);
-        if (member is null) return (null, "Member not found.");
+        var plan = await _db.MembershipPlans.FindAsync([request.MembershipPlanId], ct)
+            ?? throw new KeyNotFoundException($"Membership plan with ID {request.MembershipPlanId} not found.");
 
-        var plan = await db.MembershipPlans.FindAsync(dto.MembershipPlanId);
-        if (plan is null) return (null, "Membership plan not found.");
-        if (!plan.IsActive) return (null, "Membership plan is not active.");
+        if (!plan.IsActive)
+            throw new BusinessRuleException("Cannot purchase an inactive membership plan.");
 
-        var hasActive = await db.Memberships
-            .AnyAsync(m => m.MemberId == dto.MemberId &&
-                (m.Status == MembershipStatus.Active || m.Status == MembershipStatus.Frozen));
-        if (hasActive) return (null, "Member already has an active or frozen membership.");
+        var hasActiveOrFrozen = await _db.Memberships.AnyAsync(
+            m => m.MemberId == request.MemberId &&
+                 (m.Status == MembershipStatus.Active || m.Status == MembershipStatus.Frozen), ct);
+
+        if (hasActiveOrFrozen)
+            throw new ConflictException("Member already has an active or frozen membership.");
 
         var membership = new Membership
         {
-            MemberId = dto.MemberId,
-            MembershipPlanId = dto.MembershipPlanId,
-            StartDate = dto.StartDate,
-            EndDate = dto.StartDate.AddMonths(plan.DurationMonths),
+            MemberId = request.MemberId,
+            MembershipPlanId = request.MembershipPlanId,
+            StartDate = request.StartDate,
+            EndDate = request.StartDate.AddMonths(plan.DurationMonths),
             Status = MembershipStatus.Active,
-            PaymentStatus = dto.PaymentStatus
+            PaymentStatus = request.PaymentStatus
         };
-        db.Memberships.Add(membership);
-        await db.SaveChangesAsync();
 
-        logger.LogInformation("Created membership {MembershipId} for member {MemberId}, plan {PlanId}", membership.Id, dto.MemberId, dto.MembershipPlanId);
+        _db.Memberships.Add(membership);
+        await _db.SaveChangesAsync(ct);
 
-        var result = await db.Memberships
-            .Include(m => m.Member).Include(m => m.MembershipPlan)
-            .FirstAsync(m => m.Id == membership.Id);
-        return (ToDto(result), null);
+        _logger.LogInformation("Created membership {Id} for member {MemberId} on plan {PlanName}",
+            membership.Id, member.Id, plan.Name);
+
+        return MapToResponse(membership, member, plan);
     }
 
-    public async Task<(bool Success, string? Error)> CancelAsync(int id)
+    public async Task<MembershipResponse> GetByIdAsync(int id, CancellationToken ct)
     {
-        var ms = await db.Memberships.FindAsync(id);
-        if (ms is null) return (false, "Membership not found.");
-        if (ms.Status is MembershipStatus.Cancelled or MembershipStatus.Expired)
-            return (false, "Membership is already cancelled or expired.");
+        var membership = await _db.Memberships
+            .AsNoTracking()
+            .Include(m => m.Member)
+            .Include(m => m.MembershipPlan)
+            .FirstOrDefaultAsync(m => m.Id == id, ct)
+            ?? throw new KeyNotFoundException($"Membership with ID {id} not found.");
 
-        ms.Status = MembershipStatus.Cancelled;
-        ms.UpdatedAt = DateTime.UtcNow;
-        await db.SaveChangesAsync();
-        logger.LogInformation("Cancelled membership {MembershipId}", id);
-        return (true, null);
+        return MapToResponse(membership, membership.Member, membership.MembershipPlan);
     }
 
-    public async Task<(bool Success, string? Error)> FreezeAsync(int id, FreezeMembershipDto dto)
+    public async Task<MembershipResponse> CancelAsync(int id, CancellationToken ct)
     {
-        var ms = await db.Memberships.FindAsync(id);
-        if (ms is null) return (false, "Membership not found.");
-        if (ms.Status != MembershipStatus.Active)
-            return (false, "Only active memberships can be frozen.");
+        var membership = await GetMembershipWithRelations(id, ct);
 
-        if (ms.FreezeStartDate.HasValue)
-            return (false, "Membership has already been frozen once this term.");
+        if (membership.Status is MembershipStatus.Cancelled or MembershipStatus.Expired)
+            throw new BusinessRuleException($"Cannot cancel a membership that is already {membership.Status}.");
+
+        membership.Status = MembershipStatus.Cancelled;
+        membership.UpdatedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync(ct);
+
+        _logger.LogInformation("Cancelled membership {Id}", id);
+        return MapToResponse(membership, membership.Member, membership.MembershipPlan);
+    }
+
+    public async Task<MembershipResponse> FreezeAsync(int id, FreezeMembershipRequest request, CancellationToken ct)
+    {
+        var membership = await GetMembershipWithRelations(id, ct);
+
+        if (membership.Status != MembershipStatus.Active)
+            throw new BusinessRuleException("Only active memberships can be frozen.");
+
+        if (request.DurationDays < 7 || request.DurationDays > 30)
+            throw new BusinessRuleException("Freeze duration must be between 7 and 30 days.");
+
+        var hasExistingFreeze = membership.FreezeStartDate.HasValue;
+        if (hasExistingFreeze)
+            throw new BusinessRuleException("This membership has already been frozen once during the current term.");
 
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        ms.Status = MembershipStatus.Frozen;
-        ms.FreezeStartDate = today;
-        ms.FreezeEndDate = today.AddDays(dto.FreezeDays);
-        ms.EndDate = ms.EndDate.AddDays(dto.FreezeDays);
-        ms.UpdatedAt = DateTime.UtcNow;
+        membership.Status = MembershipStatus.Frozen;
+        membership.FreezeStartDate = today;
+        membership.FreezeEndDate = today.AddDays(request.DurationDays);
+        membership.UpdatedAt = DateTime.UtcNow;
 
-        await db.SaveChangesAsync();
-        logger.LogInformation("Froze membership {MembershipId} for {Days} days", id, dto.FreezeDays);
-        return (true, null);
+        await _db.SaveChangesAsync(ct);
+
+        _logger.LogInformation("Froze membership {Id} for {Days} days", id, request.DurationDays);
+        return MapToResponse(membership, membership.Member, membership.MembershipPlan);
     }
 
-    public async Task<(bool Success, string? Error)> UnfreezeAsync(int id)
+    public async Task<MembershipResponse> UnfreezeAsync(int id, CancellationToken ct)
     {
-        var ms = await db.Memberships.FindAsync(id);
-        if (ms is null) return (false, "Membership not found.");
-        if (ms.Status != MembershipStatus.Frozen)
-            return (false, "Membership is not frozen.");
+        var membership = await GetMembershipWithRelations(id, ct);
 
-        ms.Status = MembershipStatus.Active;
-        ms.UpdatedAt = DateTime.UtcNow;
-        await db.SaveChangesAsync();
-        logger.LogInformation("Unfroze membership {MembershipId}", id);
-        return (true, null);
-    }
-
-    public async Task<(MembershipDto? Result, string? Error)> RenewAsync(int id)
-    {
-        var ms = await db.Memberships.Include(m => m.MembershipPlan).Include(m => m.Member).FirstOrDefaultAsync(m => m.Id == id);
-        if (ms is null) return (null, "Membership not found.");
-        if (ms.Status != MembershipStatus.Expired)
-            return (null, "Only expired memberships can be renewed.");
+        if (membership.Status != MembershipStatus.Frozen)
+            throw new BusinessRuleException("Only frozen memberships can be unfrozen.");
 
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        var newMs = new Membership
-        {
-            MemberId = ms.MemberId,
-            MembershipPlanId = ms.MembershipPlanId,
-            StartDate = today,
-            EndDate = today.AddMonths(ms.MembershipPlan.DurationMonths),
-            Status = MembershipStatus.Active,
-            PaymentStatus = PaymentStatus.Paid
-        };
-        db.Memberships.Add(newMs);
-        await db.SaveChangesAsync();
+        var freezeDuration = membership.FreezeStartDate.HasValue
+            ? today.DayNumber - membership.FreezeStartDate.Value.DayNumber
+            : 0;
 
-        var result = await db.Memberships
-            .Include(m => m.Member).Include(m => m.MembershipPlan)
-            .FirstAsync(m => m.Id == newMs.Id);
-        logger.LogInformation("Renewed membership {OldId} → {NewId} for member {MemberId}", id, newMs.Id, ms.MemberId);
-        return (ToDto(result), null);
+        membership.Status = MembershipStatus.Active;
+        membership.EndDate = membership.EndDate.AddDays(freezeDuration);
+        membership.UpdatedAt = DateTime.UtcNow;
+
+        await _db.SaveChangesAsync(ct);
+
+        _logger.LogInformation("Unfroze membership {Id}, extended end date by {Days} days", id, freezeDuration);
+        return MapToResponse(membership, membership.Member, membership.MembershipPlan);
     }
 
-    internal static MembershipDto ToDto(Membership ms) => new(
-        ms.Id, ms.MemberId, $"{ms.Member.FirstName} {ms.Member.LastName}",
-        ms.MembershipPlanId, ms.MembershipPlan.Name,
+    public async Task<MembershipResponse> RenewAsync(int id, CancellationToken ct)
+    {
+        var membership = await GetMembershipWithRelations(id, ct);
+
+        if (membership.Status != MembershipStatus.Expired)
+            throw new BusinessRuleException("Only expired memberships can be renewed.");
+
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        membership.StartDate = today;
+        membership.EndDate = today.AddMonths(membership.MembershipPlan.DurationMonths);
+        membership.Status = MembershipStatus.Active;
+        membership.PaymentStatus = PaymentStatus.Paid;
+        membership.FreezeStartDate = null;
+        membership.FreezeEndDate = null;
+        membership.UpdatedAt = DateTime.UtcNow;
+
+        await _db.SaveChangesAsync(ct);
+
+        _logger.LogInformation("Renewed membership {Id}", id);
+        return MapToResponse(membership, membership.Member, membership.MembershipPlan);
+    }
+
+    private async Task<Membership> GetMembershipWithRelations(int id, CancellationToken ct)
+    {
+        return await _db.Memberships
+            .Include(m => m.Member)
+            .Include(m => m.MembershipPlan)
+            .FirstOrDefaultAsync(m => m.Id == id, ct)
+            ?? throw new KeyNotFoundException($"Membership with ID {id} not found.");
+    }
+
+    private static MembershipResponse MapToResponse(Membership ms, Member m, MembershipPlan p) => new(
+        ms.Id, ms.MemberId, $"{m.FirstName} {m.LastName}",
+        ms.MembershipPlanId, p.Name,
         ms.StartDate, ms.EndDate, ms.Status, ms.PaymentStatus,
         ms.FreezeStartDate, ms.FreezeEndDate,
         ms.CreatedAt, ms.UpdatedAt);

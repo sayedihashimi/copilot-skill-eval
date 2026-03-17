@@ -6,48 +6,48 @@ namespace LibraryApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class CategoriesController : ControllerBase
+public sealed class CategoriesController(ICategoryService categoryService) : ControllerBase
 {
-    private readonly ICategoryService _service;
-
-    public CategoriesController(ICategoryService service) => _service = service;
-
-    /// <summary>List all categories</summary>
     [HttpGet]
-    public async Task<ActionResult<List<CategoryDto>>> GetAll()
+    public async Task<ActionResult<IReadOnlyList<CategoryDto>>> GetAll(CancellationToken ct = default)
     {
-        return Ok(await _service.GetAllAsync());
+        var result = await categoryService.GetAllAsync(ct);
+        return Ok(result);
     }
 
-    /// <summary>Get category details with book count</summary>
-    [HttpGet("{id}")]
-    public async Task<ActionResult<CategoryDetailDto>> GetById(int id)
+    [HttpGet("{id:int}")]
+    public async Task<ActionResult<CategoryDetailDto>> GetById(int id, CancellationToken ct = default)
     {
-        var category = await _service.GetByIdAsync(id);
-        return category is null ? NotFound() : Ok(category);
+        var category = await categoryService.GetByIdAsync(id, ct);
+        return category is not null ? Ok(category) : NotFound();
     }
 
-    /// <summary>Create a new category</summary>
     [HttpPost]
-    public async Task<ActionResult<CategoryDto>> Create(CategoryCreateDto dto)
+    public async Task<ActionResult<CategoryDto>> Create([FromBody] CreateCategoryRequest request, CancellationToken ct = default)
     {
-        var category = await _service.CreateAsync(dto);
+        if (string.IsNullOrWhiteSpace(request.Name))
+            return BadRequest(new ProblemDetails { Title = "Validation Error", Detail = "Name is required." });
+
+        var category = await categoryService.CreateAsync(request, ct);
         return CreatedAtAction(nameof(GetById), new { id = category.Id }, category);
     }
 
-    /// <summary>Update a category</summary>
-    [HttpPut("{id}")]
-    public async Task<ActionResult<CategoryDto>> Update(int id, CategoryUpdateDto dto)
+    [HttpPut("{id:int}")]
+    public async Task<ActionResult<CategoryDto>> Update(int id, [FromBody] UpdateCategoryRequest request, CancellationToken ct = default)
     {
-        var category = await _service.UpdateAsync(id, dto);
-        return category is null ? NotFound() : Ok(category);
+        if (string.IsNullOrWhiteSpace(request.Name))
+            return BadRequest(new ProblemDetails { Title = "Validation Error", Detail = "Name is required." });
+
+        var category = await categoryService.UpdateAsync(id, request, ct);
+        return category is not null ? Ok(category) : NotFound();
     }
 
-    /// <summary>Delete a category (fails if has books)</summary>
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(int id)
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> Delete(int id, CancellationToken ct = default)
     {
-        await _service.DeleteAsync(id);
+        var (found, hasBooks) = await categoryService.DeleteAsync(id, ct);
+        if (!found) return NotFound();
+        if (hasBooks) return Conflict(new ProblemDetails { Title = "Conflict", Detail = "Cannot delete category with associated books." });
         return NoContent();
     }
 }

@@ -1,5 +1,4 @@
 using LibraryApi.DTOs;
-using LibraryApi.Models;
 using LibraryApi.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,43 +6,45 @@ namespace LibraryApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class FinesController : ControllerBase
+public sealed class FinesController(IFineService fineService) : ControllerBase
 {
-    private readonly IFineService _service;
-
-    public FinesController(IFineService service) => _service = service;
-
-    /// <summary>List fines with optional status filter and pagination</summary>
     [HttpGet]
-    public async Task<ActionResult<PagedResult<FineDto>>> GetAll(
-        [FromQuery] FineStatus? status,
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10)
+    public async Task<ActionResult<PaginatedResponse<FineDto>>> GetAll(
+        [FromQuery] string? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 10,
+        CancellationToken ct = default)
     {
-        if (page < 1) page = 1;
-        if (pageSize < 1 || pageSize > 100) pageSize = 10;
-        return Ok(await _service.GetAllAsync(status, page, pageSize));
+        var result = await fineService.GetAllAsync(status, page, pageSize, ct);
+        return Ok(result);
     }
 
-    /// <summary>Get fine details</summary>
-    [HttpGet("{id}")]
-    public async Task<ActionResult<FineDto>> GetById(int id)
+    [HttpGet("{id:int}")]
+    public async Task<ActionResult<FineDto>> GetById(int id, CancellationToken ct = default)
     {
-        var fine = await _service.GetByIdAsync(id);
-        return fine is null ? NotFound() : Ok(fine);
+        var fine = await fineService.GetByIdAsync(id, ct);
+        return fine is not null ? Ok(fine) : NotFound();
     }
 
-    /// <summary>Pay a fine</summary>
-    [HttpPost("{id}/pay")]
-    public async Task<ActionResult<FineDto>> Pay(int id)
+    [HttpPost("{id:int}/pay")]
+    public async Task<ActionResult<FineDto>> Pay(int id, CancellationToken ct = default)
     {
-        return Ok(await _service.PayAsync(id));
+        var (fine, error) = await fineService.PayAsync(id, ct);
+        if (error is not null)
+        {
+            if (error.Contains("not found")) return NotFound();
+            return BadRequest(new ProblemDetails { Title = "Payment Failed", Detail = error });
+        }
+        return Ok(fine);
     }
 
-    /// <summary>Waive a fine</summary>
-    [HttpPost("{id}/waive")]
-    public async Task<ActionResult<FineDto>> Waive(int id)
+    [HttpPost("{id:int}/waive")]
+    public async Task<ActionResult<FineDto>> Waive(int id, CancellationToken ct = default)
     {
-        return Ok(await _service.WaiveAsync(id));
+        var (fine, error) = await fineService.WaiveAsync(id, ct);
+        if (error is not null)
+        {
+            if (error.Contains("not found")) return NotFound();
+            return BadRequest(new ProblemDetails { Title = "Waive Failed", Detail = error });
+        }
+        return Ok(fine);
     }
 }

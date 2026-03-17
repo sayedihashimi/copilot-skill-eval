@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace VetClinicApi.DTOs;
 
-public record PetDto(
+public sealed record PetDto(
     int Id,
     string Name,
     string Species,
@@ -16,7 +16,7 @@ public record PetDto(
     DateTime CreatedAt,
     DateTime UpdatedAt);
 
-public record PetDetailDto(
+public sealed record PetDetailDto(
     int Id,
     string Name,
     string Species,
@@ -31,9 +31,14 @@ public record PetDetailDto(
     DateTime CreatedAt,
     DateTime UpdatedAt);
 
-public record PetSummaryDto(int Id, string Name, string Species, string? Breed, bool IsActive);
+public sealed record PetSummaryDto(
+    int Id,
+    string Name,
+    string Species,
+    string? Breed,
+    bool IsActive);
 
-public record CreatePetDto
+public sealed record CreatePetRequest
 {
     [Required, MaxLength(100)]
     public string Name { get; init; } = string.Empty;
@@ -46,17 +51,18 @@ public record CreatePetDto
 
     public DateOnly? DateOfBirth { get; init; }
 
-    [Range(0.01, double.MaxValue, ErrorMessage = "Weight must be positive")]
+    [Range(0.01, double.MaxValue)]
     public decimal? Weight { get; init; }
 
     public string? Color { get; init; }
+
     public string? MicrochipNumber { get; init; }
 
     [Required]
     public int OwnerId { get; init; }
 }
 
-public record UpdatePetDto
+public sealed record UpdatePetRequest
 {
     [Required, MaxLength(100)]
     public string Name { get; init; } = string.Empty;
@@ -69,10 +75,11 @@ public record UpdatePetDto
 
     public DateOnly? DateOfBirth { get; init; }
 
-    [Range(0.01, double.MaxValue, ErrorMessage = "Weight must be positive")]
+    [Range(0.01, double.MaxValue)]
     public decimal? Weight { get; init; }
 
     public string? Color { get; init; }
+
     public string? MicrochipNumber { get; init; }
 
     [Required]

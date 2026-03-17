@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace VetClinicApi.DTOs;
 
-public record PrescriptionDto(
+public sealed record PrescriptionDto(
     int Id,
     int MedicalRecordId,
     string MedicationName,
@@ -10,11 +10,11 @@ public record PrescriptionDto(
     int DurationDays,
     DateOnly StartDate,
     DateOnly EndDate,
-    bool IsActive,
     string? Instructions,
+    bool IsActive,
     DateTime CreatedAt);
 
-public record CreatePrescriptionDto
+public sealed record CreatePrescriptionRequest
 {
     [Required]
     public int MedicalRecordId { get; init; }
@@ -25,7 +25,7 @@ public record CreatePrescriptionDto
     [Required, MaxLength(100)]
     public string Dosage { get; init; } = string.Empty;
 
-    [Range(1, int.MaxValue, ErrorMessage = "DurationDays must be positive")]
+    [Range(1, int.MaxValue)]
     public int DurationDays { get; init; }
 
     [Required]

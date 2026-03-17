@@ -1,17 +1,21 @@
 namespace LibraryApi.Models;
 
-public class Loan
+public sealed class Loan
 {
     public int Id { get; set; }
 
     public int BookId { get; set; }
+
     public Book Book { get; set; } = null!;
 
     public int PatronId { get; set; }
+
     public Patron Patron { get; set; } = null!;
 
     public DateTime LoanDate { get; set; } = DateTime.UtcNow;
+
     public DateTime DueDate { get; set; }
+
     public DateTime? ReturnDate { get; set; }
 
     public LoanStatus Status { get; set; } = LoanStatus.Active;
@@ -20,5 +24,5 @@ public class Loan
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-    public ICollection<Fine> Fines { get; set; } = new List<Fine>();
+    public ICollection<Fine> Fines { get; set; } = [];
 }

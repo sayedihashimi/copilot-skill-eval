@@ -4,6 +4,6 @@ namespace VetClinicApi.Services;
 
 public interface IVaccinationService
 {
-    Task<VaccinationDto?> GetByIdAsync(int id);
-    Task<VaccinationDto> CreateAsync(CreateVaccinationDto dto);
+    Task<VaccinationDto?> GetByIdAsync(int id, CancellationToken ct);
+    Task<VaccinationDto> CreateAsync(CreateVaccinationRequest request, CancellationToken ct);
 }

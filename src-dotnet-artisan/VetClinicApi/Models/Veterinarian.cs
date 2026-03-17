@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace VetClinicApi.Models;
 
-public class Veterinarian
+public sealed class Veterinarian
 {
     public int Id { get; set; }
 
@@ -15,7 +15,7 @@ public class Veterinarian
     [Required, EmailAddress]
     public string Email { get; set; } = string.Empty;
 
-    [Required]
+    [Required, Phone]
     public string Phone { get; set; } = string.Empty;
 
     public string? Specialization { get; set; }
@@ -26,6 +26,10 @@ public class Veterinarian
     public bool IsAvailable { get; set; } = true;
 
     public DateOnly HireDate { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     public ICollection<Appointment> Appointments { get; set; } = [];
 }

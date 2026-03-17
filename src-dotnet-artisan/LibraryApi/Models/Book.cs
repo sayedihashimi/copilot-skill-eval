@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace LibraryApi.Models;
 
-public class Book
+public sealed class Book
 {
     public int Id { get; set; }
 
@@ -20,6 +20,7 @@ public class Book
     [MaxLength(2000)]
     public string? Description { get; set; }
 
+    [Range(1, int.MaxValue)]
     public int? PageCount { get; set; }
 
     [MaxLength(50)]
@@ -31,10 +32,14 @@ public class Book
     public int AvailableCopies { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
-    public ICollection<BookAuthor> BookAuthors { get; set; } = new List<BookAuthor>();
-    public ICollection<BookCategory> BookCategories { get; set; } = new List<BookCategory>();
-    public ICollection<Loan> Loans { get; set; } = new List<Loan>();
-    public ICollection<Reservation> Reservations { get; set; } = new List<Reservation>();
+    public ICollection<BookAuthor> BookAuthors { get; set; } = [];
+
+    public ICollection<BookCategory> BookCategories { get; set; } = [];
+
+    public ICollection<Loan> Loans { get; set; } = [];
+
+    public ICollection<Reservation> Reservations { get; set; } = [];
 }

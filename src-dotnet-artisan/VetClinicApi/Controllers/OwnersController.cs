@@ -6,65 +6,64 @@ namespace VetClinicApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class OwnersController(IOwnerService ownerService) : ControllerBase
+public sealed class OwnersController(IOwnerService ownerService) : ControllerBase
 {
-    /// <summary>List owners with optional search by name or email</summary>
+    private readonly IOwnerService _ownerService = ownerService;
+
     [HttpGet]
-    public async Task<ActionResult<PagedResult<OwnerDto>>> GetAll(
+    public async Task<ActionResult<PaginatedResponse<OwnerDto>>> GetAll(
         [FromQuery] string? search,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10)
+        [FromQuery] int pageSize = 10,
+        CancellationToken ct = default)
     {
-        var result = await ownerService.GetAllAsync(search, new PaginationParams(page, pageSize));
+        var result = await _ownerService.GetAllAsync(search, page, pageSize, ct);
         return Ok(result);
     }
 
-    /// <summary>Get owner details including pets</summary>
     [HttpGet("{id:int}")]
-    public async Task<ActionResult<OwnerDetailDto>> GetById(int id)
+    public async Task<ActionResult<OwnerDetailDto>> GetById(int id, CancellationToken ct)
     {
-        var owner = await ownerService.GetByIdAsync(id);
-        return owner is null ? NotFound() : Ok(owner);
+        var owner = await _ownerService.GetByIdAsync(id, ct);
+        return owner is not null ? Ok(owner) : NotFound();
     }
 
-    /// <summary>Create a new owner</summary>
     [HttpPost]
-    public async Task<ActionResult<OwnerDto>> Create([FromBody] CreateOwnerDto dto)
+    public async Task<ActionResult<OwnerDto>> Create([FromBody] CreateOwnerRequest request, CancellationToken ct)
     {
-        var owner = await ownerService.CreateAsync(dto);
+        var owner = await _ownerService.CreateAsync(request, ct);
         return CreatedAtAction(nameof(GetById), new { id = owner.Id }, owner);
     }
 
-    /// <summary>Update an existing owner</summary>
     [HttpPut("{id:int}")]
-    public async Task<ActionResult<OwnerDto>> Update(int id, [FromBody] UpdateOwnerDto dto)
+    public async Task<ActionResult<OwnerDto>> Update(int id, [FromBody] UpdateOwnerRequest request, CancellationToken ct)
     {
-        var owner = await ownerService.UpdateAsync(id, dto);
-        return owner is null ? NotFound() : Ok(owner);
+        var owner = await _ownerService.UpdateAsync(id, request, ct);
+        return owner is not null ? Ok(owner) : NotFound();
     }
 
-    /// <summary>Delete an owner (fails if owner has active pets)</summary>
     [HttpDelete("{id:int}")]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {
-        var deleted = await ownerService.DeleteAsync(id);
+        var deleted = await _ownerService.DeleteAsync(id, ct);
         return deleted ? NoContent() : NotFound();
     }
 
-    /// <summary>Get all pets belonging to this owner</summary>
     [HttpGet("{id:int}/pets")]
-    public async Task<ActionResult<IReadOnlyList<PetDto>>> GetPets(int id)
+    public async Task<ActionResult<IReadOnlyList<PetDto>>> GetPets(int id, CancellationToken ct)
     {
-        var pets = await ownerService.GetPetsAsync(id);
+        var pets = await _ownerService.GetPetsAsync(id, ct);
         return Ok(pets);
     }
 
-    /// <summary>Get appointments for all of this owner's pets</summary>
     [HttpGet("{id:int}/appointments")]
-    public async Task<ActionResult<PagedResult<AppointmentDto>>> GetAppointments(
-        int id, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    public async Task<ActionResult<PaginatedResponse<AppointmentDto>>> GetAppointments(
+        int id,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken ct = default)
     {
-        var result = await ownerService.GetAppointmentsAsync(id, new PaginationParams(page, pageSize));
+        var result = await _ownerService.GetAppointmentsAsync(id, page, pageSize, ct);
         return Ok(result);
     }
 }

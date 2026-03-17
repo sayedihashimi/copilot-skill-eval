@@ -4,11 +4,11 @@ namespace VetClinicApi.Services;
 
 public interface IOwnerService
 {
-    Task<PagedResult<OwnerDto>> GetAllAsync(string? search, PaginationParams pagination);
-    Task<OwnerDetailDto?> GetByIdAsync(int id);
-    Task<OwnerDto> CreateAsync(CreateOwnerDto dto);
-    Task<OwnerDto?> UpdateAsync(int id, UpdateOwnerDto dto);
-    Task<bool> DeleteAsync(int id);
-    Task<IReadOnlyList<PetDto>> GetPetsAsync(int ownerId);
-    Task<PagedResult<AppointmentDto>> GetAppointmentsAsync(int ownerId, PaginationParams pagination);
+    Task<PaginatedResponse<OwnerDto>> GetAllAsync(string? search, int page, int pageSize, CancellationToken ct);
+    Task<OwnerDetailDto?> GetByIdAsync(int id, CancellationToken ct);
+    Task<OwnerDto> CreateAsync(CreateOwnerRequest request, CancellationToken ct);
+    Task<OwnerDto?> UpdateAsync(int id, UpdateOwnerRequest request, CancellationToken ct);
+    Task<bool> DeleteAsync(int id, CancellationToken ct);
+    Task<IReadOnlyList<PetDto>> GetPetsAsync(int ownerId, CancellationToken ct);
+    Task<PaginatedResponse<AppointmentDto>> GetAppointmentsAsync(int ownerId, int page, int pageSize, CancellationToken ct);
 }

@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace LibraryApi.Models;
 
-public class Category
+public sealed class Category
 {
     public int Id { get; set; }
 
@@ -12,5 +12,5 @@ public class Category
     [MaxLength(500)]
     public string? Description { get; set; }
 
-    public ICollection<BookCategory> BookCategories { get; set; } = new List<BookCategory>();
+    public ICollection<BookCategory> BookCategories { get; set; } = [];
 }

@@ -6,61 +6,63 @@ namespace VetClinicApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class VeterinariansController(IVeterinarianService vetService) : ControllerBase
+public sealed class VeterinariansController(IVeterinarianService veterinarianService) : ControllerBase
 {
-    /// <summary>List veterinarians with optional filters</summary>
+    private readonly IVeterinarianService _veterinarianService = veterinarianService;
+
     [HttpGet]
-    public async Task<ActionResult<PagedResult<VeterinarianDto>>> GetAll(
+    public async Task<ActionResult<PaginatedResponse<VeterinarianDto>>> GetAll(
         [FromQuery] string? specialization,
         [FromQuery] bool? isAvailable,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10)
+        [FromQuery] int pageSize = 10,
+        CancellationToken ct = default)
     {
-        var result = await vetService.GetAllAsync(specialization, isAvailable, new PaginationParams(page, pageSize));
+        var result = await _veterinarianService.GetAllAsync(specialization, isAvailable, page, pageSize, ct);
         return Ok(result);
     }
 
-    /// <summary>Get veterinarian details</summary>
     [HttpGet("{id:int}")]
-    public async Task<ActionResult<VeterinarianDto>> GetById(int id)
+    public async Task<ActionResult<VeterinarianDto>> GetById(int id, CancellationToken ct)
     {
-        var vet = await vetService.GetByIdAsync(id);
-        return vet is null ? NotFound() : Ok(vet);
+        var vet = await _veterinarianService.GetByIdAsync(id, ct);
+        return vet is not null ? Ok(vet) : NotFound();
     }
 
-    /// <summary>Register a new veterinarian</summary>
     [HttpPost]
-    public async Task<ActionResult<VeterinarianDto>> Create([FromBody] CreateVeterinarianDto dto)
+    public async Task<ActionResult<VeterinarianDto>> Create([FromBody] CreateVeterinarianRequest request, CancellationToken ct)
     {
-        var vet = await vetService.CreateAsync(dto);
+        var vet = await _veterinarianService.CreateAsync(request, ct);
         return CreatedAtAction(nameof(GetById), new { id = vet.Id }, vet);
     }
 
-    /// <summary>Update veterinarian info</summary>
     [HttpPut("{id:int}")]
-    public async Task<ActionResult<VeterinarianDto>> Update(int id, [FromBody] UpdateVeterinarianDto dto)
+    public async Task<ActionResult<VeterinarianDto>> Update(int id, [FromBody] UpdateVeterinarianRequest request, CancellationToken ct)
     {
-        var vet = await vetService.UpdateAsync(id, dto);
-        return vet is null ? NotFound() : Ok(vet);
+        var vet = await _veterinarianService.UpdateAsync(id, request, ct);
+        return vet is not null ? Ok(vet) : NotFound();
     }
 
-    /// <summary>Get vet's schedule for a specific date</summary>
     [HttpGet("{id:int}/schedule")]
-    public async Task<ActionResult<IReadOnlyList<AppointmentDto>>> GetSchedule(int id, [FromQuery] DateOnly date)
+    public async Task<ActionResult<IReadOnlyList<AppointmentDto>>> GetSchedule(
+        int id,
+        [FromQuery] DateOnly? date,
+        CancellationToken ct)
     {
-        var schedule = await vetService.GetScheduleAsync(id, date);
+        var scheduleDate = date ?? DateOnly.FromDateTime(DateTime.UtcNow);
+        var schedule = await _veterinarianService.GetScheduleAsync(id, scheduleDate, ct);
         return Ok(schedule);
     }
 
-    /// <summary>Get all appointments for a veterinarian</summary>
     [HttpGet("{id:int}/appointments")]
-    public async Task<ActionResult<PagedResult<AppointmentDto>>> GetAppointments(
+    public async Task<ActionResult<PaginatedResponse<AppointmentDto>>> GetAppointments(
         int id,
         [FromQuery] string? status,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10)
+        [FromQuery] int pageSize = 10,
+        CancellationToken ct = default)
     {
-        var result = await vetService.GetAppointmentsAsync(id, status, new PaginationParams(page, pageSize));
+        var result = await _veterinarianService.GetAppointmentsAsync(id, status, page, pageSize, ct);
         return Ok(result);
     }
 }

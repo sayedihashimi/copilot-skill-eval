@@ -6,29 +6,28 @@ namespace VetClinicApi.Controllers;
 
 [ApiController]
 [Route("api/medical-records")]
-public class MedicalRecordsController(IMedicalRecordService medicalRecordService) : ControllerBase
+public sealed class MedicalRecordsController(IMedicalRecordService medicalRecordService) : ControllerBase
 {
-    /// <summary>Get medical record details with prescriptions</summary>
+    private readonly IMedicalRecordService _medicalRecordService = medicalRecordService;
+
     [HttpGet("{id:int}")]
-    public async Task<ActionResult<MedicalRecordDetailDto>> GetById(int id)
+    public async Task<ActionResult<MedicalRecordDto>> GetById(int id, CancellationToken ct)
     {
-        var record = await medicalRecordService.GetByIdAsync(id);
-        return record is null ? NotFound() : Ok(record);
+        var record = await _medicalRecordService.GetByIdAsync(id, ct);
+        return record is not null ? Ok(record) : NotFound();
     }
 
-    /// <summary>Create a medical record (only for completed/in-progress appointments)</summary>
     [HttpPost]
-    public async Task<ActionResult<MedicalRecordDto>> Create([FromBody] CreateMedicalRecordDto dto)
+    public async Task<ActionResult<MedicalRecordDto>> Create([FromBody] CreateMedicalRecordRequest request, CancellationToken ct)
     {
-        var record = await medicalRecordService.CreateAsync(dto);
+        var record = await _medicalRecordService.CreateAsync(request, ct);
         return CreatedAtAction(nameof(GetById), new { id = record.Id }, record);
     }
 
-    /// <summary>Update a medical record</summary>
     [HttpPut("{id:int}")]
-    public async Task<ActionResult<MedicalRecordDto>> Update(int id, [FromBody] UpdateMedicalRecordDto dto)
+    public async Task<ActionResult<MedicalRecordDto>> Update(int id, [FromBody] UpdateMedicalRecordRequest request, CancellationToken ct)
     {
-        var record = await medicalRecordService.UpdateAsync(id, dto);
-        return record is null ? NotFound() : Ok(record);
+        var record = await _medicalRecordService.UpdateAsync(id, request, ct);
+        return record is not null ? Ok(record) : NotFound();
     }
 }

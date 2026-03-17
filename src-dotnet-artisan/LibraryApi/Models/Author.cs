@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace LibraryApi.Models;
 
-public class Author
+public sealed class Author
 {
     public int Id { get; set; }
 
@@ -22,5 +22,5 @@ public class Author
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-    public ICollection<BookAuthor> BookAuthors { get; set; } = new List<BookAuthor>();
+    public ICollection<BookAuthor> BookAuthors { get; set; } = [];
 }

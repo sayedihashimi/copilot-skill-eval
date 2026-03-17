@@ -1,54 +1,47 @@
-using Microsoft.AspNetCore.Mvc;
 using FitnessStudioApi.DTOs;
 using FitnessStudioApi.Services;
+using Microsoft.AspNetCore.Mvc;
 
 namespace FitnessStudioApi.Controllers;
 
 [ApiController]
 [Route("api/bookings")]
-public class BookingsController(IBookingService service) : ControllerBase
+public sealed class BookingsController(IBookingService service) : ControllerBase
 {
-    /// <summary>Get booking details</summary>
-    [HttpGet("{id:int}")]
-    public async Task<ActionResult<BookingDto>> GetById(int id)
-    {
-        var booking = await service.GetByIdAsync(id);
-        return booking is null ? NotFound() : Ok(booking);
-    }
+    private readonly IBookingService _service = service;
 
-    /// <summary>Book a class (enforces all business rules)</summary>
     [HttpPost]
-    public async Task<ActionResult<BookingDto>> Create(CreateBookingDto dto)
+    public async Task<ActionResult<BookingResponse>> Create(CreateBookingRequest request, CancellationToken ct)
     {
-        var (result, error) = await service.CreateAsync(dto);
-        if (result is null) return BadRequest(new { error });
-        return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+        var booking = await _service.CreateAsync(request, ct);
+        return CreatedAtAction(nameof(GetById), new { id = booking.Id }, booking);
     }
 
-    /// <summary>Cancel a booking (enforces cancellation policy, promotes waitlist)</summary>
+    [HttpGet("{id:int}")]
+    public async Task<ActionResult<BookingResponse>> GetById(int id, CancellationToken ct)
+    {
+        var booking = await _service.GetByIdAsync(id, ct);
+        return Ok(booking);
+    }
+
     [HttpPost("{id:int}/cancel")]
-    public async Task<IActionResult> Cancel(int id, CancelBookingDto dto)
+    public async Task<ActionResult<BookingResponse>> Cancel(int id, CancelBookingRequest request, CancellationToken ct)
     {
-        var (success, error) = await service.CancelAsync(id, dto);
-        if (!success) return error == "Booking not found." ? NotFound() : BadRequest(new { error });
-        return Ok(new { message = "Booking cancelled." });
+        var booking = await _service.CancelAsync(id, request, ct);
+        return Ok(booking);
     }
 
-    /// <summary>Check in to a class (15 min window)</summary>
     [HttpPost("{id:int}/check-in")]
-    public async Task<IActionResult> CheckIn(int id)
+    public async Task<ActionResult<BookingResponse>> CheckIn(int id, CancellationToken ct)
     {
-        var (success, error) = await service.CheckInAsync(id);
-        if (!success) return error == "Booking not found." ? NotFound() : BadRequest(new { error });
-        return Ok(new { message = "Checked in successfully." });
+        var booking = await _service.CheckInAsync(id, ct);
+        return Ok(booking);
     }
 
-    /// <summary>Mark booking as no-show</summary>
     [HttpPost("{id:int}/no-show")]
-    public async Task<IActionResult> NoShow(int id)
+    public async Task<ActionResult<BookingResponse>> NoShow(int id, CancellationToken ct)
     {
-        var (success, error) = await service.MarkNoShowAsync(id);
-        if (!success) return error == "Booking not found." ? NotFound() : BadRequest(new { error });
-        return Ok(new { message = "Marked as no-show." });
+        var booking = await _service.MarkNoShowAsync(id, ct);
+        return Ok(booking);
     }
 }

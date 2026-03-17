@@ -1,5 +1,4 @@
 using LibraryApi.DTOs;
-using LibraryApi.Models;
 using LibraryApi.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,61 +6,61 @@ namespace LibraryApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class LoansController : ControllerBase
+public sealed class LoansController(ILoanService loanService) : ControllerBase
 {
-    private readonly ILoanService _service;
-
-    public LoansController(ILoanService service) => _service = service;
-
-    /// <summary>List loans with filters (status, overdue, date range) and pagination</summary>
     [HttpGet]
-    public async Task<ActionResult<PagedResult<LoanDto>>> GetAll(
-        [FromQuery] LoanStatus? status,
-        [FromQuery] bool? overdue,
-        [FromQuery] DateTime? fromDate,
-        [FromQuery] DateTime? toDate,
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10)
+    public async Task<ActionResult<PaginatedResponse<LoanDto>>> GetAll(
+        [FromQuery] string? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 10,
+        CancellationToken ct = default)
     {
-        if (page < 1) page = 1;
-        if (pageSize < 1 || pageSize > 100) pageSize = 10;
-        return Ok(await _service.GetAllAsync(status, overdue, fromDate, toDate, page, pageSize));
+        var result = await loanService.GetAllAsync(status, page, pageSize, ct);
+        return Ok(result);
     }
 
-    /// <summary>Get loan details</summary>
-    [HttpGet("{id}")]
-    public async Task<ActionResult<LoanDto>> GetById(int id)
+    [HttpGet("{id:int}")]
+    public async Task<ActionResult<LoanDto>> GetById(int id, CancellationToken ct = default)
     {
-        var loan = await _service.GetByIdAsync(id);
-        return loan is null ? NotFound() : Ok(loan);
+        var loan = await loanService.GetByIdAsync(id, ct);
+        return loan is not null ? Ok(loan) : NotFound();
     }
 
-    /// <summary>Checkout a book (creates a loan, enforces all business rules)</summary>
     [HttpPost]
-    public async Task<ActionResult<LoanDto>> Checkout(LoanCreateDto dto)
+    public async Task<ActionResult<LoanDto>> Checkout([FromBody] CreateLoanRequest request, CancellationToken ct = default)
     {
-        var loan = await _service.CheckoutAsync(dto);
-        return CreatedAtAction(nameof(GetById), new { id = loan.Id }, loan);
+        var (loan, error) = await loanService.CheckoutAsync(request, ct);
+        if (error is not null)
+            return BadRequest(new ProblemDetails { Title = "Checkout Failed", Detail = error });
+        return CreatedAtAction(nameof(GetById), new { id = loan!.Id }, loan);
     }
 
-    /// <summary>Return a book</summary>
-    [HttpPost("{id}/return")]
-    public async Task<ActionResult<LoanDto>> Return(int id)
+    [HttpPost("{id:int}/return")]
+    public async Task<ActionResult<LoanDto>> Return(int id, CancellationToken ct = default)
     {
-        return Ok(await _service.ReturnAsync(id));
+        var (loan, error) = await loanService.ReturnAsync(id, ct);
+        if (error is not null)
+        {
+            if (error.Contains("not found")) return NotFound();
+            return BadRequest(new ProblemDetails { Title = "Return Failed", Detail = error });
+        }
+        return Ok(loan);
     }
 
-    /// <summary>Renew a loan</summary>
-    [HttpPost("{id}/renew")]
-    public async Task<ActionResult<LoanDto>> Renew(int id)
+    [HttpPost("{id:int}/renew")]
+    public async Task<ActionResult<LoanDto>> Renew(int id, CancellationToken ct = default)
     {
-        return Ok(await _service.RenewAsync(id));
+        var (loan, error) = await loanService.RenewAsync(id, ct);
+        if (error is not null)
+        {
+            if (error.Contains("not found")) return NotFound();
+            return BadRequest(new ProblemDetails { Title = "Renewal Failed", Detail = error });
+        }
+        return Ok(loan);
     }
 
-    /// <summary>Get all overdue loans</summary>
     [HttpGet("overdue")]
-    public async Task<ActionResult<List<LoanDto>>> GetOverdue()
+    public async Task<ActionResult<IReadOnlyList<LoanDto>>> GetOverdue(CancellationToken ct = default)
     {
-        return Ok(await _service.GetOverdueAsync());
+        var result = await loanService.GetOverdueAsync(ct);
+        return Ok(result);
     }
 }

@@ -5,207 +5,144 @@ using Microsoft.EntityFrameworkCore;
 
 namespace LibraryApi.Services;
 
-public class ReservationService : IReservationService
+public sealed class ReservationService(LibraryDbContext db) : IReservationService
 {
-    private readonly LibraryDbContext _db;
-    private readonly ILogger<ReservationService> _logger;
-
-    public ReservationService(LibraryDbContext db, ILogger<ReservationService> logger)
+    public async Task<PaginatedResponse<ReservationDto>> GetAllAsync(string? status, int page, int pageSize, CancellationToken ct)
     {
-        _db = db;
-        _logger = logger;
-    }
+        var query = db.Reservations.AsNoTracking().AsQueryable();
 
-    public async Task<PagedResult<ReservationDto>> GetAllAsync(ReservationStatus? status, int page, int pageSize)
-    {
-        var query = _db.Reservations
-            .Include(r => r.Book)
-            .Include(r => r.Patron)
-            .AsQueryable();
+        if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<ReservationStatus>(status, true, out var rs))
+            query = query.Where(r => r.Status == rs);
 
-        if (status.HasValue)
-            query = query.Where(r => r.Status == status.Value);
-
-        var totalCount = await query.CountAsync();
-
+        var total = await query.CountAsync(ct);
         var items = await query
             .OrderByDescending(r => r.ReservationDate)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(r => MapToDto(r))
-            .ToListAsync();
+            .Select(r => new ReservationDto(r.Id, r.BookId, r.Book.Title, r.PatronId,
+                $"{r.Patron.FirstName} {r.Patron.LastName}",
+                r.ReservationDate, r.ExpirationDate, r.Status, r.QueuePosition))
+            .ToListAsync(ct);
 
-        return new PagedResult<ReservationDto>
-        {
-            Items = items,
-            Page = page,
-            PageSize = pageSize,
-            TotalCount = totalCount
-        };
+        return new PaginatedResponse<ReservationDto>(items, total, page, pageSize);
     }
 
-    public async Task<ReservationDto?> GetByIdAsync(int id)
+    public async Task<ReservationDto?> GetByIdAsync(int id, CancellationToken ct)
     {
-        var reservation = await _db.Reservations
-            .Include(r => r.Book)
-            .Include(r => r.Patron)
-            .FirstOrDefaultAsync(r => r.Id == id);
-
-        return reservation is null ? null : MapToDto(reservation);
+        return await db.Reservations.AsNoTracking()
+            .Where(r => r.Id == id)
+            .Select(r => new ReservationDto(r.Id, r.BookId, r.Book.Title, r.PatronId,
+                $"{r.Patron.FirstName} {r.Patron.LastName}",
+                r.ReservationDate, r.ExpirationDate, r.Status, r.QueuePosition))
+            .FirstOrDefaultAsync(ct);
     }
 
-    public async Task<ReservationDto> CreateAsync(ReservationCreateDto dto)
+    public async Task<(ReservationDto? Reservation, string? Error)> CreateAsync(CreateReservationRequest request, CancellationToken ct)
     {
-        var book = await _db.Books.FindAsync(dto.BookId)
-            ?? throw new KeyNotFoundException($"Book with id {dto.BookId} not found");
+        var book = await db.Books.FindAsync([request.BookId], ct);
+        if (book is null) return (null, "Book not found.");
 
-        var patron = await _db.Patrons.FindAsync(dto.PatronId)
-            ?? throw new KeyNotFoundException($"Patron with id {dto.PatronId} not found");
+        var patron = await db.Patrons.FindAsync([request.PatronId], ct);
+        if (patron is null) return (null, "Patron not found.");
 
-        if (!patron.IsActive)
-            throw new InvalidOperationException("Patron account is not active");
+        if (!patron.IsActive) return (null, "Patron account is inactive.");
 
-        // Cannot reserve a book that patron has on active loan
-        var hasActiveLoan = await _db.Loans
-            .AnyAsync(l => l.BookId == dto.BookId && l.PatronId == dto.PatronId && l.Status == LoanStatus.Active);
-
+        // Cannot reserve a book already on active loan by same patron
+        var hasActiveLoan = await db.Loans.AnyAsync(
+            l => l.BookId == request.BookId && l.PatronId == request.PatronId && l.Status != LoanStatus.Returned, ct);
         if (hasActiveLoan)
-            throw new InvalidOperationException("Cannot reserve a book that you currently have on loan");
+            return (null, "Cannot reserve a book that is currently on active loan by the same patron.");
 
-        // Check if already has a pending/ready reservation for this book
-        var hasExistingReservation = await _db.Reservations
-            .AnyAsync(r => r.BookId == dto.BookId && r.PatronId == dto.PatronId &&
-                          (r.Status == ReservationStatus.Pending || r.Status == ReservationStatus.Ready));
-
-        if (hasExistingReservation)
-            throw new InvalidOperationException("You already have an active reservation for this book");
+        // Check for existing active reservation by same patron
+        var hasActiveReservation = await db.Reservations.AnyAsync(
+            r => r.BookId == request.BookId && r.PatronId == request.PatronId &&
+                 (r.Status == ReservationStatus.Pending || r.Status == ReservationStatus.Ready), ct);
+        if (hasActiveReservation)
+            return (null, "Patron already has an active reservation for this book.");
 
         // Determine queue position
-        var maxPosition = await _db.Reservations
-            .Where(r => r.BookId == dto.BookId &&
-                       (r.Status == ReservationStatus.Pending || r.Status == ReservationStatus.Ready))
-            .MaxAsync(r => (int?)r.QueuePosition) ?? 0;
+        var maxPosition = await db.Reservations
+            .Where(r => r.BookId == request.BookId &&
+                        (r.Status == ReservationStatus.Pending || r.Status == ReservationStatus.Ready))
+            .MaxAsync(r => (int?)r.QueuePosition, ct) ?? 0;
 
         var reservation = new Reservation
         {
-            BookId = dto.BookId,
-            PatronId = dto.PatronId,
+            BookId = request.BookId,
+            PatronId = request.PatronId,
             ReservationDate = DateTime.UtcNow,
             Status = ReservationStatus.Pending,
             QueuePosition = maxPosition + 1
         };
 
-        _db.Reservations.Add(reservation);
-        await _db.SaveChangesAsync();
+        db.Reservations.Add(reservation);
+        await db.SaveChangesAsync(ct);
 
-        _logger.LogInformation("Created reservation {Id} for Book {BookId} by Patron {PatronId}, position {Position}",
-            reservation.Id, dto.BookId, dto.PatronId, reservation.QueuePosition);
-
-        await _db.Entry(reservation).Reference(r => r.Book).LoadAsync();
-        await _db.Entry(reservation).Reference(r => r.Patron).LoadAsync();
-
-        return MapToDto(reservation);
+        return (await GetByIdAsync(reservation.Id, ct), null);
     }
 
-    public async Task<ReservationDto> CancelAsync(int id)
+    public async Task<(ReservationDto? Reservation, string? Error)> CancelAsync(int id, CancellationToken ct)
     {
-        var reservation = await _db.Reservations
-            .Include(r => r.Book)
-            .Include(r => r.Patron)
-            .FirstOrDefaultAsync(r => r.Id == id)
-            ?? throw new KeyNotFoundException($"Reservation with id {id} not found");
+        var reservation = await db.Reservations.FindAsync([id], ct);
+        if (reservation is null) return (null, "Reservation not found.");
 
-        if (reservation.Status != ReservationStatus.Pending && reservation.Status != ReservationStatus.Ready)
-            throw new InvalidOperationException($"Cannot cancel a reservation with status '{reservation.Status}'");
+        if (reservation.Status is ReservationStatus.Fulfilled or ReservationStatus.Cancelled or ReservationStatus.Expired)
+            return (null, $"Cannot cancel a reservation with status '{reservation.Status}'.");
 
         reservation.Status = ReservationStatus.Cancelled;
+        await db.SaveChangesAsync(ct);
 
-        // Reorder queue positions for remaining reservations
-        var remainingReservations = await _db.Reservations
-            .Where(r => r.BookId == reservation.BookId &&
-                       (r.Status == ReservationStatus.Pending || r.Status == ReservationStatus.Ready) &&
-                       r.QueuePosition > reservation.QueuePosition)
-            .OrderBy(r => r.QueuePosition)
-            .ToListAsync();
-
-        foreach (var r in remainingReservations)
-        {
-            r.QueuePosition--;
-        }
-
-        await _db.SaveChangesAsync();
-        _logger.LogInformation("Cancelled reservation {Id}", id);
-
-        return MapToDto(reservation);
+        return (await GetByIdAsync(id, ct), null);
     }
 
-    public async Task<LoanDto> FulfillAsync(int id)
+    public async Task<(LoanDto? Loan, string? Error)> FulfillAsync(int id, CancellationToken ct)
     {
-        var reservation = await _db.Reservations
+        var reservation = await db.Reservations
             .Include(r => r.Book)
             .Include(r => r.Patron)
-            .FirstOrDefaultAsync(r => r.Id == id)
-            ?? throw new KeyNotFoundException($"Reservation with id {id} not found");
+            .FirstOrDefaultAsync(r => r.Id == id, ct);
+
+        if (reservation is null) return (null, "Reservation not found.");
 
         if (reservation.Status != ReservationStatus.Ready)
-            throw new InvalidOperationException("Only reservations with 'Ready' status can be fulfilled");
-
-        if (reservation.ExpirationDate.HasValue && reservation.ExpirationDate.Value < DateTime.UtcNow)
-            throw new InvalidOperationException("This reservation has expired");
+            return (null, "Only reservations with 'Ready' status can be fulfilled.");
 
         if (reservation.Book.AvailableCopies <= 0)
-            throw new InvalidOperationException("No copies available");
+            return (null, "No copies available to fulfill this reservation.");
 
         // Create loan
-        var loanDays = LoanService.GetLoanDays(reservation.Patron.MembershipType);
+        var loanDays = reservation.Patron.MembershipType switch
+        {
+            MembershipType.Standard => 14,
+            MembershipType.Premium => 21,
+            MembershipType.Student => 7,
+            _ => 14
+        };
+
+        var now = DateTime.UtcNow;
         var loan = new Loan
         {
             BookId = reservation.BookId,
             PatronId = reservation.PatronId,
-            LoanDate = DateTime.UtcNow,
-            DueDate = DateTime.UtcNow.AddDays(loanDays),
+            LoanDate = now,
+            DueDate = now.AddDays(loanDays),
             Status = LoanStatus.Active
         };
 
         reservation.Status = ReservationStatus.Fulfilled;
         reservation.Book.AvailableCopies--;
-        reservation.Book.UpdatedAt = DateTime.UtcNow;
+        reservation.Book.UpdatedAt = now;
 
-        // Reorder queue
-        var remainingReservations = await _db.Reservations
-            .Where(r => r.BookId == reservation.BookId &&
-                       (r.Status == ReservationStatus.Pending || r.Status == ReservationStatus.Ready) &&
-                       r.QueuePosition > reservation.QueuePosition)
-            .OrderBy(r => r.QueuePosition)
-            .ToListAsync();
+        db.Loans.Add(loan);
+        await db.SaveChangesAsync(ct);
 
-        foreach (var r in remainingReservations)
-        {
-            r.QueuePosition--;
-        }
+        var loanDto = await db.Loans.AsNoTracking()
+            .Where(l => l.Id == loan.Id)
+            .Select(l => new LoanDto(l.Id, l.BookId, l.Book.Title, l.PatronId,
+                $"{l.Patron.FirstName} {l.Patron.LastName}",
+                l.LoanDate, l.DueDate, l.ReturnDate, l.Status, l.RenewalCount))
+            .FirstAsync(ct);
 
-        _db.Loans.Add(loan);
-        await _db.SaveChangesAsync();
-
-        _logger.LogInformation("Fulfilled reservation {ReservationId}, created loan {LoanId}", id, loan.Id);
-
-        await _db.Entry(loan).Reference(l => l.Book).LoadAsync();
-        await _db.Entry(loan).Reference(l => l.Patron).LoadAsync();
-
-        return LoanService.MapToDto(loan);
+        return (loanDto, null);
     }
-
-    public static ReservationDto MapToDto(Reservation r) => new()
-    {
-        Id = r.Id,
-        BookId = r.BookId,
-        BookTitle = r.Book.Title,
-        PatronId = r.PatronId,
-        PatronName = $"{r.Patron.FirstName} {r.Patron.LastName}",
-        ReservationDate = r.ReservationDate,
-        ExpirationDate = r.ExpirationDate,
-        Status = r.Status,
-        QueuePosition = r.QueuePosition,
-        CreatedAt = r.CreatedAt
-    };
 }

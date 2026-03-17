@@ -1,5 +1,4 @@
 using LibraryApi.DTOs;
-using LibraryApi.Models;
 using LibraryApi.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,51 +6,54 @@ namespace LibraryApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class ReservationsController : ControllerBase
+public sealed class ReservationsController(IReservationService reservationService) : ControllerBase
 {
-    private readonly IReservationService _service;
-
-    public ReservationsController(IReservationService service) => _service = service;
-
-    /// <summary>List reservations with optional status filter and pagination</summary>
     [HttpGet]
-    public async Task<ActionResult<PagedResult<ReservationDto>>> GetAll(
-        [FromQuery] ReservationStatus? status,
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10)
+    public async Task<ActionResult<PaginatedResponse<ReservationDto>>> GetAll(
+        [FromQuery] string? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 10,
+        CancellationToken ct = default)
     {
-        if (page < 1) page = 1;
-        if (pageSize < 1 || pageSize > 100) pageSize = 10;
-        return Ok(await _service.GetAllAsync(status, page, pageSize));
+        var result = await reservationService.GetAllAsync(status, page, pageSize, ct);
+        return Ok(result);
     }
 
-    /// <summary>Get reservation details</summary>
-    [HttpGet("{id}")]
-    public async Task<ActionResult<ReservationDto>> GetById(int id)
+    [HttpGet("{id:int}")]
+    public async Task<ActionResult<ReservationDto>> GetById(int id, CancellationToken ct = default)
     {
-        var reservation = await _service.GetByIdAsync(id);
-        return reservation is null ? NotFound() : Ok(reservation);
+        var reservation = await reservationService.GetByIdAsync(id, ct);
+        return reservation is not null ? Ok(reservation) : NotFound();
     }
 
-    /// <summary>Create a reservation</summary>
     [HttpPost]
-    public async Task<ActionResult<ReservationDto>> Create(ReservationCreateDto dto)
+    public async Task<ActionResult<ReservationDto>> Create([FromBody] CreateReservationRequest request, CancellationToken ct = default)
     {
-        var reservation = await _service.CreateAsync(dto);
-        return CreatedAtAction(nameof(GetById), new { id = reservation.Id }, reservation);
+        var (reservation, error) = await reservationService.CreateAsync(request, ct);
+        if (error is not null)
+            return BadRequest(new ProblemDetails { Title = "Reservation Failed", Detail = error });
+        return CreatedAtAction(nameof(GetById), new { id = reservation!.Id }, reservation);
     }
 
-    /// <summary>Cancel a reservation</summary>
-    [HttpPost("{id}/cancel")]
-    public async Task<ActionResult<ReservationDto>> Cancel(int id)
+    [HttpPost("{id:int}/cancel")]
+    public async Task<ActionResult<ReservationDto>> Cancel(int id, CancellationToken ct = default)
     {
-        return Ok(await _service.CancelAsync(id));
+        var (reservation, error) = await reservationService.CancelAsync(id, ct);
+        if (error is not null)
+        {
+            if (error.Contains("not found")) return NotFound();
+            return BadRequest(new ProblemDetails { Title = "Cancellation Failed", Detail = error });
+        }
+        return Ok(reservation);
     }
 
-    /// <summary>Fulfill a Ready reservation (creates a loan)</summary>
-    [HttpPost("{id}/fulfill")]
-    public async Task<ActionResult<LoanDto>> Fulfill(int id)
+    [HttpPost("{id:int}/fulfill")]
+    public async Task<ActionResult<LoanDto>> Fulfill(int id, CancellationToken ct = default)
     {
-        return Ok(await _service.FulfillAsync(id));
+        var (loan, error) = await reservationService.FulfillAsync(id, ct);
+        if (error is not null)
+        {
+            if (error.Contains("not found")) return NotFound();
+            return BadRequest(new ProblemDetails { Title = "Fulfillment Failed", Detail = error });
+        }
+        return Ok(loan);
     }
 }

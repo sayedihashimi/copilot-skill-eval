@@ -2,20 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace VetClinicApi.DTOs;
 
-public record MedicalRecordDto(
-    int Id,
-    int AppointmentId,
-    int PetId,
-    string PetName,
-    int VeterinarianId,
-    string VeterinarianName,
-    string Diagnosis,
-    string Treatment,
-    string? Notes,
-    DateOnly? FollowUpDate,
-    DateTime CreatedAt);
-
-public record MedicalRecordDetailDto(
+public sealed record MedicalRecordDto(
     int Id,
     int AppointmentId,
     int PetId,
@@ -29,16 +16,10 @@ public record MedicalRecordDetailDto(
     DateTime CreatedAt,
     IReadOnlyList<PrescriptionDto> Prescriptions);
 
-public record CreateMedicalRecordDto
+public sealed record CreateMedicalRecordRequest
 {
     [Required]
     public int AppointmentId { get; init; }
-
-    [Required]
-    public int PetId { get; init; }
-
-    [Required]
-    public int VeterinarianId { get; init; }
 
     [Required, MaxLength(1000)]
     public string Diagnosis { get; init; } = string.Empty;
@@ -52,7 +33,7 @@ public record CreateMedicalRecordDto
     public DateOnly? FollowUpDate { get; init; }
 }
 
-public record UpdateMedicalRecordDto
+public sealed record UpdateMedicalRecordRequest
 {
     [Required, MaxLength(1000)]
     public string Diagnosis { get; init; } = string.Empty;

@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace VetClinicApi.DTOs;
 
-public record OwnerDto(
+public sealed record OwnerDto(
     int Id,
     string FirstName,
     string LastName,
@@ -15,7 +15,7 @@ public record OwnerDto(
     DateTime CreatedAt,
     DateTime UpdatedAt);
 
-public record OwnerDetailDto(
+public sealed record OwnerDetailDto(
     int Id,
     string FirstName,
     string LastName,
@@ -29,7 +29,7 @@ public record OwnerDetailDto(
     DateTime UpdatedAt,
     IReadOnlyList<PetSummaryDto> Pets);
 
-public record CreateOwnerDto
+public sealed record CreateOwnerRequest
 {
     [Required, MaxLength(100)]
     public string FirstName { get; init; } = string.Empty;
@@ -40,7 +40,7 @@ public record CreateOwnerDto
     [Required, EmailAddress]
     public string Email { get; init; } = string.Empty;
 
-    [Required]
+    [Required, Phone]
     public string Phone { get; init; } = string.Empty;
 
     public string? Address { get; init; }
@@ -52,7 +52,7 @@ public record CreateOwnerDto
     public string? ZipCode { get; init; }
 }
 
-public record UpdateOwnerDto
+public sealed record UpdateOwnerRequest
 {
     [Required, MaxLength(100)]
     public string FirstName { get; init; } = string.Empty;
@@ -63,7 +63,7 @@ public record UpdateOwnerDto
     [Required, EmailAddress]
     public string Email { get; init; } = string.Empty;
 
-    [Required]
+    [Required, Phone]
     public string Phone { get; init; } = string.Empty;
 
     public string? Address { get; init; }

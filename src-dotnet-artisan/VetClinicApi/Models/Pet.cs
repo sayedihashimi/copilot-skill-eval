@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace VetClinicApi.Models;
 
-public class Pet
+public sealed class Pet
 {
     public int Id { get; set; }
 
@@ -26,12 +26,16 @@ public class Pet
     public bool IsActive { get; set; } = true;
 
     public int OwnerId { get; set; }
+
     public Owner Owner { get; set; } = null!;
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     public ICollection<Appointment> Appointments { get; set; } = [];
+
     public ICollection<MedicalRecord> MedicalRecords { get; set; } = [];
+
     public ICollection<Vaccination> Vaccinations { get; set; } = [];
 }

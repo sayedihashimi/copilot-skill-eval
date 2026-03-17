@@ -2,14 +2,16 @@ using System.ComponentModel.DataAnnotations;
 
 namespace VetClinicApi.Models;
 
-public class Appointment
+public sealed class Appointment
 {
     public int Id { get; set; }
 
     public int PetId { get; set; }
+
     public Pet Pet { get; set; } = null!;
 
     public int VeterinarianId { get; set; }
+
     public Veterinarian Veterinarian { get; set; } = null!;
 
     public DateTime AppointmentDate { get; set; }
@@ -28,6 +30,7 @@ public class Appointment
     public string? CancellationReason { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     public MedicalRecord? MedicalRecord { get; set; }

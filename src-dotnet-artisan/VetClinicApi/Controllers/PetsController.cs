@@ -6,82 +6,76 @@ namespace VetClinicApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class PetsController(IPetService petService) : ControllerBase
+public sealed class PetsController(IPetService petService) : ControllerBase
 {
-    /// <summary>List active pets with optional search and species filter</summary>
+    private readonly IPetService _petService = petService;
+
     [HttpGet]
-    public async Task<ActionResult<PagedResult<PetDto>>> GetAll(
+    public async Task<ActionResult<PaginatedResponse<PetDto>>> GetAll(
         [FromQuery] string? search,
         [FromQuery] string? species,
         [FromQuery] bool includeInactive = false,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10)
+        [FromQuery] int pageSize = 10,
+        CancellationToken ct = default)
     {
-        var result = await petService.GetAllAsync(search, species, includeInactive, new PaginationParams(page, pageSize));
+        var result = await _petService.GetAllAsync(search, species, includeInactive, page, pageSize, ct);
         return Ok(result);
     }
 
-    /// <summary>Get pet details with owner info</summary>
     [HttpGet("{id:int}")]
-    public async Task<ActionResult<PetDetailDto>> GetById(int id)
+    public async Task<ActionResult<PetDetailDto>> GetById(int id, CancellationToken ct)
     {
-        var pet = await petService.GetByIdAsync(id);
-        return pet is null ? NotFound() : Ok(pet);
+        var pet = await _petService.GetByIdAsync(id, ct);
+        return pet is not null ? Ok(pet) : NotFound();
     }
 
-    /// <summary>Register a new pet</summary>
     [HttpPost]
-    public async Task<ActionResult<PetDto>> Create([FromBody] CreatePetDto dto)
+    public async Task<ActionResult<PetDto>> Create([FromBody] CreatePetRequest request, CancellationToken ct)
     {
-        var pet = await petService.CreateAsync(dto);
+        var pet = await _petService.CreateAsync(request, ct);
         return CreatedAtAction(nameof(GetById), new { id = pet.Id }, pet);
     }
 
-    /// <summary>Update pet info (including owner transfer)</summary>
     [HttpPut("{id:int}")]
-    public async Task<ActionResult<PetDto>> Update(int id, [FromBody] UpdatePetDto dto)
+    public async Task<ActionResult<PetDto>> Update(int id, [FromBody] UpdatePetRequest request, CancellationToken ct)
     {
-        var pet = await petService.UpdateAsync(id, dto);
-        return pet is null ? NotFound() : Ok(pet);
+        var pet = await _petService.UpdateAsync(id, request, ct);
+        return pet is not null ? Ok(pet) : NotFound();
     }
 
-    /// <summary>Soft-delete a pet (sets IsActive = false)</summary>
     [HttpDelete("{id:int}")]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {
-        var deleted = await petService.SoftDeleteAsync(id);
+        var deleted = await _petService.SoftDeleteAsync(id, ct);
         return deleted ? NoContent() : NotFound();
     }
 
-    /// <summary>Get pet's medical records</summary>
     [HttpGet("{id:int}/medical-records")]
-    public async Task<ActionResult<IReadOnlyList<MedicalRecordDto>>> GetMedicalRecords(int id)
+    public async Task<ActionResult<IReadOnlyList<MedicalRecordDto>>> GetMedicalRecords(int id, CancellationToken ct)
     {
-        var records = await petService.GetMedicalRecordsAsync(id);
+        var records = await _petService.GetMedicalRecordsAsync(id, ct);
         return Ok(records);
     }
 
-    /// <summary>Get pet's vaccination history</summary>
     [HttpGet("{id:int}/vaccinations")]
-    public async Task<ActionResult<IReadOnlyList<VaccinationDto>>> GetVaccinations(int id)
+    public async Task<ActionResult<IReadOnlyList<VaccinationDto>>> GetVaccinations(int id, CancellationToken ct)
     {
-        var vaccinations = await petService.GetVaccinationsAsync(id);
+        var vaccinations = await _petService.GetVaccinationsAsync(id, ct);
         return Ok(vaccinations);
     }
 
-    /// <summary>Get upcoming/overdue vaccinations for a pet</summary>
     [HttpGet("{id:int}/vaccinations/upcoming")]
-    public async Task<ActionResult<IReadOnlyList<VaccinationDto>>> GetUpcomingVaccinations(int id)
+    public async Task<ActionResult<IReadOnlyList<VaccinationDto>>> GetUpcomingVaccinations(int id, CancellationToken ct)
     {
-        var vaccinations = await petService.GetUpcomingVaccinationsAsync(id);
+        var vaccinations = await _petService.GetUpcomingVaccinationsAsync(id, ct);
         return Ok(vaccinations);
     }
 
-    /// <summary>Get active prescriptions for a pet</summary>
     [HttpGet("{id:int}/prescriptions/active")]
-    public async Task<ActionResult<IReadOnlyList<PrescriptionDto>>> GetActivePrescriptions(int id)
+    public async Task<ActionResult<IReadOnlyList<PrescriptionDto>>> GetActivePrescriptions(int id, CancellationToken ct)
     {
-        var prescriptions = await petService.GetActivePrescriptionsAsync(id);
+        var prescriptions = await _petService.GetActivePrescriptionsAsync(id, ct);
         return Ok(prescriptions);
     }
 }

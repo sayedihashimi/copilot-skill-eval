@@ -6,21 +6,21 @@ namespace VetClinicApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class VaccinationsController(IVaccinationService vaccinationService) : ControllerBase
+public sealed class VaccinationsController(IVaccinationService vaccinationService) : ControllerBase
 {
-    /// <summary>Get vaccination details</summary>
+    private readonly IVaccinationService _vaccinationService = vaccinationService;
+
     [HttpGet("{id:int}")]
-    public async Task<ActionResult<VaccinationDto>> GetById(int id)
+    public async Task<ActionResult<VaccinationDto>> GetById(int id, CancellationToken ct)
     {
-        var vaccination = await vaccinationService.GetByIdAsync(id);
-        return vaccination is null ? NotFound() : Ok(vaccination);
+        var vaccination = await _vaccinationService.GetByIdAsync(id, ct);
+        return vaccination is not null ? Ok(vaccination) : NotFound();
     }
 
-    /// <summary>Record a new vaccination</summary>
     [HttpPost]
-    public async Task<ActionResult<VaccinationDto>> Create([FromBody] CreateVaccinationDto dto)
+    public async Task<ActionResult<VaccinationDto>> Create([FromBody] CreateVaccinationRequest request, CancellationToken ct)
     {
-        var vaccination = await vaccinationService.CreateAsync(dto);
+        var vaccination = await _vaccinationService.CreateAsync(request, ct);
         return CreatedAtAction(nameof(GetById), new { id = vaccination.Id }, vaccination);
     }
 }
