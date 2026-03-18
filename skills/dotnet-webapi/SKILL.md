@@ -214,9 +214,17 @@ Every ASP.NET Core Web API should have OpenAPI documentation. Check whether
 the project already has OpenAPI configured before adding it.
 
 **For .NET 9+ projects**, use the built-in ASP.NET Core OpenAPI support
-(`builder.Services.AddOpenApi()` + `app.MapOpenApi()`). If the user wants a
-visual explorer, add `Swashbuckle.AspNetCore` and enable `app.UseSwaggerUI()`
-in development. Reference: https://learn.microsoft.com/en-us/aspnet/core/fundamentals/openapi/overview
+(`builder.Services.AddOpenApi()` + `app.MapOpenApi()`). For a visual
+explorer in development, use `Scalar` or the built-in Swagger UI endpoint
+(`app.UseSwaggerUI(o => o.SwaggerEndpoint("/openapi/v1.json", "v1"))`)
+which reads the OpenAPI document directly — **no Swashbuckle package needed**.
+
+**Do not add the `Swashbuckle.AspNetCore` NuGet package** to new projects.
+Swashbuckle has known compatibility issues with .NET 9+ OpenAPI types and is
+no longer the recommended approach. Only use Swashbuckle if the project
+already has it installed and the user has not asked to remove it.
+
+Reference: https://learn.microsoft.com/en-us/aspnet/core/fundamentals/openapi/overview
 
 **OpenAPI metadata on endpoints:** Add descriptive metadata so the generated
 documentation is useful, not just a list of routes. For minimal APIs, chain
@@ -479,6 +487,7 @@ paths (e.g., non-existent IDs). Match the port to `launchSettings.json`.
 | Not sealing types | Seal all types by default (CA1852). Enables JIT devirtualization. |
 | Returning `List<T>` in responses | Use `IReadOnlyList<T>` to signal immutability. |
 | Registering services without interfaces | Define `IService` and register with `AddScoped<IService, Service>()`. |
+| Adding `Swashbuckle.AspNetCore` to new .NET 9+ projects | Use built-in `AddOpenApi()` + `MapOpenApi()`. Swashbuckle has compatibility issues with .NET 9+ OpenAPI types. |
 
 ## More Info
 
