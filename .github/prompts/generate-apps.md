@@ -8,3 +8,5 @@ Examples:
 - `.\generate-apps.ps1 -Apps dotnet-webapi, dotnet-artisan` — generates two variants
 
 When it's done, I want you to check to see if the generated projects successfully build and run with `dotnet build` and `dotnet run`. If they don't build/run, don't make any changes just report that to me so that I am aware. Also check the `gen-notes.md` in each app to ensure that it was built using the correct skill configuration. Show me a summary of the projects that were created including if they build/run and what skill config was used. Write this to a file named `generate-all-apps-notes.md` in the repo root.
+
+After creating `generate-all-apps-notes.md` follow the instructions in the file at ./github/prompts/analyze.md to create the analysis file.
