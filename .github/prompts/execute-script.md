@@ -1,0 +1,3 @@
+I want you to run the script `generate-apps.ps1` and babysit it. If there are issues, fix the script and try again. make sure to run the script in the directory repo root. I don't want you modifying any code files that the script generates. 
+
+When it's done, I want you to check to see if the generated projects successfully build and run with `dotnet build` and `dotnet run`. If they don't build/run, don't make any changes just report that to me so that I am aware. Also check the `gen-notes.md` in each app to ensure that it was built using the correct skill configuration. Show me a summary of the projects that were created including if they build/run and what skill config was used. Write this to a file named `generate-all-apps-notes.md` in the repo root.
