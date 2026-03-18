@@ -75,6 +75,28 @@ directly in request or response bodies.
 Whether using controllers or minimal APIs, follow these HTTP conventions
 consistently.
 
+**Minimal API return types — `Results` vs `TypedResults`:**
+
+When a minimal API handler returns **a single result type**, use `TypedResults`
+for richer OpenAPI metadata (e.g., `TypedResults.Ok(product)`).
+
+When a handler uses **conditional or ternary returns with multiple types**,
+you must do one of the following:
+
+1. **Use the `Results` factory** — `Results.Ok()`, `Results.NotFound()`, etc.
+   all return `IResult`, so the compiler can infer a common return type for
+   ternary expressions.
+2. **Annotate the lambda with an explicit `Results<T1, T2>` return type** —
+   this lets you use `TypedResults` while still giving the compiler a common
+   type. Example:
+   `async Task<Results<Ok<ProductResponse>, NotFound>> (int id, ...) => ...`
+
+**Never** use `TypedResults.Ok(x)` and `TypedResults.NotFound()` in a bare
+ternary without an explicit return type annotation. `Ok<T>` and `NotFound` are
+different types with no common base the compiler can infer, which causes
+`CS1593: Delegate 'RequestDelegate' does not take N arguments` because the
+compiler falls back to matching `RequestDelegate(HttpContext)`.
+
 **Status codes:**
 
 | Operation | Success | Common errors |
@@ -107,12 +129,20 @@ public async Task<ActionResult<ProductResponse>> GetById(
     return product is null ? NotFound() : Ok(product);
 }
 
-// Minimal API example
+// Minimal API example — Option A: Results factory (simple, always works in ternaries)
 app.MapGet("/api/products/{id}", async (
     int id, IProductService service, CancellationToken cancellationToken) =>
 {
     var product = await service.GetByIdAsync(id, cancellationToken);
     return product is null ? Results.NotFound() : Results.Ok(product);
+});
+
+// Minimal API example — Option B: TypedResults with explicit return type (better OpenAPI metadata)
+app.MapGet("/api/products/{id}", async Task<Results<Ok<ProductResponse>, NotFound>> (
+    int id, IProductService service, CancellationToken cancellationToken) =>
+{
+    var product = await service.GetByIdAsync(id, cancellationToken);
+    return product is null ? TypedResults.NotFound() : TypedResults.Ok(product);
 });
 ```
 
@@ -414,6 +444,7 @@ DELETE {{baseUrl}}/api/products/1
 | Injecting DbContext directly into controllers | Introduce a service layer. Direct DbContext usage in controllers mixes data access concerns with HTTP concerns and makes unit testing harder. |
 | Returning unbounded lists from GET endpoints | Always paginate list endpoints. A default page size of 20 and a max of 100 prevents accidental full-table dumps. |
 | Mixing controller and minimal API styles in one project | Pick one and be consistent. Mixing styles makes the project harder to navigate and creates conflicting conventions. |
+| Using `TypedResults` in ternary/conditional returns without an explicit return type | `TypedResults.Ok(x)` returns `Ok<T>` and `TypedResults.NotFound()` returns `NotFound` — different types with no common base. The compiler cannot infer the lambda return type and falls back to `RequestDelegate`, causing CS1593. Use `Results.Ok()`/`Results.NotFound()` (both return `IResult`), or annotate the lambda with `Task<Results<Ok<T>, NotFound>>`. |
 | Writing try-catch in every endpoint | Use global exception handling middleware (`IExceptionHandler` in .NET 8+). Endpoints should throw; the middleware translates exceptions to HTTP responses. |
 | Forgetting the `.http` file | Create it as part of the endpoint work. It is the fastest way to verify the API works and serves as documentation for the next developer. |
 
