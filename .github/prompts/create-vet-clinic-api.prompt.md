@@ -20,7 +20,7 @@ Build a veterinary clinic management system API for **"Happy Paws Veterinary Cli
   - **Models** — Entity classes
   - **DTOs** — Request and response data transfer objects
   - **Services** — Business logic behind interfaces and their implementations
-  - **API Layer** — Controllers/endpoints
+  - **API Layer** — Endpoints/Controllers
 - **Validation**: Use Data Annotations and/or FluentValidation for input validation on all DTOs.
 - **Error Handling**: Implement global error handling middleware that returns consistent **ProblemDetails** responses (RFC 7807).
 - **Project Location**: Create the project at `./src/VetClinicApi/`. It must be a standalone ASP.NET Core Web API project with no dependencies on other projects in this repository.

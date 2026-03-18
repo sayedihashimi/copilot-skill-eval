@@ -22,7 +22,6 @@ The API is the backend for a library system used by library staff. It does not i
   - **Models** — Entity/domain classes and enums
   - **DTOs** — Request and response data transfer objects (never expose raw entities directly in API responses)
   - **Services** — Business logic behind interfaces (interface + implementation pattern)
-  - **Controllers** — Thin API layer that delegates to services
 - **Validation**: Use Data Annotations and/or FluentValidation for all input validation.
 - **Error Handling**: Global error handling middleware that returns consistent **ProblemDetails** responses (RFC 7807).
 - **Project Location**: Create the project at `./src/LibraryApi/`
