@@ -6,13 +6,14 @@ A framework for evaluating how **GitHub Copilot custom skills** impact the quali
 
 This repo answers the question: **"Do custom Copilot skills produce better code?"**
 
-It works by asking GitHub Copilot CLI to build three realistic ASP.NET Core Web API applications — a fitness studio booking system, a community library, and a veterinary clinic — under three different configurations:
+It works by asking GitHub Copilot CLI to build three realistic ASP.NET Core Web API applications — a fitness studio booking system, a community library, and a veterinary clinic — under four different configurations:
 
 | Configuration | Directory | What It Tests |
 |---|---|---|
 | **No skills** | `src-no-skills/` | Baseline — Copilot with no custom skill guidance |
 | **dotnet-webapi skill** | `src-dotnet-webapi/` | A single custom skill focused on Web API patterns |
 | **dotnet-artisan skills** | `src-dotnet-artisan/` | A full skill chain (`using-dotnet` → `dotnet-advisor` → `dotnet-csharp` + `dotnet-api`) |
+| **managedcode-dotnet-skills** | `src-managedcode-dotnet-skills/` | Community-maintained skills covering project setup, ASP.NET Core, EF Core, minimal APIs, and modern C# |
 
 After generation, the framework analyzes the output across 16 dimensions (API style, sealed types, CancellationToken propagation, OpenAPI wiring, etc.) and produces a structured comparison report.
 
@@ -36,15 +37,19 @@ webapi-testing/
 │       ├── create-fitness-studio-api.prompt.md   # Spec: Zenith Fitness Studio API
 │       ├── create-library-api.prompt.md          # Spec: Sunrise Community Library API
 │       └── create-vet-clinic-api.prompt.md       # Spec: Happy Paws Vet Clinic API
-├── skills/
-│   └── dotnet-webapi/
-│       └── SKILL.md                      # Custom Copilot skill for Web API generation
-├── generate-apps.ps1                     # PowerShell script that invokes Copilot CLI 3x
+├── contrib/
+│   ├── skills/
+│   │   ├── dotnet-webapi/                # Custom Copilot skill for Web API generation
+│   │   └── managedcode-dotnet-skills/    # Community skills (project-setup, aspnet-core, EF Core, etc.)
+│   └── plugins/
+│       └── dotnet-artisan/               # Artisan plugin chain (using-dotnet → advisor → csharp + api)
+├── generate-apps.ps1                     # PowerShell script that invokes Copilot CLI 4x
 ├── analysis.md                           # Generated comparative analysis report
-├── generate-all-apps-notes.md            # Generated build/run status for all 9 projects
+├── generate-all-apps-notes.md            # Generated build/run status for all 12 projects
 ├── src-no-skills/                        # Generated apps (no skills)
 ├── src-dotnet-webapi/                    # Generated apps (dotnet-webapi skill)
-└── src-dotnet-artisan/                   # Generated apps (dotnet-artisan skills)
+├── src-dotnet-artisan/                   # Generated apps (dotnet-artisan skills)
+└── src-managedcode-dotnet-skills/        # Generated apps (managedcode-dotnet-skills)
 ```
 
 ## Quick Start: The Main Workflow
@@ -65,13 +70,13 @@ Follow the instructions in the file @.github\prompts\generate-apps.md
 
 This single command triggers the full pipeline:
 
-1. **Runs `generate-apps.ps1`** — deletes existing `src-*` folders and calls `copilot -p ... --yolo` three times with different skill configurations
-2. **Verifies all 9 projects** — runs `dotnet build` and `dotnet run` on each
+1. **Runs `generate-apps.ps1`** — deletes existing `src-*` folders and calls `copilot -p ... --yolo` four times with different skill configurations
+2. **Verifies all 12 projects** — runs `dotnet build` and `dotnet run` on each
 3. **Checks `gen-notes.md`** — confirms each variant used the correct skill configuration
 4. **Writes `generate-all-apps-notes.md`** — a summary of build/run results and skill configs
 5. **Follows `analyze.md`** — produces `analysis.md` with a 16-dimension comparative report
 
-> **⏱ Note:** The full pipeline takes a significant amount of time (30–60+ minutes) since it generates 9 complete ASP.NET Core apps sequentially.
+> **⏱ Note:** The full pipeline takes a significant amount of time (60–120+ minutes) since it generates 12 complete ASP.NET Core apps across 4 configurations.
 
 ### 3. Review the output
 
@@ -84,7 +89,7 @@ After completion, read:
 
 ### The Generation Script
 
-`generate-apps.ps1` is a PowerShell script that calls the Copilot CLI three times, each with a different prompt that controls which skills are active:
+`generate-apps.ps1` is a PowerShell script that calls the Copilot CLI four times, each with a different prompt that controls which skills are active:
 
 ```powershell
 # No skills (baseline)
@@ -95,14 +100,18 @@ copilot -p "Follow the instructions in the file @.github\prompts\create-all-apps
 
 # dotnet-artisan skills (full chain)
 copilot -p "Follow the instructions in the file @.github\prompts\create-all-apps.md. Instead of putting the files in 'src' put them in 'src-dotnet-artisan'. Use the 'dotnet-artisan' skills but do NOT use the 'dotnet-webapi' skill." --yolo
+
+# managedcode-dotnet-skills (community skills)
+copilot -p "Follow the instructions in the file @.github\prompts\create-all-apps.md. Instead of putting the files in 'src' put them in 'src-managedcode-dotnet-skills'. Use the 'managedcode-dotnet-skills' skills but do NOT use any other skills." --yolo
 ```
 
 The script supports an optional `-Apps` parameter to generate only specific variants:
 
 ```powershell
-.\generate-apps.ps1                              # All three variants
+.\generate-apps.ps1                              # All four variants
 .\generate-apps.ps1 -Apps no-skills              # Only the baseline
 .\generate-apps.ps1 -Apps dotnet-webapi, dotnet-artisan  # Two variants
+.\generate-apps.ps1 -Apps managedcode-dotnet-skills      # Only managedcode variant
 ```
 
 ### The Three Apps
@@ -169,7 +178,7 @@ The typical workflow for iterating on skill quality:
 
 ### 1. Edit the skill
 
-Modify `skills/dotnet-webapi/SKILL.md` to change what guidance Copilot follows when generating Web API code. The skill covers:
+Modify `contrib/skills/dotnet-webapi/SKILL.md` to change what guidance Copilot follows when generating Web API code. The skill covers:
 
 - API style (minimal APIs by default)
 - Sealed types, primary constructors
@@ -203,7 +212,7 @@ Open `analysis.md` to see the updated comparison. The executive summary table at
 
 To test a new skill configuration:
 
-1. Create a new skill in `skills/<your-skill>/SKILL.md`
+1. Create a new skill in `contrib/skills/<your-skill>/SKILL.md`
 2. Add a new entry to the `$allRuns` hashtable in `generate-apps.ps1`
 3. Update `generate-apps.md` if needed
 4. Run the pipeline
@@ -220,7 +229,7 @@ To add a fourth app:
 
 | File | What It Contains | Generated By |
 |---|---|---|
-| `generate-all-apps-notes.md` | Build/run status, skill configs, Swashbuckle observations for all 9 projects | Copilot following `generate-apps.md` |
+| `generate-all-apps-notes.md` | Build/run status, skill configs, runtime issue details for all 12 projects | Copilot following `generate-apps.md` |
 | `analysis.md` | 16-dimension comparative analysis with code examples, verdicts, and rankings | Copilot following `analyze.md` |
 | `src-*/gen-notes.md` | Per-variant notes on which skills were used during generation | Copilot during app generation |
 | `src-*/FitnessStudioApi/` | Complete ASP.NET Core Web API project | Copilot following app spec prompts |
@@ -229,7 +238,7 @@ To add a fourth app:
 
 ## The dotnet-webapi Skill
 
-The custom skill at `skills/dotnet-webapi/SKILL.md` provides ~500 lines of guidance covering:
+The custom skill at `contrib/skills/dotnet-webapi/SKILL.md` provides ~500 lines of guidance covering:
 
 - **Minimal APIs by default** — only use controllers if the project already has them
 - **Sealed types everywhere** — classes, records, middleware, services
@@ -241,6 +250,17 @@ The custom skill at `skills/dotnet-webapi/SKILL.md` provides ~500 lines of guida
 - **`AsNoTracking()`** for read-only queries
 - **`IReadOnlyList<T>`** for collection return types
 - Validation, pagination, `.http` file generation, and more
+
+## The managedcode-dotnet-skills
+
+Community-maintained skills at `contrib/skills/managedcode-dotnet-skills/` covering six focused areas:
+
+- **dotnet-project-setup** — .NET solution/project scaffolding, folder structure, SDK settings
+- **dotnet-aspnet-core** — ASP.NET Core hosting, middleware, configuration, logging
+- **dotnet-entity-framework-core** — EF Core data access, modeling, migrations, query patterns
+- **dotnet-microsoft-extensions** — Dependency injection, configuration, logging, options
+- **dotnet-minimal-apis** — Minimal API endpoint design with route groups, filters, TypedResults
+- **dotnet-modern-csharp** — Modern C# language features (C# 13/14) compatible with .NET 10
 
 ## License
 
