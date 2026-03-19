@@ -2,7 +2,21 @@ using System.ComponentModel.DataAnnotations;
 
 namespace LibraryApi.DTOs;
 
-public sealed record AuthorResponse(
+public record CreateAuthorRequest(
+    [Required, MaxLength(100)] string FirstName,
+    [Required, MaxLength(100)] string LastName,
+    [MaxLength(2000)] string? Biography,
+    DateOnly? BirthDate,
+    [MaxLength(100)] string? Country);
+
+public record UpdateAuthorRequest(
+    [Required, MaxLength(100)] string FirstName,
+    [Required, MaxLength(100)] string LastName,
+    [MaxLength(2000)] string? Biography,
+    DateOnly? BirthDate,
+    [MaxLength(100)] string? Country);
+
+public record AuthorResponse(
     int Id,
     string FirstName,
     string LastName,
@@ -11,7 +25,7 @@ public sealed record AuthorResponse(
     string? Country,
     DateTime CreatedAt);
 
-public sealed record AuthorDetailResponse(
+public record AuthorDetailResponse(
     int Id,
     string FirstName,
     string LastName,
@@ -21,41 +35,7 @@ public sealed record AuthorDetailResponse(
     DateTime CreatedAt,
     IReadOnlyList<AuthorBookResponse> Books);
 
-public sealed record AuthorBookResponse(
+public record AuthorBookResponse(
     int Id,
     string Title,
     string ISBN);
-
-public sealed class CreateAuthorRequest
-{
-    [Required, MaxLength(100)]
-    public string FirstName { get; init; } = string.Empty;
-
-    [Required, MaxLength(100)]
-    public string LastName { get; init; } = string.Empty;
-
-    [MaxLength(2000)]
-    public string? Biography { get; init; }
-
-    public DateOnly? BirthDate { get; init; }
-
-    [MaxLength(100)]
-    public string? Country { get; init; }
-}
-
-public sealed class UpdateAuthorRequest
-{
-    [Required, MaxLength(100)]
-    public string FirstName { get; init; } = string.Empty;
-
-    [Required, MaxLength(100)]
-    public string LastName { get; init; } = string.Empty;
-
-    [MaxLength(2000)]
-    public string? Biography { get; init; }
-
-    public DateOnly? BirthDate { get; init; }
-
-    [MaxLength(100)]
-    public string? Country { get; init; }
-}

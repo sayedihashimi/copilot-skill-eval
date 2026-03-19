@@ -5,43 +5,35 @@ using VetClinicApi.Models;
 
 namespace VetClinicApi.Services;
 
-public sealed class VaccinationService(VetClinicDbContext db, ILogger<VaccinationService> logger)
-    : IVaccinationService
+public sealed class VaccinationService(VetClinicDbContext db, ILogger<VaccinationService> logger) : IVaccinationService
 {
     public async Task<VaccinationResponse?> GetByIdAsync(int id, CancellationToken ct)
     {
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        var vacc = await db.Vaccinations.AsNoTracking()
+        var vaccination = await db.Vaccinations
+            .AsNoTracking()
             .Include(v => v.Pet)
             .Include(v => v.AdministeredByVet)
             .FirstOrDefaultAsync(v => v.Id == id, ct);
 
-        if (vacc is null) return null;
+        if (vaccination is null) return null;
 
-        return new VaccinationResponse(
-            vacc.Id, vacc.PetId, vacc.Pet.Name, vacc.VaccineName,
-            vacc.DateAdministered, vacc.ExpirationDate, vacc.BatchNumber,
-            vacc.AdministeredByVetId,
-            vacc.AdministeredByVet.FirstName + " " + vacc.AdministeredByVet.LastName,
-            vacc.Notes,
-            vacc.ExpirationDate < today,
-            vacc.ExpirationDate >= today && vacc.ExpirationDate <= today.AddDays(30),
-            vacc.CreatedAt);
+        return MapToResponse(vaccination);
     }
 
     public async Task<VaccinationResponse> CreateAsync(CreateVaccinationRequest request, CancellationToken ct)
     {
-        if (!await db.Pets.AnyAsync(p => p.Id == request.PetId && p.IsActive, ct))
-            throw new KeyNotFoundException($"Active pet with ID {request.PetId} not found.");
+        var petExists = await db.Pets.AnyAsync(p => p.Id == request.PetId, ct);
+        if (!petExists)
+            throw new KeyNotFoundException($"Pet with ID {request.PetId} not found.");
 
-        if (!await db.Veterinarians.AnyAsync(v => v.Id == request.AdministeredByVetId, ct))
+        var vetExists = await db.Veterinarians.AnyAsync(v => v.Id == request.AdministeredByVetId, ct);
+        if (!vetExists)
             throw new KeyNotFoundException($"Veterinarian with ID {request.AdministeredByVetId} not found.");
 
         if (request.ExpirationDate <= request.DateAdministered)
             throw new ArgumentException("Expiration date must be after the date administered.");
 
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        var vacc = new Vaccination
+        var vaccination = new Vaccination
         {
             PetId = request.PetId,
             VaccineName = request.VaccineName,
@@ -53,20 +45,25 @@ public sealed class VaccinationService(VetClinicDbContext db, ILogger<Vaccinatio
             CreatedAt = DateTime.UtcNow
         };
 
-        db.Vaccinations.Add(vacc);
+        db.Vaccinations.Add(vaccination);
         await db.SaveChangesAsync(ct);
 
-        var pet = await db.Pets.FindAsync([vacc.PetId], ct);
-        var vet = await db.Veterinarians.FindAsync([vacc.AdministeredByVetId], ct);
-        logger.LogInformation("Created vaccination {VaccId} for pet {PetId}", vacc.Id, vacc.PetId);
+        await db.Entry(vaccination).Reference(v => v.Pet).LoadAsync(ct);
+        await db.Entry(vaccination).Reference(v => v.AdministeredByVet).LoadAsync(ct);
 
+        logger.LogInformation("Vaccination recorded with ID {VaccinationId}", vaccination.Id);
+        return MapToResponse(vaccination);
+    }
+
+    private static VaccinationResponse MapToResponse(Vaccination v)
+    {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var isExpired = v.ExpirationDate < today;
+        var isDueSoon = !isExpired && v.ExpirationDate <= today.AddDays(30);
         return new VaccinationResponse(
-            vacc.Id, vacc.PetId, pet!.Name, vacc.VaccineName,
-            vacc.DateAdministered, vacc.ExpirationDate, vacc.BatchNumber,
-            vacc.AdministeredByVetId, vet!.FirstName + " " + vet.LastName,
-            vacc.Notes,
-            vacc.ExpirationDate < today,
-            vacc.ExpirationDate >= today && vacc.ExpirationDate <= today.AddDays(30),
-            vacc.CreatedAt);
+            v.Id, v.PetId, v.Pet.Name, v.VaccineName,
+            v.DateAdministered, v.ExpirationDate, v.BatchNumber,
+            v.AdministeredByVetId, $"{v.AdministeredByVet.FirstName} {v.AdministeredByVet.LastName}",
+            v.Notes, isExpired, isDueSoon, v.CreatedAt);
     }
 }

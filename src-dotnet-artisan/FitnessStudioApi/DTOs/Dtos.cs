@@ -1,17 +1,42 @@
-using FitnessStudioApi.Models;
-
 namespace FitnessStudioApi.DTOs;
 
-// === Pagination ===
-public sealed record PaginatedResponse<T>(
-    IReadOnlyList<T> Items,
-    int Page,
-    int PageSize,
-    int TotalCount,
-    int TotalPages);
+// --- Pagination ---
+public class PaginationParams
+{
+    private int _page = 1;
+    private int _pageSize = 10;
 
-// === MembershipPlan DTOs ===
-public sealed record CreateMembershipPlanRequest(
+    public int Page
+    {
+        get => _page;
+        set => _page = value < 1 ? 1 : value;
+    }
+
+    public int PageSize
+    {
+        get => _pageSize;
+        set => _pageSize = value switch
+        {
+            < 1 => 10,
+            > 50 => 50,
+            _ => value
+        };
+    }
+}
+
+public class PaginatedResponse<T>
+{
+    public IReadOnlyList<T> Items { get; init; } = [];
+    public int Page { get; init; }
+    public int PageSize { get; init; }
+    public int TotalCount { get; init; }
+    public int TotalPages => (int)Math.Ceiling((double)TotalCount / PageSize);
+    public bool HasPreviousPage => Page > 1;
+    public bool HasNextPage => Page < TotalPages;
+}
+
+// --- MembershipPlan DTOs ---
+public record CreateMembershipPlanRequest(
     string Name,
     string? Description,
     int DurationMonths,
@@ -19,7 +44,7 @@ public sealed record CreateMembershipPlanRequest(
     int MaxClassBookingsPerWeek,
     bool AllowsPremiumClasses);
 
-public sealed record UpdateMembershipPlanRequest(
+public record UpdateMembershipPlanRequest(
     string Name,
     string? Description,
     int DurationMonths,
@@ -27,7 +52,7 @@ public sealed record UpdateMembershipPlanRequest(
     int MaxClassBookingsPerWeek,
     bool AllowsPremiumClasses);
 
-public sealed record MembershipPlanResponse(
+public record MembershipPlanResponse(
     int Id,
     string Name,
     string? Description,
@@ -35,10 +60,12 @@ public sealed record MembershipPlanResponse(
     decimal Price,
     int MaxClassBookingsPerWeek,
     bool AllowsPremiumClasses,
-    bool IsActive);
+    bool IsActive,
+    DateTime CreatedAt,
+    DateTime UpdatedAt);
 
-// === Member DTOs ===
-public sealed record CreateMemberRequest(
+// --- Member DTOs ---
+public record CreateMemberRequest(
     string FirstName,
     string LastName,
     string Email,
@@ -47,15 +74,16 @@ public sealed record CreateMemberRequest(
     string EmergencyContactName,
     string EmergencyContactPhone);
 
-public sealed record UpdateMemberRequest(
+public record UpdateMemberRequest(
     string FirstName,
     string LastName,
     string Email,
     string Phone,
+    DateOnly DateOfBirth,
     string EmergencyContactName,
     string EmergencyContactPhone);
 
-public sealed record MemberResponse(
+public record MemberResponse(
     int Id,
     string FirstName,
     string LastName,
@@ -65,9 +93,11 @@ public sealed record MemberResponse(
     string EmergencyContactName,
     string EmergencyContactPhone,
     DateOnly JoinDate,
-    bool IsActive);
+    bool IsActive,
+    DateTime CreatedAt,
+    DateTime UpdatedAt);
 
-public sealed record MemberDetailResponse(
+public record MemberDetailResponse(
     int Id,
     string FirstName,
     string LastName,
@@ -80,23 +110,25 @@ public sealed record MemberDetailResponse(
     bool IsActive,
     MembershipSummary? ActiveMembership,
     int TotalBookings,
-    int UpcomingBookings);
+    int UpcomingBookings,
+    DateTime CreatedAt,
+    DateTime UpdatedAt);
 
-public sealed record MembershipSummary(
+public record MembershipSummary(
     int Id,
     string PlanName,
     DateOnly StartDate,
     DateOnly EndDate,
     string Status);
 
-// === Membership DTOs ===
-public sealed record CreateMembershipRequest(
+// --- Membership DTOs ---
+public record CreateMembershipRequest(
     int MemberId,
     int MembershipPlanId,
     DateOnly StartDate,
     string PaymentStatus);
 
-public sealed record MembershipResponse(
+public record MembershipResponse(
     int Id,
     int MemberId,
     string MemberName,
@@ -107,12 +139,14 @@ public sealed record MembershipResponse(
     string Status,
     string PaymentStatus,
     DateOnly? FreezeStartDate,
-    DateOnly? FreezeEndDate);
+    DateOnly? FreezeEndDate,
+    DateTime CreatedAt,
+    DateTime UpdatedAt);
 
-public sealed record FreezeMembershipRequest(int FreezeDurationDays);
+public record FreezeMembershipRequest(int FreezeDays);
 
-// === Instructor DTOs ===
-public sealed record CreateInstructorRequest(
+// --- Instructor DTOs ---
+public record CreateInstructorRequest(
     string FirstName,
     string LastName,
     string Email,
@@ -121,15 +155,16 @@ public sealed record CreateInstructorRequest(
     string? Specializations,
     DateOnly HireDate);
 
-public sealed record UpdateInstructorRequest(
+public record UpdateInstructorRequest(
     string FirstName,
     string LastName,
     string Email,
     string Phone,
     string? Bio,
-    string? Specializations);
+    string? Specializations,
+    DateOnly HireDate);
 
-public sealed record InstructorResponse(
+public record InstructorResponse(
     int Id,
     string FirstName,
     string LastName,
@@ -138,28 +173,30 @@ public sealed record InstructorResponse(
     string? Bio,
     string? Specializations,
     DateOnly HireDate,
-    bool IsActive);
+    bool IsActive,
+    DateTime CreatedAt,
+    DateTime UpdatedAt);
 
-// === ClassType DTOs ===
-public sealed record CreateClassTypeRequest(
+// --- ClassType DTOs ---
+public record CreateClassTypeRequest(
     string Name,
     string? Description,
     int DefaultDurationMinutes,
     int DefaultCapacity,
     bool IsPremium,
     int? CaloriesPerSession,
-    DifficultyLevel DifficultyLevel);
+    string DifficultyLevel);
 
-public sealed record UpdateClassTypeRequest(
+public record UpdateClassTypeRequest(
     string Name,
     string? Description,
     int DefaultDurationMinutes,
     int DefaultCapacity,
     bool IsPremium,
     int? CaloriesPerSession,
-    DifficultyLevel DifficultyLevel);
+    string DifficultyLevel);
 
-public sealed record ClassTypeResponse(
+public record ClassTypeResponse(
     int Id,
     string Name,
     string? Description,
@@ -167,27 +204,29 @@ public sealed record ClassTypeResponse(
     int DefaultCapacity,
     bool IsPremium,
     int? CaloriesPerSession,
-    DifficultyLevel DifficultyLevel,
-    bool IsActive);
+    string DifficultyLevel,
+    bool IsActive,
+    DateTime CreatedAt,
+    DateTime UpdatedAt);
 
-// === ClassSchedule DTOs ===
-public sealed record CreateClassScheduleRequest(
+// --- ClassSchedule DTOs ---
+public record CreateClassScheduleRequest(
     int ClassTypeId,
     int InstructorId,
     DateTime StartTime,
-    int? DurationMinutes,
-    int? Capacity,
+    DateTime EndTime,
+    int Capacity,
     string Room);
 
-public sealed record UpdateClassScheduleRequest(
+public record UpdateClassScheduleRequest(
     int ClassTypeId,
     int InstructorId,
     DateTime StartTime,
-    int? DurationMinutes,
-    int? Capacity,
+    DateTime EndTime,
+    int Capacity,
     string Room);
 
-public sealed record ClassScheduleResponse(
+public record ClassScheduleResponse(
     int Id,
     int ClassTypeId,
     string ClassTypeName,
@@ -201,29 +240,18 @@ public sealed record ClassScheduleResponse(
     int AvailableSpots,
     string Room,
     string Status,
-    string? CancellationReason);
+    string? CancellationReason,
+    DateTime CreatedAt,
+    DateTime UpdatedAt);
 
-public sealed record ClassRosterEntry(
-    int BookingId,
-    int MemberId,
-    string MemberName,
-    string Status,
-    DateTime BookingDate,
-    DateTime? CheckInTime);
+public record CancelClassRequest(string? Reason);
 
-public sealed record WaitlistEntry(
-    int BookingId,
-    int MemberId,
-    string MemberName,
-    int? WaitlistPosition,
-    DateTime BookingDate);
-
-// === Booking DTOs ===
-public sealed record CreateBookingRequest(
+// --- Booking DTOs ---
+public record CreateBookingRequest(
     int ClassScheduleId,
     int MemberId);
 
-public sealed record BookingResponse(
+public record BookingResponse(
     int Id,
     int ClassScheduleId,
     string ClassName,
@@ -235,6 +263,16 @@ public sealed record BookingResponse(
     int? WaitlistPosition,
     DateTime? CheckInTime,
     DateTime? CancellationDate,
-    string? CancellationReason);
+    string? CancellationReason,
+    DateTime CreatedAt,
+    DateTime UpdatedAt);
 
-public sealed record CancelBookingRequest(string? Reason);
+public record CancelBookingRequest(string? Reason);
+
+// --- Roster/Waitlist ---
+public record RosterEntry(
+    int BookingId,
+    int MemberId,
+    string MemberName,
+    DateTime BookingDate,
+    string Status);

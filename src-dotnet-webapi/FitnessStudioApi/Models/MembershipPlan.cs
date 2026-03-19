@@ -10,8 +10,8 @@ public sealed class MembershipPlan
     public int MaxClassBookingsPerWeek { get; set; }
     public bool AllowsPremiumClasses { get; set; }
     public bool IsActive { get; set; } = true;
-    public DateTime CreatedAt { get; set; }
-    public DateTime UpdatedAt { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     public ICollection<Membership> Memberships { get; set; } = new List<Membership>();
 }

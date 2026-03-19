@@ -2,28 +2,11 @@ using System.ComponentModel.DataAnnotations;
 
 namespace VetClinicApi.DTOs;
 
-public sealed record CreateMedicalRecordRequest(
-    [Required] int AppointmentId,
-    [Required] int PetId,
-    [Required] int VeterinarianId,
-    [Required, MaxLength(1000)] string Diagnosis,
-    [Required, MaxLength(2000)] string Treatment,
-    [MaxLength(2000)] string? Notes,
-    DateOnly? FollowUpDate);
-
-public sealed record UpdateMedicalRecordRequest(
-    [Required, MaxLength(1000)] string Diagnosis,
-    [Required, MaxLength(2000)] string Treatment,
-    [MaxLength(2000)] string? Notes,
-    DateOnly? FollowUpDate);
-
 public sealed record MedicalRecordResponse(
     int Id,
     int AppointmentId,
     int PetId,
-    string PetName,
     int VeterinarianId,
-    string VeterinarianName,
     string Diagnosis,
     string Treatment,
     string? Notes,
@@ -43,3 +26,34 @@ public sealed record MedicalRecordDetailResponse(
     DateOnly? FollowUpDate,
     DateTime CreatedAt,
     IReadOnlyList<PrescriptionResponse> Prescriptions);
+
+public sealed record CreateMedicalRecordRequest
+{
+    [Required]
+    public int AppointmentId { get; init; }
+
+    [Required, MaxLength(1000)]
+    public string Diagnosis { get; init; } = string.Empty;
+
+    [Required, MaxLength(2000)]
+    public string Treatment { get; init; } = string.Empty;
+
+    [MaxLength(2000)]
+    public string? Notes { get; init; }
+
+    public DateOnly? FollowUpDate { get; init; }
+}
+
+public sealed record UpdateMedicalRecordRequest
+{
+    [Required, MaxLength(1000)]
+    public string Diagnosis { get; init; } = string.Empty;
+
+    [Required, MaxLength(2000)]
+    public string Treatment { get; init; } = string.Empty;
+
+    [MaxLength(2000)]
+    public string? Notes { get; init; }
+
+    public DateOnly? FollowUpDate { get; init; }
+}

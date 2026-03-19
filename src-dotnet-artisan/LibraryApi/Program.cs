@@ -1,15 +1,21 @@
 using LibraryApi.Data;
-using LibraryApi.Endpoints;
+using LibraryApi.Middleware;
 using LibraryApi.Services;
 using Microsoft.EntityFrameworkCore;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Database
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+    });
+builder.Services.AddOpenApi();
+
 builder.Services.AddDbContext<LibraryDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Services
 builder.Services.AddScoped<IAuthorService, AuthorService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IBookService, BookService>();
@@ -18,55 +24,25 @@ builder.Services.AddScoped<ILoanService, LoanService>();
 builder.Services.AddScoped<IReservationService, ReservationService>();
 builder.Services.AddScoped<IFineService, FineService>();
 
-// OpenAPI
-builder.Services.AddOpenApi();
-
-// Global exception handler
-builder.Services.AddProblemDetails();
-
 var app = builder.Build();
 
-// Global error handling
-app.UseExceptionHandler(exceptionApp =>
-{
-    exceptionApp.Run(async context =>
-    {
-        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-        context.Response.ContentType = "application/problem+json";
-        await context.Response.WriteAsJsonAsync(new
-        {
-            type = "https://tools.ietf.org/html/rfc7807",
-            title = "An unexpected error occurred",
-            status = 500,
-            detail = "An internal server error has occurred. Please try again later."
-        });
-    });
-});
-
-app.UseStatusCodePages();
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-    app.UseSwaggerUI(options => options.SwaggerEndpoint("/openapi/v1.json", "Library API v1"));
+    app.MapScalarApiReference();
 }
 
-// Map all endpoints
-var api = app.MapGroup("/api");
-api.MapAuthorEndpoints();
-api.MapCategoryEndpoints();
-api.MapBookEndpoints();
-api.MapPatronEndpoints();
-api.MapLoanEndpoints();
-api.MapReservationEndpoints();
-api.MapFineEndpoints();
+app.UseAuthorization();
+app.MapControllers();
 
 // Ensure database is created and seeded
 using (var scope = app.Services.CreateScope())
 {
-    var context = scope.ServiceProvider.GetRequiredService<LibraryDbContext>();
-    await context.Database.EnsureCreatedAsync();
-    await DataSeeder.SeedAsync(context);
+    var db = scope.ServiceProvider.GetRequiredService<LibraryDbContext>();
+    await db.Database.EnsureCreatedAsync();
+    await SeedData.InitializeAsync(db);
 }
 
 await app.RunAsync();

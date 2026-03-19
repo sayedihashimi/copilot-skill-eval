@@ -16,7 +16,7 @@ public class VeterinariansController : ControllerBase
     }
 
     [HttpGet]
-    [ProducesResponseType(typeof(PaginatedResponse<VeterinarianResponseDto>), 200)]
+    [ProducesResponseType(typeof(PagedResult<VeterinarianResponseDto>), 200)]
     public async Task<IActionResult> GetAll(
         [FromQuery] string? specialization,
         [FromQuery] bool? isAvailable,
@@ -57,7 +57,7 @@ public class VeterinariansController : ControllerBase
     }
 
     [HttpGet("{id}/schedule")]
-    [ProducesResponseType(typeof(List<AppointmentResponseDto>), 200)]
+    [ProducesResponseType(typeof(List<AppointmentSummaryDto>), 200)]
     [ProducesResponseType(404)]
     public async Task<IActionResult> GetSchedule(int id, [FromQuery] DateOnly date)
     {
@@ -66,7 +66,7 @@ public class VeterinariansController : ControllerBase
     }
 
     [HttpGet("{id}/appointments")]
-    [ProducesResponseType(typeof(PaginatedResponse<AppointmentResponseDto>), 200)]
+    [ProducesResponseType(typeof(PagedResult<AppointmentSummaryDto>), 200)]
     [ProducesResponseType(404)]
     public async Task<IActionResult> GetAppointments(int id, [FromQuery] string? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {

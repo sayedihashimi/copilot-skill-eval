@@ -2,7 +2,38 @@ using System.ComponentModel.DataAnnotations;
 
 namespace FitnessStudioApi.DTOs;
 
-// --- Requests ---
+public sealed record MemberResponse(
+    int Id,
+    string FirstName,
+    string LastName,
+    string Email,
+    string Phone,
+    DateOnly DateOfBirth,
+    string EmergencyContactName,
+    string EmergencyContactPhone,
+    DateOnly JoinDate,
+    bool IsActive,
+    DateTime CreatedAt,
+    DateTime UpdatedAt
+);
+
+public sealed record MemberDetailResponse(
+    int Id,
+    string FirstName,
+    string LastName,
+    string Email,
+    string Phone,
+    DateOnly DateOfBirth,
+    string EmergencyContactName,
+    string EmergencyContactPhone,
+    DateOnly JoinDate,
+    bool IsActive,
+    MembershipResponse? ActiveMembership,
+    int TotalBookings,
+    int AttendedBookings,
+    DateTime CreatedAt,
+    DateTime UpdatedAt
+);
 
 public sealed record CreateMemberRequest
 {
@@ -15,7 +46,7 @@ public sealed record CreateMemberRequest
     [Required, EmailAddress]
     public required string Email { get; init; }
 
-    [Required, Phone]
+    [Required]
     public required string Phone { get; init; }
 
     [Required]
@@ -39,8 +70,11 @@ public sealed record UpdateMemberRequest
     [Required, EmailAddress]
     public required string Email { get; init; }
 
-    [Required, Phone]
+    [Required]
     public required string Phone { get; init; }
+
+    [Required]
+    public required DateOnly DateOfBirth { get; init; }
 
     [Required, MaxLength(200)]
     public required string EmergencyContactName { get; init; }
@@ -48,30 +82,3 @@ public sealed record UpdateMemberRequest
     [Required]
     public required string EmergencyContactPhone { get; init; }
 }
-
-// --- Responses ---
-
-public sealed record MemberResponse(
-    int Id,
-    string FirstName,
-    string LastName,
-    string Email,
-    string Phone,
-    DateOnly DateOfBirth,
-    string EmergencyContactName,
-    string EmergencyContactPhone,
-    DateOnly JoinDate,
-    bool IsActive,
-    MembershipResponse? ActiveMembership,
-    int TotalBookings,
-    DateTime CreatedAt,
-    DateTime UpdatedAt);
-
-public sealed record MemberListResponse(
-    int Id,
-    string FirstName,
-    string LastName,
-    string Email,
-    string Phone,
-    DateOnly JoinDate,
-    bool IsActive);

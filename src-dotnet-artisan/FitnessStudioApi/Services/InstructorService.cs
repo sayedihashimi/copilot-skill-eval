@@ -1,42 +1,50 @@
+using Microsoft.EntityFrameworkCore;
 using FitnessStudioApi.Data;
 using FitnessStudioApi.DTOs;
 using FitnessStudioApi.Models;
-using Microsoft.EntityFrameworkCore;
+using FitnessStudioApi.Middleware;
 
 namespace FitnessStudioApi.Services;
 
-public sealed class InstructorService(AppDbContext db, ILogger<InstructorService> logger) : IInstructorService
+public interface IInstructorService
 {
-    public async Task<IReadOnlyList<InstructorResponse>> GetAllAsync(
-        string? specialization, bool? isActive, CancellationToken ct)
+    Task<IReadOnlyList<InstructorResponse>> GetAllAsync(string? specialization, bool? isActive);
+    Task<InstructorResponse> GetByIdAsync(int id);
+    Task<InstructorResponse> CreateAsync(CreateInstructorRequest request);
+    Task<InstructorResponse> UpdateAsync(int id, UpdateInstructorRequest request);
+    Task<IReadOnlyList<ClassScheduleResponse>> GetScheduleAsync(int instructorId, DateTime? from, DateTime? to);
+}
+
+public class InstructorService(FitnessDbContext db, ILogger<InstructorService> logger) : IInstructorService
+{
+    public async Task<IReadOnlyList<InstructorResponse>> GetAllAsync(string? specialization, bool? isActive)
     {
         var query = db.Instructors.AsQueryable();
 
         if (isActive.HasValue)
-        {
             query = query.Where(i => i.IsActive == isActive.Value);
-        }
 
         if (!string.IsNullOrWhiteSpace(specialization))
-        {
-            var term = specialization.ToLower();
-            query = query.Where(i => i.Specializations != null && i.Specializations.ToLower().Contains(term));
-        }
+            query = query.Where(i => i.Specializations != null && i.Specializations.ToLower().Contains(specialization.ToLower()));
 
         return await query
             .OrderBy(i => i.LastName)
             .Select(i => MapToResponse(i))
-            .ToListAsync(ct);
+            .ToListAsync();
     }
 
-    public async Task<InstructorResponse?> GetByIdAsync(int id, CancellationToken ct)
+    public async Task<InstructorResponse> GetByIdAsync(int id)
     {
-        var instructor = await db.Instructors.FindAsync([id], ct);
-        return instructor is null ? null : MapToResponse(instructor);
+        var instructor = await db.Instructors.FindAsync(id)
+            ?? throw new NotFoundException($"Instructor with ID {id} not found");
+        return MapToResponse(instructor);
     }
 
-    public async Task<InstructorResponse> CreateAsync(CreateInstructorRequest request, CancellationToken ct)
+    public async Task<InstructorResponse> CreateAsync(CreateInstructorRequest request)
     {
+        if (await db.Instructors.AnyAsync(i => i.Email == request.Email))
+            throw new BusinessRuleException($"An instructor with email '{request.Email}' already exists");
+
         var instructor = new Instructor
         {
             FirstName = request.FirstName,
@@ -49,19 +57,18 @@ public sealed class InstructorService(AppDbContext db, ILogger<InstructorService
         };
 
         db.Instructors.Add(instructor);
-        await db.SaveChangesAsync(ct);
-        logger.LogInformation("Created instructor {InstructorName} with Id {InstructorId}",
-            $"{instructor.FirstName} {instructor.LastName}", instructor.Id);
+        await db.SaveChangesAsync();
+        logger.LogInformation("Created instructor: {Email}", instructor.Email);
         return MapToResponse(instructor);
     }
 
-    public async Task<InstructorResponse?> UpdateAsync(int id, UpdateInstructorRequest request, CancellationToken ct)
+    public async Task<InstructorResponse> UpdateAsync(int id, UpdateInstructorRequest request)
     {
-        var instructor = await db.Instructors.FindAsync([id], ct);
-        if (instructor is null)
-        {
-            return null;
-        }
+        var instructor = await db.Instructors.FindAsync(id)
+            ?? throw new NotFoundException($"Instructor with ID {id} not found");
+
+        if (await db.Instructors.AnyAsync(i => i.Email == request.Email && i.Id != id))
+            throw new BusinessRuleException($"An instructor with email '{request.Email}' already exists");
 
         instructor.FirstName = request.FirstName;
         instructor.LastName = request.LastName;
@@ -69,45 +76,34 @@ public sealed class InstructorService(AppDbContext db, ILogger<InstructorService
         instructor.Phone = request.Phone;
         instructor.Bio = request.Bio;
         instructor.Specializations = request.Specializations;
+        instructor.HireDate = request.HireDate;
         instructor.UpdatedAt = DateTime.UtcNow;
 
-        await db.SaveChangesAsync(ct);
+        await db.SaveChangesAsync();
+        logger.LogInformation("Updated instructor: {InstructorId}", id);
         return MapToResponse(instructor);
     }
 
-    public async Task<IReadOnlyList<ClassScheduleResponse>> GetScheduleAsync(
-        int instructorId, DateOnly? fromDate, DateOnly? toDate, CancellationToken ct)
+    public async Task<IReadOnlyList<ClassScheduleResponse>> GetScheduleAsync(int instructorId, DateTime? from, DateTime? to)
     {
+        if (!await db.Instructors.AnyAsync(i => i.Id == instructorId))
+            throw new NotFoundException($"Instructor with ID {instructorId} not found");
+
         var query = db.ClassSchedules
             .Include(cs => cs.ClassType)
             .Include(cs => cs.Instructor)
             .Where(cs => cs.InstructorId == instructorId);
 
-        if (fromDate.HasValue)
-        {
-            var from = fromDate.Value.ToDateTime(TimeOnly.MinValue);
-            query = query.Where(cs => cs.StartTime >= from);
-        }
+        if (from.HasValue)
+            query = query.Where(cs => cs.StartTime >= from.Value);
+        if (to.HasValue)
+            query = query.Where(cs => cs.StartTime <= to.Value);
 
-        if (toDate.HasValue)
-        {
-            var to = toDate.Value.ToDateTime(TimeOnly.MaxValue);
-            query = query.Where(cs => cs.StartTime <= to);
-        }
-
-        return await query
-            .OrderBy(cs => cs.StartTime)
-            .Select(cs => new ClassScheduleResponse(
-                cs.Id, cs.ClassTypeId, cs.ClassType.Name,
-                cs.InstructorId, cs.Instructor.FirstName + " " + cs.Instructor.LastName,
-                cs.StartTime, cs.EndTime, cs.Capacity,
-                cs.CurrentEnrollment, cs.WaitlistCount,
-                cs.Capacity - cs.CurrentEnrollment,
-                cs.Room, cs.Status.ToString(), cs.CancellationReason))
-            .ToListAsync(ct);
+        var schedules = await query.OrderBy(cs => cs.StartTime).ToListAsync();
+        return schedules.Select(ClassScheduleService.MapToResponse).ToList();
     }
 
-    private static InstructorResponse MapToResponse(Instructor i) =>
-        new(i.Id, i.FirstName, i.LastName, i.Email, i.Phone,
-            i.Bio, i.Specializations, i.HireDate, i.IsActive);
+    private static InstructorResponse MapToResponse(Instructor i) => new(
+        i.Id, i.FirstName, i.LastName, i.Email, i.Phone, i.Bio,
+        i.Specializations, i.HireDate, i.IsActive, i.CreatedAt, i.UpdatedAt);
 }

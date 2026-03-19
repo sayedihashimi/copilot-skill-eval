@@ -29,13 +29,12 @@ public class VaccinationResponseDto
 {
     public int Id { get; set; }
     public int PetId { get; set; }
-    public PetSummaryDto? Pet { get; set; }
     public string VaccineName { get; set; } = string.Empty;
     public DateOnly DateAdministered { get; set; }
     public DateOnly ExpirationDate { get; set; }
     public string? BatchNumber { get; set; }
     public int AdministeredByVetId { get; set; }
-    public VeterinarianSummaryDto? AdministeredByVet { get; set; }
+    public string? AdministeredByVetName { get; set; }
     public string? Notes { get; set; }
     public bool IsExpired { get; set; }
     public bool IsDueSoon { get; set; }

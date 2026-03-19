@@ -5,12 +5,12 @@ namespace LibraryApi.Services;
 
 public interface IPatronService
 {
-    Task<PaginatedResponse<PatronResponse>> GetAllAsync(string? search, MembershipType? membershipType, bool? isActive, int page, int pageSize, CancellationToken ct);
-    Task<PatronDetailResponse?> GetByIdAsync(int id, CancellationToken ct);
-    Task<PatronResponse> CreateAsync(CreatePatronRequest request, CancellationToken ct);
-    Task<PatronResponse?> UpdateAsync(int id, UpdatePatronRequest request, CancellationToken ct);
-    Task DeleteAsync(int id, CancellationToken ct);
-    Task<PaginatedResponse<LoanResponse>> GetLoansAsync(int patronId, LoanStatus? status, int page, int pageSize, CancellationToken ct);
-    Task<IReadOnlyList<ReservationResponse>> GetReservationsAsync(int patronId, CancellationToken ct);
-    Task<PaginatedResponse<FineResponse>> GetFinesAsync(int patronId, FineStatus? status, int page, int pageSize, CancellationToken ct);
+    Task<PaginatedResponse<PatronResponse>> GetPatronsAsync(string? search, MembershipType? membershipType, int page, int pageSize, CancellationToken ct);
+    Task<PatronDetailResponse?> GetPatronByIdAsync(int id, CancellationToken ct);
+    Task<PatronResponse> CreatePatronAsync(CreatePatronRequest request, CancellationToken ct);
+    Task<PatronResponse?> UpdatePatronAsync(int id, UpdatePatronRequest request, CancellationToken ct);
+    Task<(bool Found, bool HasActiveLoans)> DeactivatePatronAsync(int id, CancellationToken ct);
+    Task<IReadOnlyList<LoanResponse>?> GetPatronLoansAsync(int patronId, string? status, CancellationToken ct);
+    Task<IReadOnlyList<ReservationResponse>?> GetPatronReservationsAsync(int patronId, CancellationToken ct);
+    Task<IReadOnlyList<FineResponse>?> GetPatronFinesAsync(int patronId, string? status, CancellationToken ct);
 }

@@ -15,7 +15,7 @@ public class ClassSchedule
     public DateTime StartTime { get; set; }
     public DateTime EndTime { get; set; }
 
-    [Range(1, 100)]
+    [Range(1, 50)]
     public int Capacity { get; set; }
 
     public int CurrentEnrollment { get; set; }

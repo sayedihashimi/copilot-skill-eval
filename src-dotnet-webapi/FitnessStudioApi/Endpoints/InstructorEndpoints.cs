@@ -11,68 +11,66 @@ public static class InstructorEndpoints
         var group = app.MapGroup("/api/instructors").WithTags("Instructors");
 
         group.MapGet("/", async Task<Ok<PaginatedResponse<InstructorResponse>>> (
-            string? specialization, bool? isActive, int? page, int? pageSize,
-            IInstructorService service, CancellationToken ct) =>
+            IInstructorService service,
+            string? specialization = null, bool? isActive = null,
+            int page = 1, int pageSize = 20,
+            CancellationToken ct = default) =>
         {
-            var p = Math.Clamp(page ?? 1, 1, int.MaxValue);
-            var ps = Math.Clamp(pageSize ?? 20, 1, 100);
-            var result = await service.GetAllAsync(specialization, isActive, p, ps, ct);
+            pageSize = Math.Clamp(pageSize, 1, 100);
+            var result = await service.GetAllAsync(specialization, isActive, page, pageSize, ct);
             return TypedResults.Ok(result);
         })
         .WithName("GetInstructors")
         .WithSummary("List instructors")
-        .WithDescription("Returns a paginated list of instructors. Filter by specialization or active status.")
-        .Produces<PaginatedResponse<InstructorResponse>>(StatusCodes.Status200OK);
+        .WithDescription("Returns a paginated list of instructors with optional specialization and active status filters.")
+        .Produces<PaginatedResponse<InstructorResponse>>(200);
 
         group.MapGet("/{id:int}", async Task<Results<Ok<InstructorResponse>, NotFound>> (
             int id, IInstructorService service, CancellationToken ct) =>
         {
-            var instructor = await service.GetByIdAsync(id, ct);
-            return instructor is null ? TypedResults.NotFound() : TypedResults.Ok(instructor);
+            var result = await service.GetByIdAsync(id, ct);
+            return result is not null ? TypedResults.Ok(result) : TypedResults.NotFound();
         })
-        .WithName("GetInstructorById")
-        .WithSummary("Get an instructor by ID")
-        .WithDescription("Returns the full details of a specific instructor.")
-        .Produces<InstructorResponse>(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status404NotFound);
+        .WithName("GetInstructor")
+        .WithSummary("Get instructor details")
+        .WithDescription("Returns details of a specific instructor by ID.")
+        .Produces<InstructorResponse>(200)
+        .Produces(404);
 
         group.MapPost("/", async Task<Created<InstructorResponse>> (
             CreateInstructorRequest request, IInstructorService service, CancellationToken ct) =>
         {
-            var instructor = await service.CreateAsync(request, ct);
-            return TypedResults.Created($"/api/instructors/{instructor.Id}", instructor);
+            var result = await service.CreateAsync(request, ct);
+            return TypedResults.Created($"/api/instructors/{result.Id}", result);
         })
         .WithName("CreateInstructor")
         .WithSummary("Create a new instructor")
-        .WithDescription("Creates a new instructor. Email must be unique.")
-        .Produces<InstructorResponse>(StatusCodes.Status201Created)
-        .Produces(StatusCodes.Status400BadRequest)
-        .Produces(StatusCodes.Status409Conflict);
+        .WithDescription("Creates a new instructor profile.")
+        .Produces<InstructorResponse>(201);
 
         group.MapPut("/{id:int}", async Task<Results<Ok<InstructorResponse>, NotFound>> (
             int id, UpdateInstructorRequest request, IInstructorService service, CancellationToken ct) =>
         {
-            var instructor = await service.UpdateAsync(id, request, ct);
-            return TypedResults.Ok(instructor);
+            var result = await service.UpdateAsync(id, request, ct);
+            return result is not null ? TypedResults.Ok(result) : TypedResults.NotFound();
         })
         .WithName("UpdateInstructor")
         .WithSummary("Update an instructor")
-        .WithDescription("Updates an existing instructor's details.")
-        .Produces<InstructorResponse>(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status400BadRequest)
-        .Produces(StatusCodes.Status404NotFound);
+        .WithDescription("Updates an existing instructor's profile information.")
+        .Produces<InstructorResponse>(200)
+        .Produces(404);
 
         group.MapGet("/{id:int}/schedule", async Task<Ok<IReadOnlyList<ClassScheduleResponse>>> (
-            int id, DateOnly? fromDate, DateOnly? toDate,
-            IInstructorService service, CancellationToken ct) =>
+            int id, IInstructorService service,
+            DateTime? fromDate = null, DateTime? toDate = null,
+            CancellationToken ct = default) =>
         {
-            var schedule = await service.GetScheduleAsync(id, fromDate, toDate, ct);
-            return TypedResults.Ok(schedule);
+            var result = await service.GetScheduleAsync(id, fromDate, toDate, ct);
+            return TypedResults.Ok(result);
         })
         .WithName("GetInstructorSchedule")
         .WithSummary("Get instructor's schedule")
-        .WithDescription("Returns the class schedule for a specific instructor. Filter by date range.")
-        .Produces<IReadOnlyList<ClassScheduleResponse>>(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status404NotFound);
+        .WithDescription("Returns class schedules for an instructor with optional date range filter.")
+        .Produces<IReadOnlyList<ClassScheduleResponse>>(200);
     }
 }

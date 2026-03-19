@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace FitnessStudioApi.Models;
 
-public sealed class Member
+public class Member
 {
     public int Id { get; set; }
 
@@ -31,10 +31,8 @@ public sealed class Member
     public bool IsActive { get; set; } = true;
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     public ICollection<Membership> Memberships { get; set; } = [];
-
     public ICollection<Booking> Bookings { get; set; } = [];
 }

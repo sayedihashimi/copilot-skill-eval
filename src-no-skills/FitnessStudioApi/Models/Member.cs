@@ -26,7 +26,7 @@ public class Member
     [Required]
     public string EmergencyContactPhone { get; set; } = string.Empty;
 
-    public DateOnly JoinDate { get; set; } = DateOnly.FromDateTime(DateTime.Today);
+    public DateOnly JoinDate { get; set; } = DateOnly.FromDateTime(DateTime.UtcNow);
 
     public bool IsActive { get; set; } = true;
 

@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
 using VetClinicApi.DTOs;
 using VetClinicApi.Services;
 
@@ -9,36 +11,33 @@ public static class OwnerEndpoints
     {
         var group = app.MapGroup("/api/owners").WithTags("Owners");
 
-        group.MapGet("/", async Task<Ok<PaginatedResponse<OwnerResponse>>> (
-            IOwnerService service,
-            string? search,
-            int page = 1,
-            int pageSize = 20,
-            CancellationToken ct = default) =>
+        group.MapGet("/", async Task<Results<Ok<PaginatedResponse<OwnerSummaryResponse>>, BadRequest>> (
+            string? search, int? page, int? pageSize,
+            IOwnerService service, CancellationToken ct) =>
         {
-            pageSize = Math.Clamp(pageSize, 1, 100);
-            page = Math.Max(1, page);
-            var result = await service.GetAllAsync(search, page, pageSize, ct);
+            var p = Math.Max(1, page ?? 1);
+            var ps = Math.Clamp(pageSize ?? 20, 1, 100);
+            var result = await service.GetAllAsync(search, p, ps, ct);
             return TypedResults.Ok(result);
         })
         .WithName("GetOwners")
         .WithSummary("List all owners")
-        .WithDescription("Returns a paginated list of owners. Supports search by name and email.")
-        .Produces<PaginatedResponse<OwnerResponse>>(StatusCodes.Status200OK);
+        .WithDescription("Returns a paginated list of owners. Supports search by name or email.")
+        .Produces<PaginatedResponse<OwnerSummaryResponse>>();
 
-        group.MapGet("/{id:int}", async Task<Results<Ok<OwnerDetailResponse>, NotFound>> (
+        group.MapGet("/{id:int}", async Task<Results<Ok<OwnerResponse>, NotFound>> (
             int id, IOwnerService service, CancellationToken ct) =>
         {
             var owner = await service.GetByIdAsync(id, ct);
             return owner is null ? TypedResults.NotFound() : TypedResults.Ok(owner);
         })
         .WithName("GetOwnerById")
-        .WithSummary("Get an owner by ID")
+        .WithSummary("Get owner by ID")
         .WithDescription("Returns owner details including their pets.")
-        .Produces<OwnerDetailResponse>(StatusCodes.Status200OK)
+        .Produces<OwnerResponse>()
         .Produces(StatusCodes.Status404NotFound);
 
-        group.MapPost("/", async Task<Created<OwnerResponse>> (
+        group.MapPost("/", async Task<Results<Created<OwnerResponse>, Conflict<ProblemDetails>>> (
             CreateOwnerRequest request, IOwnerService service, CancellationToken ct) =>
         {
             var owner = await service.CreateAsync(request, ct);
@@ -48,8 +47,7 @@ public static class OwnerEndpoints
         .WithSummary("Create a new owner")
         .WithDescription("Creates a new pet owner. Email must be unique.")
         .Produces<OwnerResponse>(StatusCodes.Status201Created)
-        .Produces(StatusCodes.Status400BadRequest)
-        .Produces(StatusCodes.Status409Conflict);
+        .Produces(StatusCodes.Status400BadRequest);
 
         group.MapPut("/{id:int}", async Task<Results<Ok<OwnerResponse>, NotFound>> (
             int id, UpdateOwnerRequest request, IOwnerService service, CancellationToken ct) =>
@@ -58,10 +56,9 @@ public static class OwnerEndpoints
             return owner is null ? TypedResults.NotFound() : TypedResults.Ok(owner);
         })
         .WithName("UpdateOwner")
-        .WithSummary("Update an owner")
+        .WithSummary("Update an existing owner")
         .WithDescription("Updates all fields of an existing owner.")
-        .Produces<OwnerResponse>(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status400BadRequest)
+        .Produces<OwnerResponse>()
         .Produces(StatusCodes.Status404NotFound);
 
         group.MapDelete("/{id:int}", async Task<Results<NoContent, NotFound>> (
@@ -77,30 +74,31 @@ public static class OwnerEndpoints
         .Produces(StatusCodes.Status404NotFound)
         .Produces(StatusCodes.Status409Conflict);
 
-        group.MapGet("/{id:int}/pets", async Task<Results<Ok<IReadOnlyList<PetResponse>>, NotFound>> (
+        group.MapGet("/{id:int}/pets", async Task<Results<Ok<IReadOnlyList<PetSummaryResponse>>, NotFound>> (
             int id, IOwnerService service, CancellationToken ct) =>
         {
-            var pets = await service.GetPetsAsync(id, ct);
+            var pets = await service.GetPetsByOwnerIdAsync(id, ct);
             return TypedResults.Ok(pets);
         })
         .WithName("GetOwnerPets")
-        .WithSummary("Get an owner's pets")
+        .WithSummary("Get all pets for an owner")
         .WithDescription("Returns all pets belonging to the specified owner.")
-        .Produces<IReadOnlyList<PetResponse>>(StatusCodes.Status200OK)
+        .Produces<IReadOnlyList<PetSummaryResponse>>()
         .Produces(StatusCodes.Status404NotFound);
 
         group.MapGet("/{id:int}/appointments", async Task<Results<Ok<PaginatedResponse<AppointmentResponse>>, NotFound>> (
-            int id, IOwnerService service, int page = 1, int pageSize = 20, CancellationToken ct = default) =>
+            int id, int? page, int? pageSize,
+            IOwnerService service, CancellationToken ct) =>
         {
-            pageSize = Math.Clamp(pageSize, 1, 100);
-            page = Math.Max(1, page);
-            var appointments = await service.GetAppointmentsAsync(id, page, pageSize, ct);
-            return TypedResults.Ok(appointments);
+            var p = Math.Max(1, page ?? 1);
+            var ps = Math.Clamp(pageSize ?? 20, 1, 100);
+            var result = await service.GetAppointmentsByOwnerIdAsync(id, p, ps, ct);
+            return TypedResults.Ok(result);
         })
         .WithName("GetOwnerAppointments")
         .WithSummary("Get appointment history for an owner's pets")
-        .WithDescription("Returns paginated appointment history for all pets of the specified owner.")
-        .Produces<PaginatedResponse<AppointmentResponse>>(StatusCodes.Status200OK)
+        .WithDescription("Returns all appointments for all pets belonging to the specified owner.")
+        .Produces<PaginatedResponse<AppointmentResponse>>()
         .Produces(StatusCodes.Status404NotFound);
     }
 }

@@ -1,28 +1,31 @@
-@baseUrl = http://localhost:5245
+@baseUrl = http://localhost:5111
 
-###############################################################################
+### ===========================
 ### Authors
-###############################################################################
+### ===========================
 
 ### List all authors
 GET {{baseUrl}}/api/authors?page=1&pageSize=10
 
 ### Search authors by name
-GET {{baseUrl}}/api/authors?search=Orwell&page=1&pageSize=10
+GET {{baseUrl}}/api/authors?search=orwell&page=1&pageSize=10
 
-### Get author by ID (George Orwell)
+### Get author details (George Orwell)
 GET {{baseUrl}}/api/authors/1
+
+### Get author details (Yuval Noah Harari)
+GET {{baseUrl}}/api/authors/5
 
 ### Create a new author
 POST {{baseUrl}}/api/authors
 Content-Type: application/json
 
 {
-  "firstName": "Haruki",
-  "lastName": "Murakami",
-  "biography": "Japanese writer known for his surreal and dreamlike novels.",
-  "birthDate": "1949-01-12",
-  "country": "Japan"
+  "firstName": "Gabriel",
+  "lastName": "Garcia Marquez",
+  "biography": "Colombian novelist and Nobel Prize winner, author of One Hundred Years of Solitude.",
+  "birthDate": "1927-03-06",
+  "country": "Colombia"
 }
 
 ### Update an author
@@ -32,22 +35,22 @@ Content-Type: application/json
 {
   "firstName": "George",
   "lastName": "Orwell",
-  "biography": "English novelist, essayist, journalist and critic. Best known for '1984' and 'Animal Farm'.",
+  "biography": "English novelist, essayist, journalist and critic. Best known for 1984 and Animal Farm.",
   "birthDate": "1903-06-25",
   "country": "United Kingdom"
 }
 
-### Delete an author (will fail if author has books)
+### Delete an author (will fail — author has books)
 DELETE {{baseUrl}}/api/authors/1
 
-###############################################################################
+### ===========================
 ### Categories
-###############################################################################
+### ===========================
 
 ### List all categories
 GET {{baseUrl}}/api/categories?page=1&pageSize=10
 
-### Get category by ID (Fiction)
+### Get category details (Fiction)
 GET {{baseUrl}}/api/categories/1
 
 ### Create a new category
@@ -56,7 +59,7 @@ Content-Type: application/json
 
 {
   "name": "Philosophy",
-  "description": "Books about philosophical ideas and thinkers"
+  "description": "Books about philosophical thought and inquiry."
 }
 
 ### Update a category
@@ -65,15 +68,15 @@ Content-Type: application/json
 
 {
   "name": "Fiction",
-  "description": "Literary works of imaginative narration"
+  "description": "Novels and stories based on imagined events and characters."
 }
 
-### Delete a category (will fail if category has books)
+### Delete a category (will fail — category has books)
 DELETE {{baseUrl}}/api/categories/1
 
-###############################################################################
+### ===========================
 ### Books
-###############################################################################
+### ===========================
 
 ### List all books
 GET {{baseUrl}}/api/books?page=1&pageSize=10
@@ -82,38 +85,41 @@ GET {{baseUrl}}/api/books?page=1&pageSize=10
 GET {{baseUrl}}/api/books?search=1984&page=1&pageSize=10
 
 ### Search books by author name
-GET {{baseUrl}}/api/books?search=Asimov&page=1&pageSize=10
+GET {{baseUrl}}/api/books?search=asimov&page=1&pageSize=10
 
-### Filter by category
+### Filter books by category
 GET {{baseUrl}}/api/books?category=Science Fiction&page=1&pageSize=10
 
-### Filter by availability (available only)
+### Filter available books only
 GET {{baseUrl}}/api/books?available=true&page=1&pageSize=10
 
-### Filter by unavailable books
+### Filter unavailable books only
 GET {{baseUrl}}/api/books?available=false&page=1&pageSize=10
 
-### Sort by title descending
-GET {{baseUrl}}/api/books?sortBy=title&sortOrder=desc&page=1&pageSize=10
+### Sort books by year
+GET {{baseUrl}}/api/books?sortBy=year&page=1&pageSize=10
 
-### Get book by ID (1984)
+### Get book details (1984)
 GET {{baseUrl}}/api/books/1
+
+### Get book details (I, Robot — 0 available copies)
+GET {{baseUrl}}/api/books/5
 
 ### Create a new book
 POST {{baseUrl}}/api/books
 Content-Type: application/json
 
 {
-  "title": "The Caves of Steel",
-  "isbn": "978-0553293401",
-  "publisher": "Bantam Books",
-  "publicationYear": 1954,
-  "description": "A science fiction detective novel by Isaac Asimov.",
-  "pageCount": 206,
+  "title": "Brave New World",
+  "isbn": "9780060850524",
+  "publisher": "Harper Perennial",
+  "publicationYear": 1932,
+  "description": "A dystopian novel about a futuristic World State.",
+  "pageCount": 288,
   "language": "English",
-  "totalCopies": 2,
-  "authorIds": [3],
-  "categoryIds": [2]
+  "totalCopies": 3,
+  "authorIds": [1],
+  "categoryIds": [1, 2]
 }
 
 ### Update a book
@@ -122,44 +128,44 @@ Content-Type: application/json
 
 {
   "title": "1984",
-  "isbn": "978-0451524935",
+  "isbn": "9780451524935",
   "publisher": "Signet Classics",
   "publicationYear": 1949,
-  "description": "A dystopian novel set in Airstrip One, a province of the superstate Oceania.",
+  "description": "A dystopian novel set in a totalitarian society ruled by Big Brother.",
   "pageCount": 328,
   "language": "English",
   "totalCopies": 4,
   "authorIds": [1],
-  "categoryIds": [1, 2, 7]
+  "categoryIds": [1, 6]
 }
 
-### Delete a book (will fail if book has active loans)
+### Delete a book (will fail — book has active loans)
 DELETE {{baseUrl}}/api/books/1
 
-### Get loan history for a book
+### Get loan history for a book (1984)
 GET {{baseUrl}}/api/books/1/loans?page=1&pageSize=10
 
-### Get active reservations queue for a book
-GET {{baseUrl}}/api/books/8/reservations?page=1&pageSize=10
+### Get active reservations for a book (I, Robot)
+GET {{baseUrl}}/api/books/5/reservations?page=1&pageSize=10
 
-###############################################################################
+### ===========================
 ### Patrons
-###############################################################################
+### ===========================
 
 ### List all patrons
 GET {{baseUrl}}/api/patrons?page=1&pageSize=10
 
 ### Search patrons by name
-GET {{baseUrl}}/api/patrons?search=Alice&page=1&pageSize=10
+GET {{baseUrl}}/api/patrons?search=alice&page=1&pageSize=10
 
-### Search patrons by email
-GET {{baseUrl}}/api/patrons?search=bob.smith@email.com&page=1&pageSize=10
-
-### Filter by membership type
+### Filter patrons by membership type
 GET {{baseUrl}}/api/patrons?membershipType=Premium&page=1&pageSize=10
 
-### Get patron by ID (Alice Johnson — Premium)
+### Get patron details (Alice Johnson — Premium)
 GET {{baseUrl}}/api/patrons/1
+
+### Get patron details (Frank Davis — Inactive)
+GET {{baseUrl}}/api/patrons/6
 
 ### Create a new patron
 POST {{baseUrl}}/api/patrons
@@ -170,27 +176,27 @@ Content-Type: application/json
   "lastName": "Lee",
   "email": "grace.lee@email.com",
   "phone": "555-0107",
-  "address": "111 Maple Ave, Springfield",
-  "membershipType": "Standard"
+  "address": "111 Willow Way",
+  "membershipType": "Student"
 }
 
 ### Update a patron
-PUT {{baseUrl}}/api/patrons/2
+PUT {{baseUrl}}/api/patrons/1
 Content-Type: application/json
 
 {
-  "firstName": "Bob",
-  "lastName": "Smith",
-  "email": "bob.smith@email.com",
-  "phone": "555-0102",
-  "address": "456 Oak Ave, Apt 2B, Springfield",
+  "firstName": "Alice",
+  "lastName": "Johnson",
+  "email": "alice.johnson@email.com",
+  "phone": "555-0101",
+  "address": "123 Maple St, Apt 4B",
   "membershipType": "Premium"
 }
 
 ### Deactivate a patron (will fail if patron has active loans)
 DELETE {{baseUrl}}/api/patrons/1
 
-### Get patron's loans (all)
+### Get patron's loans (Alice — all)
 GET {{baseUrl}}/api/patrons/1/loans?page=1&pageSize=10
 
 ### Get patron's active loans
@@ -200,124 +206,127 @@ GET {{baseUrl}}/api/patrons/1/loans?status=Active&page=1&pageSize=10
 GET {{baseUrl}}/api/patrons/1/reservations?page=1&pageSize=10
 
 ### Get patron's fines (all)
-GET {{baseUrl}}/api/patrons/4/fines?page=1&pageSize=10
+GET {{baseUrl}}/api/patrons/5/fines?page=1&pageSize=10
 
 ### Get patron's unpaid fines
-GET {{baseUrl}}/api/patrons/4/fines?status=Unpaid&page=1&pageSize=10
+GET {{baseUrl}}/api/patrons/5/fines?status=Unpaid&page=1&pageSize=10
 
-###############################################################################
+### ===========================
 ### Loans
-###############################################################################
+### ===========================
 
 ### List all loans
 GET {{baseUrl}}/api/loans?page=1&pageSize=10
 
-### Filter loans by status
+### List active loans
 GET {{baseUrl}}/api/loans?status=Active&page=1&pageSize=10
 
-### Filter overdue loans
+### List overdue loans via filter
 GET {{baseUrl}}/api/loans?overdue=true&page=1&pageSize=10
 
-### Filter loans by date range
-GET {{baseUrl}}/api/loans?fromDate=2024-01-01&toDate=2026-12-31&page=1&pageSize=10
+### List loans in a date range
+GET {{baseUrl}}/api/loans?fromDate=2025-01-01&toDate=2025-12-31&page=1&pageSize=20
 
-### Get loan by ID
+### Get loan details (Loan 1 — Alice has 1984)
 GET {{baseUrl}}/api/loans/1
 
-### Check out a book (normal checkout — patron 5, book 7 which is available)
+### Check out a book (Bob checks out Pride and Prejudice)
 POST {{baseUrl}}/api/loans
 Content-Type: application/json
 
 {
-  "bookId": 7,
-  "patronId": 5
+  "bookId": 3,
+  "patronId": 2
 }
 
-### Return a book (loan 7 which is already returned — should fail; try loan 1 instead)
-POST {{baseUrl}}/api/loans/1/return
+### Return a book (Loan 2 — Bob returns Animal Farm)
+POST {{baseUrl}}/api/loans/2/return
 
-### Renew a loan
-POST {{baseUrl}}/api/loans/2/renew
+### Renew a loan (Loan 1 — Alice renews 1984)
+POST {{baseUrl}}/api/loans/1/renew
 
-### Get all overdue loans (also flags overdue loans)
+### Get all overdue loans (also flags them)
 GET {{baseUrl}}/api/loans/overdue?page=1&pageSize=10
 
-###############################################################################
-### Business Rule Test Cases
-###############################################################################
+### ===========================
+### Business Rule Tests — Loans
+### ===========================
 
-### FAIL: Check out a book for an inactive patron (patron 6 is inactive)
+### DENIED: Check out a book for inactive patron (Frank, id=6)
 POST {{baseUrl}}/api/loans
 Content-Type: application/json
 
 {
-  "bookId": 2,
+  "bookId": 3,
   "patronId": 6
 }
 
-### FAIL: Check out a book with no available copies (book 8 has 0 available)
+### DENIED: Check out a book with no available copies (I, Robot)
 POST {{baseUrl}}/api/loans
 Content-Type: application/json
 
 {
-  "bookId": 8,
+  "bookId": 5,
   "patronId": 1
 }
 
-### FAIL: Attempt to renew an overdue loan (loan 8 is overdue)
+### DENIED: Renew an overdue loan (Loan 8 is overdue)
 POST {{baseUrl}}/api/loans/8/renew
 
-### FAIL: Attempt to renew loan 1 for book 1 — should fail because book 1 has pending reservations
-POST {{baseUrl}}/api/loans/1/renew
-
-### FAIL: Reserve a book that patron already has on active loan (patron 1 has book 1 on loan)
-POST {{baseUrl}}/api/reservations
-Content-Type: application/json
-
-{
-  "bookId": 1,
-  "patronId": 1
-}
-
-###############################################################################
+### ===========================
 ### Reservations
-###############################################################################
+### ===========================
 
 ### List all reservations
 GET {{baseUrl}}/api/reservations?page=1&pageSize=10
 
-### Filter reservations by status
+### List pending reservations
 GET {{baseUrl}}/api/reservations?status=Pending&page=1&pageSize=10
 
-### Get reservation by ID
+### Get reservation details (Reservation 1)
 GET {{baseUrl}}/api/reservations/1
 
-### Create a new reservation
+### Get reservation details (Reservation 3 — Ready)
+GET {{baseUrl}}/api/reservations/3
+
+### Create a reservation (Eva reserves I, Robot)
 POST {{baseUrl}}/api/reservations
 Content-Type: application/json
 
 {
   "bookId": 5,
-  "patronId": 2
+  "patronId": 5
+}
+
+### DENIED: Reserve a book patron already has on active loan (Carol has I, Robot loan 3)
+POST {{baseUrl}}/api/reservations
+Content-Type: application/json
+
+{
+  "bookId": 5,
+  "patronId": 3
 }
 
 ### Cancel a reservation
-POST {{baseUrl}}/api/reservations/2/cancel
+POST {{baseUrl}}/api/reservations/1/cancel
 
-### Fulfill a Ready reservation (reservation 3 is Ready for patron 4, book 1)
+### Fulfill a "Ready" reservation (Reservation 3 — Eva picks up Foundation)
 POST {{baseUrl}}/api/reservations/3/fulfill
 
-###############################################################################
+### ===========================
 ### Fines
-###############################################################################
+### ===========================
 
 ### List all fines
 GET {{baseUrl}}/api/fines?page=1&pageSize=10
 
-### Filter fines by status
+### List unpaid fines
 GET {{baseUrl}}/api/fines?status=Unpaid&page=1&pageSize=10
 
-### Get fine by ID
+### List paid fines
+GET {{baseUrl}}/api/fines?status=Paid&page=1&pageSize=10
+
+### Get fine details
 GET {{baseUrl}}/api/fines/1
 
 ### Pay a fine

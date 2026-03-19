@@ -27,6 +27,7 @@ public class PrescriptionsController : ControllerBase
     [HttpPost]
     [ProducesResponseType(typeof(PrescriptionResponseDto), 201)]
     [ProducesResponseType(400)]
+    [ProducesResponseType(404)]
     public async Task<IActionResult> Create([FromBody] CreatePrescriptionDto dto)
     {
         var result = await _service.CreateAsync(dto);

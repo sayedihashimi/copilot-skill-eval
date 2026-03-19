@@ -13,65 +13,57 @@ public static class BookingEndpoints
         group.MapPost("/", async Task<Created<BookingResponse>> (
             CreateBookingRequest request, IBookingService service, CancellationToken ct) =>
         {
-            var booking = await service.CreateAsync(request, ct);
-            return TypedResults.Created($"/api/bookings/{booking.Id}", booking);
+            var result = await service.CreateAsync(request, ct);
+            return TypedResults.Created($"/api/bookings/{result.Id}", result);
         })
         .WithName("CreateBooking")
         .WithSummary("Book a class")
-        .WithDescription("Books a class for a member. Enforces membership, capacity, premium access, weekly limits, and scheduling rules.")
-        .Produces<BookingResponse>(StatusCodes.Status201Created)
-        .Produces(StatusCodes.Status400BadRequest)
-        .Produces(StatusCodes.Status409Conflict);
+        .WithDescription("Books a class for a member. Enforces all business rules: capacity management, membership requirements, tier access, weekly limits, booking window, and overlap checks.")
+        .Produces<BookingResponse>(201);
 
         group.MapGet("/{id:int}", async Task<Results<Ok<BookingResponse>, NotFound>> (
             int id, IBookingService service, CancellationToken ct) =>
         {
-            var booking = await service.GetByIdAsync(id, ct);
-            return booking is null ? TypedResults.NotFound() : TypedResults.Ok(booking);
+            var result = await service.GetByIdAsync(id, ct);
+            return result is not null ? TypedResults.Ok(result) : TypedResults.NotFound();
         })
-        .WithName("GetBookingById")
-        .WithSummary("Get a booking by ID")
-        .WithDescription("Returns the full details of a specific booking.")
-        .Produces<BookingResponse>(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status404NotFound);
+        .WithName("GetBooking")
+        .WithSummary("Get booking details")
+        .WithDescription("Returns details of a specific booking by ID.")
+        .Produces<BookingResponse>(200)
+        .Produces(404);
 
-        group.MapPost("/{id:int}/cancel", async Task<Results<Ok<BookingResponse>, NotFound>> (
+        group.MapPost("/{id:int}/cancel", async Task<Ok<BookingResponse>> (
             int id, CancelBookingRequest request, IBookingService service, CancellationToken ct) =>
         {
-            var booking = await service.CancelAsync(id, request, ct);
-            return TypedResults.Ok(booking);
+            var result = await service.CancelAsync(id, request, ct);
+            return TypedResults.Ok(result);
         })
         .WithName("CancelBooking")
         .WithSummary("Cancel a booking")
-        .WithDescription("Cancels a booking. Promotes the first waitlisted member if the cancelled booking was confirmed.")
-        .Produces<BookingResponse>(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status400BadRequest)
-        .Produces(StatusCodes.Status404NotFound);
+        .WithDescription("Cancels a booking. If a confirmed booking is cancelled, the first person on the waitlist is promoted. Late cancellation (less than 2 hours before class) is noted.")
+        .Produces<BookingResponse>(200);
 
-        group.MapPost("/{id:int}/check-in", async Task<Results<Ok<BookingResponse>, NotFound>> (
+        group.MapPost("/{id:int}/check-in", async Task<Ok<BookingResponse>> (
             int id, IBookingService service, CancellationToken ct) =>
         {
-            var booking = await service.CheckInAsync(id, ct);
-            return TypedResults.Ok(booking);
+            var result = await service.CheckInAsync(id, ct);
+            return TypedResults.Ok(result);
         })
         .WithName("CheckInBooking")
-        .WithSummary("Check in to a class")
-        .WithDescription("Checks a member into a class. Must be within 15 minutes before or after class start time.")
-        .Produces<BookingResponse>(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status400BadRequest)
-        .Produces(StatusCodes.Status404NotFound);
+        .WithSummary("Check in for a class")
+        .WithDescription("Checks in a member for a class. Available 15 minutes before to 15 minutes after class start time.")
+        .Produces<BookingResponse>(200);
 
-        group.MapPost("/{id:int}/no-show", async Task<Results<Ok<BookingResponse>, NotFound>> (
+        group.MapPost("/{id:int}/no-show", async Task<Ok<BookingResponse>> (
             int id, IBookingService service, CancellationToken ct) =>
         {
-            var booking = await service.MarkNoShowAsync(id, ct);
-            return TypedResults.Ok(booking);
+            var result = await service.MarkNoShowAsync(id, ct);
+            return TypedResults.Ok(result);
         })
         .WithName("MarkNoShow")
         .WithSummary("Mark booking as no-show")
-        .WithDescription("Marks a confirmed booking as a no-show. Can only be done 15 minutes after class start.")
-        .Produces<BookingResponse>(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status400BadRequest)
-        .Produces(StatusCodes.Status404NotFound);
+        .WithDescription("Marks a confirmed booking as no-show. Only available 15 minutes after class start time.")
+        .Produces<BookingResponse>(200);
     }
 }

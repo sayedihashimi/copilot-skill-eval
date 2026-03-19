@@ -4,9 +4,9 @@ namespace LibraryApi.Services;
 
 public interface IAuthorService
 {
-    Task<PaginatedResponse<AuthorResponse>> GetAllAsync(string? search, int page, int pageSize, CancellationToken ct);
-    Task<AuthorDetailResponse?> GetByIdAsync(int id, CancellationToken ct);
-    Task<AuthorResponse> CreateAsync(CreateAuthorRequest request, CancellationToken ct);
-    Task<AuthorResponse?> UpdateAsync(int id, UpdateAuthorRequest request, CancellationToken ct);
-    Task DeleteAsync(int id, CancellationToken ct);
+    Task<PaginatedResponse<AuthorResponse>> GetAuthorsAsync(string? search, int page, int pageSize, CancellationToken ct);
+    Task<AuthorDetailResponse?> GetAuthorByIdAsync(int id, CancellationToken ct);
+    Task<AuthorResponse> CreateAuthorAsync(CreateAuthorRequest request, CancellationToken ct);
+    Task<AuthorResponse?> UpdateAuthorAsync(int id, UpdateAuthorRequest request, CancellationToken ct);
+    Task<(bool Found, bool HasBooks)> DeleteAuthorAsync(int id, CancellationToken ct);
 }

@@ -1,6 +1,6 @@
-using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using System.Text.Json;
+using Microsoft.AspNetCore.Mvc;
 
 namespace LibraryApi.Middleware;
 
@@ -23,7 +23,7 @@ public class GlobalExceptionHandlerMiddleware
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "An unhandled exception occurred.");
+            _logger.LogError(ex, "An unhandled exception occurred: {Message}", ex.Message);
             await HandleExceptionAsync(context, ex);
         }
     }
@@ -31,55 +31,17 @@ public class GlobalExceptionHandlerMiddleware
     private static async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
         context.Response.ContentType = "application/problem+json";
+        context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
 
-        var problemDetails = exception switch
+        var problem = new ProblemDetails
         {
-            BusinessRuleException bre => new ProblemDetails
-            {
-                Status = (int)HttpStatusCode.BadRequest,
-                Title = "Business Rule Violation",
-                Detail = bre.Message,
-                Type = "https://tools.ietf.org/html/rfc7807"
-            },
-            NotFoundException nfe => new ProblemDetails
-            {
-                Status = (int)HttpStatusCode.NotFound,
-                Title = "Resource Not Found",
-                Detail = nfe.Message,
-                Type = "https://tools.ietf.org/html/rfc7807"
-            },
-            ConflictException ce => new ProblemDetails
-            {
-                Status = (int)HttpStatusCode.Conflict,
-                Title = "Conflict",
-                Detail = ce.Message,
-                Type = "https://tools.ietf.org/html/rfc7807"
-            },
-            _ => new ProblemDetails
-            {
-                Status = (int)HttpStatusCode.InternalServerError,
-                Title = "An unexpected error occurred",
-                Detail = "An internal server error has occurred.",
-                Type = "https://tools.ietf.org/html/rfc7807"
-            }
+            Status = context.Response.StatusCode,
+            Title = "An unexpected error occurred",
+            Detail = exception.Message,
+            Instance = context.Request.Path
         };
 
-        context.Response.StatusCode = problemDetails.Status ?? 500;
-        await context.Response.WriteAsJsonAsync(problemDetails);
+        var json = JsonSerializer.Serialize(problem, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+        await context.Response.WriteAsync(json);
     }
-}
-
-public class BusinessRuleException : Exception
-{
-    public BusinessRuleException(string message) : base(message) { }
-}
-
-public class NotFoundException : Exception
-{
-    public NotFoundException(string message) : base(message) { }
-}
-
-public class ConflictException : Exception
-{
-    public ConflictException(string message) : base(message) { }
 }

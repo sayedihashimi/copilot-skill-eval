@@ -30,7 +30,6 @@ namespace FitnessStudioApi.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("CancellationReason")
-                        .HasMaxLength(500)
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("CheckInTime")
@@ -90,7 +89,7 @@ namespace FitnessStudioApi.Migrations
                             BookingDate = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             ClassScheduleId = 1,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            MemberId = 3,
+                            MemberId = 4,
                             Status = "Confirmed",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
@@ -100,7 +99,7 @@ namespace FitnessStudioApi.Migrations
                             BookingDate = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             ClassScheduleId = 2,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            MemberId = 2,
+                            MemberId = 1,
                             Status = "Confirmed",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
@@ -110,7 +109,7 @@ namespace FitnessStudioApi.Migrations
                             BookingDate = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             ClassScheduleId = 2,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            MemberId = 4,
+                            MemberId = 5,
                             Status = "Confirmed",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
@@ -118,9 +117,9 @@ namespace FitnessStudioApi.Migrations
                         {
                             Id = 6,
                             BookingDate = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ClassScheduleId = 2,
+                            ClassScheduleId = 3,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            MemberId = 6,
+                            MemberId = 2,
                             Status = "Confirmed",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
@@ -130,7 +129,7 @@ namespace FitnessStudioApi.Migrations
                             BookingDate = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             ClassScheduleId = 3,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            MemberId = 1,
+                            MemberId = 4,
                             Status = "Confirmed",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
@@ -138,9 +137,9 @@ namespace FitnessStudioApi.Migrations
                         {
                             Id = 8,
                             BookingDate = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ClassScheduleId = 3,
+                            ClassScheduleId = 4,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            MemberId = 5,
+                            MemberId = 3,
                             Status = "Confirmed",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
@@ -148,7 +147,7 @@ namespace FitnessStudioApi.Migrations
                         {
                             Id = 9,
                             BookingDate = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ClassScheduleId = 4,
+                            ClassScheduleId = 5,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             MemberId = 1,
                             Status = "Confirmed",
@@ -158,26 +157,6 @@ namespace FitnessStudioApi.Migrations
                         {
                             Id = 10,
                             BookingDate = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ClassScheduleId = 4,
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            MemberId = 4,
-                            Status = "Confirmed",
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Id = 11,
-                            BookingDate = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ClassScheduleId = 5,
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            MemberId = 2,
-                            Status = "Confirmed",
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Id = 12,
-                            BookingDate = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             ClassScheduleId = 5,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             MemberId = 6,
@@ -186,17 +165,17 @@ namespace FitnessStudioApi.Migrations
                         },
                         new
                         {
-                            Id = 13,
+                            Id = 11,
                             BookingDate = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             ClassScheduleId = 6,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            MemberId = 7,
+                            MemberId = 5,
                             Status = "Confirmed",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
-                            Id = 14,
+                            Id = 12,
                             BookingDate = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             ClassScheduleId = 7,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
@@ -206,39 +185,19 @@ namespace FitnessStudioApi.Migrations
                         },
                         new
                         {
-                            Id = 15,
+                            Id = 13,
+                            BookingDate = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ClassScheduleId = 7,
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            MemberId = 6,
+                            Status = "Confirmed",
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 14,
                             BookingDate = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             ClassScheduleId = 8,
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            MemberId = 5,
-                            Status = "Confirmed",
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Id = 16,
-                            BookingDate = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ClassScheduleId = 11,
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            MemberId = 1,
-                            Status = "Confirmed",
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Id = 17,
-                            BookingDate = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ClassScheduleId = 11,
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            MemberId = 2,
-                            Status = "Confirmed",
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
-                        },
-                        new
-                        {
-                            Id = 18,
-                            BookingDate = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ClassScheduleId = 11,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             MemberId = 4,
                             Status = "Confirmed",
@@ -246,33 +205,74 @@ namespace FitnessStudioApi.Migrations
                         },
                         new
                         {
-                            Id = 19,
+                            Id = 15,
                             BookingDate = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ClassScheduleId = 11,
+                            ClassScheduleId = 9,
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            MemberId = 1,
+                            Status = "Confirmed",
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 16,
+                            BookingDate = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ClassScheduleId = 9,
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            MemberId = 2,
+                            Status = "Confirmed",
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 17,
+                            BookingDate = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ClassScheduleId = 9,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             MemberId = 6,
+                            Status = "Confirmed",
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            Id = 18,
+                            BookingDate = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ClassScheduleId = 9,
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            MemberId = 4,
                             Status = "Waitlisted",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             WaitlistPosition = 1
                         },
                         new
                         {
+                            Id = 19,
+                            BookingDate = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CancellationDate = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CancellationReason = "Schedule conflict",
+                            ClassScheduleId = 9,
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            MemberId = 1,
+                            Status = "Cancelled",
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
                             Id = 20,
                             BookingDate = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ClassScheduleId = 11,
+                            ClassScheduleId = 10,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            MemberId = 3,
-                            Status = "Waitlisted",
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            WaitlistPosition = 2
+                            MemberId = 6,
+                            Status = "Confirmed",
+                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 21,
                             BookingDate = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            ClassScheduleId = 12,
+                            ClassScheduleId = 11,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            MemberId = 7,
+                            MemberId = 5,
                             Status = "Confirmed",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         });
@@ -285,7 +285,6 @@ namespace FitnessStudioApi.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("CancellationReason")
-                        .HasMaxLength(500)
                         .HasColumnType("TEXT");
 
                     b.Property<int>("Capacity")
@@ -340,10 +339,10 @@ namespace FitnessStudioApi.Migrations
                             ClassTypeId = 1,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             CurrentEnrollment = 3,
-                            EndTime = new DateTime(2025, 7, 7, 9, 0, 0, 0, DateTimeKind.Utc),
+                            EndTime = new DateTime(2025, 7, 21, 9, 0, 0, 0, DateTimeKind.Utc),
                             InstructorId = 1,
                             Room = "Studio A",
-                            StartTime = new DateTime(2025, 7, 7, 8, 0, 0, 0, DateTimeKind.Utc),
+                            StartTime = new DateTime(2025, 7, 21, 8, 0, 0, 0, DateTimeKind.Utc),
                             Status = "Scheduled",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             WaitlistCount = 0
@@ -354,11 +353,11 @@ namespace FitnessStudioApi.Migrations
                             Capacity = 15,
                             ClassTypeId = 2,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CurrentEnrollment = 3,
-                            EndTime = new DateTime(2025, 7, 7, 10, 45, 0, 0, DateTimeKind.Utc),
+                            CurrentEnrollment = 2,
+                            EndTime = new DateTime(2025, 7, 21, 10, 45, 0, 0, DateTimeKind.Utc),
                             InstructorId = 2,
-                            Room = "Studio B",
-                            StartTime = new DateTime(2025, 7, 7, 10, 0, 0, 0, DateTimeKind.Utc),
+                            Room = "Main Floor",
+                            StartTime = new DateTime(2025, 7, 21, 10, 0, 0, 0, DateTimeKind.Utc),
                             Status = "Scheduled",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             WaitlistCount = 0
@@ -370,10 +369,10 @@ namespace FitnessStudioApi.Migrations
                             ClassTypeId = 3,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             CurrentEnrollment = 2,
-                            EndTime = new DateTime(2025, 7, 8, 7, 45, 0, 0, DateTimeKind.Utc),
-                            InstructorId = 2,
-                            Room = "Spin Room",
-                            StartTime = new DateTime(2025, 7, 8, 7, 0, 0, 0, DateTimeKind.Utc),
+                            EndTime = new DateTime(2025, 7, 22, 9, 45, 0, 0, DateTimeKind.Utc),
+                            InstructorId = 3,
+                            Room = "Studio B",
+                            StartTime = new DateTime(2025, 7, 22, 9, 0, 0, 0, DateTimeKind.Utc),
                             Status = "Scheduled",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             WaitlistCount = 0
@@ -384,11 +383,11 @@ namespace FitnessStudioApi.Migrations
                             Capacity = 15,
                             ClassTypeId = 4,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CurrentEnrollment = 2,
-                            EndTime = new DateTime(2025, 7, 8, 10, 0, 0, 0, DateTimeKind.Utc),
-                            InstructorId = 3,
+                            CurrentEnrollment = 1,
+                            EndTime = new DateTime(2025, 7, 22, 15, 0, 0, 0, DateTimeKind.Utc),
+                            InstructorId = 1,
                             Room = "Studio A",
-                            StartTime = new DateTime(2025, 7, 8, 9, 0, 0, 0, DateTimeKind.Utc),
+                            StartTime = new DateTime(2025, 7, 22, 14, 0, 0, 0, DateTimeKind.Utc),
                             Status = "Scheduled",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             WaitlistCount = 0
@@ -400,10 +399,10 @@ namespace FitnessStudioApi.Migrations
                             ClassTypeId = 5,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             CurrentEnrollment = 2,
-                            EndTime = new DateTime(2025, 7, 9, 18, 0, 0, 0, DateTimeKind.Utc),
+                            EndTime = new DateTime(2025, 7, 23, 12, 0, 0, 0, DateTimeKind.Utc),
                             InstructorId = 4,
-                            Room = "Boxing Ring",
-                            StartTime = new DateTime(2025, 7, 9, 17, 0, 0, 0, DateTimeKind.Utc),
+                            Room = "Studio B",
+                            StartTime = new DateTime(2025, 7, 23, 11, 0, 0, 0, DateTimeKind.Utc),
                             Status = "Scheduled",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             WaitlistCount = 0
@@ -415,10 +414,10 @@ namespace FitnessStudioApi.Migrations
                             ClassTypeId = 6,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             CurrentEnrollment = 1,
-                            EndTime = new DateTime(2025, 7, 9, 19, 30, 0, 0, DateTimeKind.Utc),
+                            EndTime = new DateTime(2025, 7, 23, 17, 30, 0, 0, DateTimeKind.Utc),
                             InstructorId = 1,
-                            Room = "Zen Room",
-                            StartTime = new DateTime(2025, 7, 9, 19, 0, 0, 0, DateTimeKind.Utc),
+                            Room = "Studio A",
+                            StartTime = new DateTime(2025, 7, 23, 17, 0, 0, 0, DateTimeKind.Utc),
                             Status = "Scheduled",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             WaitlistCount = 0
@@ -429,11 +428,11 @@ namespace FitnessStudioApi.Migrations
                             Capacity = 20,
                             ClassTypeId = 1,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CurrentEnrollment = 1,
-                            EndTime = new DateTime(2025, 7, 10, 9, 0, 0, 0, DateTimeKind.Utc),
-                            InstructorId = 3,
+                            CurrentEnrollment = 2,
+                            EndTime = new DateTime(2025, 7, 24, 9, 0, 0, 0, DateTimeKind.Utc),
+                            InstructorId = 1,
                             Room = "Studio A",
-                            StartTime = new DateTime(2025, 7, 10, 8, 0, 0, 0, DateTimeKind.Utc),
+                            StartTime = new DateTime(2025, 7, 24, 8, 0, 0, 0, DateTimeKind.Utc),
                             Status = "Scheduled",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             WaitlistCount = 0
@@ -445,10 +444,10 @@ namespace FitnessStudioApi.Migrations
                             ClassTypeId = 2,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             CurrentEnrollment = 1,
-                            EndTime = new DateTime(2025, 7, 10, 18, 45, 0, 0, DateTimeKind.Utc),
-                            InstructorId = 4,
-                            Room = "Studio B",
-                            StartTime = new DateTime(2025, 7, 10, 18, 0, 0, 0, DateTimeKind.Utc),
+                            EndTime = new DateTime(2025, 7, 24, 18, 45, 0, 0, DateTimeKind.Utc),
+                            InstructorId = 2,
+                            Room = "Main Floor",
+                            StartTime = new DateTime(2025, 7, 24, 18, 0, 0, 0, DateTimeKind.Utc),
                             Status = "Scheduled",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             WaitlistCount = 0
@@ -456,17 +455,17 @@ namespace FitnessStudioApi.Migrations
                         new
                         {
                             Id = 9,
-                            Capacity = 12,
+                            Capacity = 3,
                             ClassTypeId = 3,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CurrentEnrollment = 0,
-                            EndTime = new DateTime(2025, 7, 11, 7, 45, 0, 0, DateTimeKind.Utc),
-                            InstructorId = 2,
-                            Room = "Spin Room",
-                            StartTime = new DateTime(2025, 7, 11, 7, 0, 0, 0, DateTimeKind.Utc),
+                            CurrentEnrollment = 3,
+                            EndTime = new DateTime(2025, 7, 25, 9, 45, 0, 0, DateTimeKind.Utc),
+                            InstructorId = 3,
+                            Room = "Studio B",
+                            StartTime = new DateTime(2025, 7, 25, 9, 0, 0, 0, DateTimeKind.Utc),
                             Status = "Scheduled",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            WaitlistCount = 0
+                            WaitlistCount = 2
                         },
                         new
                         {
@@ -474,11 +473,11 @@ namespace FitnessStudioApi.Migrations
                             Capacity = 10,
                             ClassTypeId = 5,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CurrentEnrollment = 0,
-                            EndTime = new DateTime(2025, 7, 11, 18, 0, 0, 0, DateTimeKind.Utc),
+                            CurrentEnrollment = 1,
+                            EndTime = new DateTime(2025, 7, 25, 17, 0, 0, 0, DateTimeKind.Utc),
                             InstructorId = 4,
-                            Room = "Boxing Ring",
-                            StartTime = new DateTime(2025, 7, 11, 17, 0, 0, 0, DateTimeKind.Utc),
+                            Room = "Studio B",
+                            StartTime = new DateTime(2025, 7, 25, 16, 0, 0, 0, DateTimeKind.Utc),
                             Status = "Scheduled",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             WaitlistCount = 0
@@ -486,30 +485,31 @@ namespace FitnessStudioApi.Migrations
                         new
                         {
                             Id = 11,
-                            Capacity = 3,
-                            ClassTypeId = 4,
+                            Capacity = 20,
+                            ClassTypeId = 1,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CurrentEnrollment = 3,
-                            EndTime = new DateTime(2025, 7, 12, 10, 0, 0, 0, DateTimeKind.Utc),
-                            InstructorId = 3,
+                            CurrentEnrollment = 1,
+                            EndTime = new DateTime(2025, 7, 26, 11, 0, 0, 0, DateTimeKind.Utc),
+                            InstructorId = 1,
                             Room = "Studio A",
-                            StartTime = new DateTime(2025, 7, 12, 9, 0, 0, 0, DateTimeKind.Utc),
+                            StartTime = new DateTime(2025, 7, 26, 10, 0, 0, 0, DateTimeKind.Utc),
                             Status = "Scheduled",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            WaitlistCount = 2
+                            WaitlistCount = 0
                         },
                         new
                         {
                             Id = 12,
-                            Capacity = 25,
-                            ClassTypeId = 6,
+                            CancellationReason = "Instructor unavailable",
+                            Capacity = 15,
+                            ClassTypeId = 2,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            CurrentEnrollment = 1,
-                            EndTime = new DateTime(2025, 7, 12, 19, 30, 0, 0, DateTimeKind.Utc),
-                            InstructorId = 1,
-                            Room = "Zen Room",
-                            StartTime = new DateTime(2025, 7, 12, 19, 0, 0, 0, DateTimeKind.Utc),
-                            Status = "Scheduled",
+                            CurrentEnrollment = 0,
+                            EndTime = new DateTime(2025, 7, 26, 14, 45, 0, 0, DateTimeKind.Utc),
+                            InstructorId = 2,
+                            Room = "Main Floor",
+                            StartTime = new DateTime(2025, 7, 26, 14, 0, 0, 0, DateTimeKind.Utc),
+                            Status = "Cancelled",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             WaitlistCount = 0
                         });
@@ -570,7 +570,7 @@ namespace FitnessStudioApi.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             DefaultCapacity = 20,
                             DefaultDurationMinutes = 60,
-                            Description = "Vinyasa flow yoga for flexibility and mindfulness",
+                            Description = "Traditional yoga focusing on flexibility and mindfulness",
                             DifficultyLevel = "AllLevels",
                             IsActive = true,
                             IsPremium = false,
@@ -598,10 +598,10 @@ namespace FitnessStudioApi.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             DefaultCapacity = 12,
                             DefaultDurationMinutes = 45,
-                            Description = "Indoor cycling for cardiovascular endurance",
+                            Description = "Indoor cycling with energizing music and coaching",
                             DifficultyLevel = "Intermediate",
                             IsActive = true,
-                            IsPremium = false,
+                            IsPremium = true,
                             Name = "Spin",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
@@ -612,10 +612,10 @@ namespace FitnessStudioApi.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             DefaultCapacity = 15,
                             DefaultDurationMinutes = 60,
-                            Description = "Core strengthening and body alignment",
+                            Description = "Core-strengthening exercises for all fitness levels",
                             DifficultyLevel = "Beginner",
                             IsActive = true,
-                            IsPremium = true,
+                            IsPremium = false,
                             Name = "Pilates",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
@@ -626,7 +626,7 @@ namespace FitnessStudioApi.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             DefaultCapacity = 10,
                             DefaultDurationMinutes = 60,
-                            Description = "Boxing fundamentals and cardio boxing workout",
+                            Description = "Premium boxing class with personal attention",
                             DifficultyLevel = "Advanced",
                             IsActive = true,
                             IsPremium = true,
@@ -640,7 +640,7 @@ namespace FitnessStudioApi.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             DefaultCapacity = 25,
                             DefaultDurationMinutes = 30,
-                            Description = "Guided meditation and breathing exercises for stress relief",
+                            Description = "Guided meditation for stress relief and mental clarity",
                             DifficultyLevel = "Beginner",
                             IsActive = true,
                             IsPremium = false,
@@ -664,7 +664,6 @@ namespace FitnessStudioApi.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("FirstName")
@@ -685,11 +684,9 @@ namespace FitnessStudioApi.Migrations
 
                     b.Property<string>("Phone")
                         .IsRequired()
-                        .HasMaxLength(20)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Specializations")
-                        .HasMaxLength(500)
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("UpdatedAt")
@@ -706,57 +703,57 @@ namespace FitnessStudioApi.Migrations
                         new
                         {
                             Id = 1,
-                            Bio = "Certified yoga instructor with 10 years of experience",
+                            Bio = "Certified yoga and pilates instructor with 10 years of experience",
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Email = "sarah.kim@zenithfitness.com",
+                            Email = "sarah.miller@zenithfitness.com",
                             FirstName = "Sarah",
-                            HireDate = new DateOnly(2020, 1, 15),
+                            HireDate = new DateOnly(2022, 1, 15),
                             IsActive = true,
-                            LastName = "Kim",
+                            LastName = "Miller",
                             Phone = "555-1001",
-                            Specializations = "Yoga,Pilates,Meditation",
+                            Specializations = "Yoga, Pilates, Meditation",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 2,
-                            Bio = "Former competitive athlete specializing in high-intensity training",
+                            Bio = "Former professional athlete specializing in high-intensity training",
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Email = "mike.torres@zenithfitness.com",
-                            FirstName = "Mike",
-                            HireDate = new DateOnly(2021, 3, 1),
+                            Email = "jake.thompson@zenithfitness.com",
+                            FirstName = "Jake",
+                            HireDate = new DateOnly(2022, 3, 1),
                             IsActive = true,
-                            LastName = "Torres",
+                            LastName = "Thompson",
                             Phone = "555-1002",
-                            Specializations = "HIIT,Boxing,Spin",
+                            Specializations = "HIIT, Boxing, Spin",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 3,
-                            Bio = "Pilates and mindfulness expert with a holistic approach",
+                            Bio = "Dance and cardio fitness specialist",
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Email = "priya.patel@zenithfitness.com",
-                            FirstName = "Priya",
-                            HireDate = new DateOnly(2022, 6, 15),
+                            Email = "maria.garcia@zenithfitness.com",
+                            FirstName = "Maria",
+                            HireDate = new DateOnly(2023, 6, 1),
                             IsActive = true,
-                            LastName = "Patel",
+                            LastName = "Garcia",
                             Phone = "555-1003",
-                            Specializations = "Pilates,Yoga,Meditation",
+                            Specializations = "Spin, HIIT, Yoga",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 4,
-                            Bio = "Professional boxing coach and strength training specialist",
+                            Bio = "Martial arts and boxing coach with competition experience",
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Email = "david.okonkwo@zenithfitness.com",
+                            Email = "david.kim@zenithfitness.com",
                             FirstName = "David",
-                            HireDate = new DateOnly(2023, 1, 10),
+                            HireDate = new DateOnly(2023, 9, 15),
                             IsActive = true,
-                            LastName = "Okonkwo",
+                            LastName = "Kim",
                             Phone = "555-1004",
-                            Specializations = "Boxing,HIIT,Spin",
+                            Specializations = "Boxing, HIIT",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         });
                 });
@@ -775,7 +772,6 @@ namespace FitnessStudioApi.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("EmergencyContactName")
@@ -785,7 +781,6 @@ namespace FitnessStudioApi.Migrations
 
                     b.Property<string>("EmergencyContactPhone")
                         .IsRequired()
-                        .HasMaxLength(20)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("FirstName")
@@ -806,7 +801,6 @@ namespace FitnessStudioApi.Migrations
 
                     b.Property<string>("Phone")
                         .IsRequired()
-                        .HasMaxLength(20)
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("UpdatedAt")
@@ -841,7 +835,7 @@ namespace FitnessStudioApi.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             DateOfBirth = new DateOnly(1985, 7, 22),
                             Email = "marcus.chen@email.com",
-                            EmergencyContactName = "Li Chen",
+                            EmergencyContactName = "Lin Chen",
                             EmergencyContactPhone = "555-0202",
                             FirstName = "Marcus",
                             IsActive = true,
@@ -855,13 +849,13 @@ namespace FitnessStudioApi.Migrations
                             Id = 3,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             DateOfBirth = new DateOnly(1992, 11, 8),
-                            Email = "sophia.martinez@email.com",
-                            EmergencyContactName = "Carlos Martinez",
+                            Email = "sophia.williams@email.com",
+                            EmergencyContactName = "James Williams",
                             EmergencyContactPhone = "555-0302",
                             FirstName = "Sophia",
                             IsActive = true,
                             JoinDate = new DateOnly(2024, 8, 1),
-                            LastName = "Martinez",
+                            LastName = "Williams",
                             Phone = "555-0301",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
@@ -870,13 +864,13 @@ namespace FitnessStudioApi.Migrations
                             Id = 4,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             DateOfBirth = new DateOnly(1988, 1, 30),
-                            Email = "james.williams@email.com",
-                            EmergencyContactName = "Sarah Williams",
+                            Email = "raj.patel@email.com",
+                            EmergencyContactName = "Priya Patel",
                             EmergencyContactPhone = "555-0402",
-                            FirstName = "James",
+                            FirstName = "Raj",
                             IsActive = true,
-                            JoinDate = new DateOnly(2024, 5, 1),
-                            LastName = "Williams",
+                            JoinDate = new DateOnly(2024, 9, 1),
+                            LastName = "Patel",
                             Phone = "555-0401",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
@@ -890,7 +884,7 @@ namespace FitnessStudioApi.Migrations
                             EmergencyContactPhone = "555-0502",
                             FirstName = "Emma",
                             IsActive = true,
-                            JoinDate = new DateOnly(2024, 9, 1),
+                            JoinDate = new DateOnly(2024, 10, 1),
                             LastName = "Davis",
                             Phone = "555-0501",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
@@ -900,13 +894,13 @@ namespace FitnessStudioApi.Migrations
                             Id = 6,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             DateOfBirth = new DateOnly(1993, 9, 25),
-                            Email = "daniel.brown@email.com",
-                            EmergencyContactName = "Lisa Brown",
+                            Email = "liam.obrien@email.com",
+                            EmergencyContactName = "Fiona O'Brien",
                             EmergencyContactPhone = "555-0602",
-                            FirstName = "Daniel",
+                            FirstName = "Liam",
                             IsActive = true,
                             JoinDate = new DateOnly(2024, 4, 15),
-                            LastName = "Brown",
+                            LastName = "O'Brien",
                             Phone = "555-0601",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
@@ -914,14 +908,14 @@ namespace FitnessStudioApi.Migrations
                         {
                             Id = 7,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            DateOfBirth = new DateOnly(2000, 2, 14),
-                            Email = "olivia.wilson@email.com",
-                            EmergencyContactName = "Mark Wilson",
+                            DateOfBirth = new DateOnly(1991, 12, 3),
+                            Email = "yuki.tanaka@email.com",
+                            EmergencyContactName = "Kenji Tanaka",
                             EmergencyContactPhone = "555-0702",
-                            FirstName = "Olivia",
+                            FirstName = "Yuki",
                             IsActive = true,
-                            JoinDate = new DateOnly(2024, 10, 1),
-                            LastName = "Wilson",
+                            JoinDate = new DateOnly(2024, 5, 1),
+                            LastName = "Tanaka",
                             Phone = "555-0701",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
@@ -929,14 +923,14 @@ namespace FitnessStudioApi.Migrations
                         {
                             Id = 8,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            DateOfBirth = new DateOnly(1987, 12, 3),
-                            Email = "ryan.taylor@email.com",
-                            EmergencyContactName = "Karen Taylor",
+                            DateOfBirth = new DateOnly(1987, 4, 18),
+                            Email = "olivia.martinez@email.com",
+                            EmergencyContactName = "Carlos Martinez",
                             EmergencyContactPhone = "555-0802",
-                            FirstName = "Ryan",
+                            FirstName = "Olivia",
                             IsActive = false,
                             JoinDate = new DateOnly(2024, 3, 1),
-                            LastName = "Taylor",
+                            LastName = "Martinez",
                             Phone = "555-0801",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         });
@@ -995,7 +989,7 @@ namespace FitnessStudioApi.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             EndDate = new DateOnly(2025, 7, 1),
                             MemberId = 1,
-                            MembershipPlanId = 2,
+                            MembershipPlanId = 3,
                             PaymentStatus = "Paid",
                             StartDate = new DateOnly(2025, 6, 1),
                             Status = "Active",
@@ -1005,11 +999,11 @@ namespace FitnessStudioApi.Migrations
                         {
                             Id = 2,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            EndDate = new DateOnly(2025, 7, 1),
+                            EndDate = new DateOnly(2025, 7, 15),
                             MemberId = 2,
-                            MembershipPlanId = 3,
+                            MembershipPlanId = 2,
                             PaymentStatus = "Paid",
-                            StartDate = new DateOnly(2025, 6, 1),
+                            StartDate = new DateOnly(2025, 6, 15),
                             Status = "Active",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
@@ -1065,11 +1059,11 @@ namespace FitnessStudioApi.Migrations
                         {
                             Id = 7,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            EndDate = new DateOnly(2024, 7, 1),
-                            MemberId = 1,
+                            EndDate = new DateOnly(2025, 4, 1),
+                            MemberId = 7,
                             MembershipPlanId = 1,
                             PaymentStatus = "Paid",
-                            StartDate = new DateOnly(2024, 6, 1),
+                            StartDate = new DateOnly(2025, 3, 1),
                             Status = "Expired",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         },
@@ -1077,11 +1071,11 @@ namespace FitnessStudioApi.Migrations
                         {
                             Id = 8,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            EndDate = new DateOnly(2024, 4, 1),
+                            EndDate = new DateOnly(2025, 4, 1),
                             MemberId = 8,
-                            MembershipPlanId = 1,
+                            MembershipPlanId = 2,
                             PaymentStatus = "Refunded",
-                            StartDate = new DateOnly(2024, 3, 1),
+                            StartDate = new DateOnly(2025, 3, 1),
                             Status = "Cancelled",
                             UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         });
@@ -1162,7 +1156,7 @@ namespace FitnessStudioApi.Migrations
                             Id = 3,
                             AllowsPremiumClasses = true,
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Unlimited access to all classes and premium features",
+                            Description = "Unlimited access to all classes",
                             DurationMonths = 1,
                             IsActive = true,
                             MaxClassBookingsPerWeek = -1,
@@ -1177,13 +1171,13 @@ namespace FitnessStudioApi.Migrations
                     b.HasOne("FitnessStudioApi.Models.ClassSchedule", "ClassSchedule")
                         .WithMany("Bookings")
                         .HasForeignKey("ClassScheduleId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("FitnessStudioApi.Models.Member", "Member")
                         .WithMany("Bookings")
                         .HasForeignKey("MemberId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("ClassSchedule");
@@ -1196,13 +1190,13 @@ namespace FitnessStudioApi.Migrations
                     b.HasOne("FitnessStudioApi.Models.ClassType", "ClassType")
                         .WithMany("ClassSchedules")
                         .HasForeignKey("ClassTypeId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("FitnessStudioApi.Models.Instructor", "Instructor")
                         .WithMany("ClassSchedules")
                         .HasForeignKey("InstructorId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("ClassType");
@@ -1215,13 +1209,13 @@ namespace FitnessStudioApi.Migrations
                     b.HasOne("FitnessStudioApi.Models.Member", "Member")
                         .WithMany("Memberships")
                         .HasForeignKey("MemberId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("FitnessStudioApi.Models.MembershipPlan", "MembershipPlan")
                         .WithMany("Memberships")
                         .HasForeignKey("MembershipPlanId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Member");

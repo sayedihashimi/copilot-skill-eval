@@ -10,66 +10,65 @@ public static class MembershipPlanEndpoints
     {
         var group = app.MapGroup("/api/membership-plans").WithTags("Membership Plans");
 
-        group.MapGet("/", async Task<Ok<IReadOnlyList<MembershipPlanResponse>>> (
-            IMembershipPlanService service, CancellationToken ct) =>
+        group.MapGet("/", async Task<Ok<PaginatedResponse<MembershipPlanResponse>>> (
+            IMembershipPlanService service,
+            int page = 1, int pageSize = 20,
+            CancellationToken ct = default) =>
         {
-            var plans = await service.GetAllActiveAsync(ct);
-            return TypedResults.Ok(plans);
+            pageSize = Math.Clamp(pageSize, 1, 100);
+            var result = await service.GetAllAsync(page, pageSize, ct);
+            return TypedResults.Ok(result);
         })
         .WithName("GetMembershipPlans")
         .WithSummary("List all active membership plans")
-        .WithDescription("Returns all active membership plans ordered by price.")
-        .Produces<IReadOnlyList<MembershipPlanResponse>>(StatusCodes.Status200OK);
+        .WithDescription("Returns a paginated list of all active membership plans.")
+        .Produces<PaginatedResponse<MembershipPlanResponse>>(200);
 
         group.MapGet("/{id:int}", async Task<Results<Ok<MembershipPlanResponse>, NotFound>> (
             int id, IMembershipPlanService service, CancellationToken ct) =>
         {
-            var plan = await service.GetByIdAsync(id, ct);
-            return plan is null ? TypedResults.NotFound() : TypedResults.Ok(plan);
+            var result = await service.GetByIdAsync(id, ct);
+            return result is not null ? TypedResults.Ok(result) : TypedResults.NotFound();
         })
-        .WithName("GetMembershipPlanById")
-        .WithSummary("Get a membership plan by ID")
-        .WithDescription("Returns the full details of a specific membership plan.")
-        .Produces<MembershipPlanResponse>(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status404NotFound);
+        .WithName("GetMembershipPlan")
+        .WithSummary("Get membership plan details")
+        .WithDescription("Returns details of a specific membership plan by ID.")
+        .Produces<MembershipPlanResponse>(200)
+        .Produces(404);
 
         group.MapPost("/", async Task<Created<MembershipPlanResponse>> (
             CreateMembershipPlanRequest request, IMembershipPlanService service, CancellationToken ct) =>
         {
-            var plan = await service.CreateAsync(request, ct);
-            return TypedResults.Created($"/api/membership-plans/{plan.Id}", plan);
+            var result = await service.CreateAsync(request, ct);
+            return TypedResults.Created($"/api/membership-plans/{result.Id}", result);
         })
         .WithName("CreateMembershipPlan")
         .WithSummary("Create a new membership plan")
-        .WithDescription("Creates a new membership plan with the given details.")
-        .Produces<MembershipPlanResponse>(StatusCodes.Status201Created)
-        .Produces(StatusCodes.Status400BadRequest)
-        .Produces(StatusCodes.Status409Conflict);
+        .WithDescription("Creates a new membership plan with the specified details.")
+        .Produces<MembershipPlanResponse>(201);
 
         group.MapPut("/{id:int}", async Task<Results<Ok<MembershipPlanResponse>, NotFound>> (
             int id, UpdateMembershipPlanRequest request, IMembershipPlanService service, CancellationToken ct) =>
         {
-            var plan = await service.UpdateAsync(id, request, ct);
-            return TypedResults.Ok(plan);
+            var result = await service.UpdateAsync(id, request, ct);
+            return result is not null ? TypedResults.Ok(result) : TypedResults.NotFound();
         })
         .WithName("UpdateMembershipPlan")
         .WithSummary("Update a membership plan")
-        .WithDescription("Updates an existing membership plan.")
-        .Produces<MembershipPlanResponse>(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status400BadRequest)
-        .Produces(StatusCodes.Status404NotFound);
+        .WithDescription("Updates an existing membership plan by ID.")
+        .Produces<MembershipPlanResponse>(200)
+        .Produces(404);
 
         group.MapDelete("/{id:int}", async Task<Results<NoContent, NotFound>> (
             int id, IMembershipPlanService service, CancellationToken ct) =>
         {
-            await service.DeleteAsync(id, ct);
-            return TypedResults.NoContent();
+            var result = await service.DeactivateAsync(id, ct);
+            return result ? TypedResults.NoContent() : TypedResults.NotFound();
         })
-        .WithName("DeleteMembershipPlan")
+        .WithName("DeactivateMembershipPlan")
         .WithSummary("Deactivate a membership plan")
-        .WithDescription("Soft-deletes a membership plan by setting IsActive to false.")
-        .Produces(StatusCodes.Status204NoContent)
-        .Produces(StatusCodes.Status404NotFound)
-        .Produces(StatusCodes.Status409Conflict);
+        .WithDescription("Deactivates a membership plan (soft delete).")
+        .Produces(204)
+        .Produces(404);
     }
 }

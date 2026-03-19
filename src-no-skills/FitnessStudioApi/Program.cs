@@ -2,23 +2,27 @@ using Microsoft.EntityFrameworkCore;
 using FitnessStudioApi.Data;
 using FitnessStudioApi.Middleware;
 using FitnessStudioApi.Services;
+using FitnessStudioApi.Services.Interfaces;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+// Add controllers with JSON options
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+    });
 
-// EF Core + SQLite
+// OpenAPI/Swagger
+builder.Services.AddOpenApi();
+
+// Database
 builder.Services.AddDbContext<FitnessDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Exception handler
-builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
-builder.Services.AddProblemDetails();
-
-// DI for services
+// Services
 builder.Services.AddScoped<IMembershipPlanService, MembershipPlanService>();
 builder.Services.AddScoped<IMemberService, MemberService>();
 builder.Services.AddScoped<IMembershipService, MembershipService>();
@@ -29,23 +33,28 @@ builder.Services.AddScoped<IBookingService, BookingService>();
 
 var app = builder.Build();
 
-// Apply migrations and seed data
-using (var scope = app.Services.CreateScope())
+// Global exception handler
+app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
+
+// Swagger
+if (app.Environment.IsDevelopment())
 {
-    var db = scope.ServiceProvider.GetRequiredService<FitnessDbContext>();
-    db.Database.EnsureCreated();
-    DataSeeder.Seed(db);
+    app.MapOpenApi();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/openapi/v1.json", "Fitness Studio API v1");
+        options.RoutePrefix = "swagger";
+    });
 }
-
-// Middleware pipeline
-app.UseExceptionHandler();
-
-app.UseSwagger();
-app.UseSwaggerUI(c =>
-{
-    c.RoutePrefix = string.Empty;
-});
 
 app.MapControllers();
 
-app.Run();
+// Database initialization and seeding
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<FitnessDbContext>();
+    await db.Database.EnsureCreatedAsync();
+    await DataSeeder.SeedAsync(db);
+}
+
+await app.RunAsync();

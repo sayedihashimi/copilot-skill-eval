@@ -1,80 +1,103 @@
 using LibraryApi.DTOs;
-using LibraryApi.Models;
 using LibraryApi.Services;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
 
 namespace LibraryApi.Endpoints;
 
 public static class ReservationEndpoints
 {
-    public static void MapReservationEndpoints(this IEndpointRouteBuilder app)
+    public static void MapReservationEndpoints(this WebApplication app)
     {
         var group = app.MapGroup("/api/reservations").WithTags("Reservations");
 
-        group.MapGet("/", async Task<Ok<PaginatedResponse<ReservationResponse>>> (
-            ReservationStatus? status, int? page, int? pageSize,
-            IReservationService service, CancellationToken ct) =>
+        group.MapGet("/", async (
+            [FromQuery] string? status,
+            [FromQuery] int page,
+            [FromQuery] int pageSize,
+            IReservationService service,
+            CancellationToken ct) =>
         {
-            var p = Math.Clamp(page ?? 1, 1, int.MaxValue);
-            var ps = Math.Clamp(pageSize ?? 20, 1, 100);
-            var result = await service.GetAllAsync(status, p, ps, ct);
-            return TypedResults.Ok(result);
+            if (page < 1) page = 1;
+            pageSize = Math.Clamp(pageSize == 0 ? 10 : pageSize, 1, 100);
+            return TypedResults.Ok(await service.GetReservationsAsync(status, page, pageSize, ct));
         })
         .WithName("GetReservations")
         .WithSummary("List reservations")
-        .WithDescription("Returns a paginated list of reservations, optionally filtered by status.")
+        .WithDescription("List reservations with optional filter by status and pagination.")
         .Produces<PaginatedResponse<ReservationResponse>>(StatusCodes.Status200OK);
 
         group.MapGet("/{id:int}", async Task<Results<Ok<ReservationResponse>, NotFound>> (
             int id, IReservationService service, CancellationToken ct) =>
         {
-            var result = await service.GetByIdAsync(id, ct);
-            return result is not null ? TypedResults.Ok(result) : TypedResults.NotFound();
+            var reservation = await service.GetReservationByIdAsync(id, ct);
+            return reservation is not null ? TypedResults.Ok(reservation) : TypedResults.NotFound();
         })
         .WithName("GetReservationById")
-        .WithSummary("Get reservation by ID")
-        .WithDescription("Returns reservation details.")
+        .WithSummary("Get reservation details")
+        .WithDescription("Get details for a specific reservation.")
         .Produces<ReservationResponse>(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status404NotFound);
 
-        group.MapPost("/", async Task<Created<ReservationResponse>> (
+        group.MapPost("/", async Task<Results<Created<ReservationResponse>, BadRequest<ProblemDetails>>> (
             CreateReservationRequest request, IReservationService service, CancellationToken ct) =>
         {
-            var result = await service.CreateAsync(request, ct);
-            return TypedResults.Created($"/api/reservations/{result.Id}", result);
+            var (reservation, error) = await service.CreateReservationAsync(request, ct);
+            if (error is not null)
+                return TypedResults.BadRequest(new ProblemDetails
+                {
+                    Title = "Reservation denied",
+                    Detail = error,
+                    Status = StatusCodes.Status400BadRequest
+                });
+            return TypedResults.Created($"/api/reservations/{reservation!.Id}", reservation);
         })
         .WithName("CreateReservation")
         .WithSummary("Create a reservation")
-        .WithDescription("Creates a new reservation. Cannot reserve a book you currently have on loan.")
+        .WithDescription("Create a reservation enforcing all reservation rules.")
         .Produces<ReservationResponse>(StatusCodes.Status201Created)
-        .Produces(StatusCodes.Status400BadRequest)
-        .Produces(StatusCodes.Status404NotFound)
-        .Produces(StatusCodes.Status409Conflict);
+        .Produces(StatusCodes.Status400BadRequest);
 
-        group.MapPost("/{id:int}/cancel", async Task<Ok<ReservationResponse>> (
+        group.MapPost("/{id:int}/cancel", async Task<Results<Ok<ReservationResponse>, NotFound, BadRequest<ProblemDetails>>> (
             int id, IReservationService service, CancellationToken ct) =>
         {
-            var result = await service.CancelAsync(id, ct);
-            return TypedResults.Ok(result);
+            var (reservation, error, notFound) = await service.CancelReservationAsync(id, ct);
+            if (notFound) return TypedResults.NotFound();
+            if (error is not null)
+                return TypedResults.BadRequest(new ProblemDetails
+                {
+                    Title = "Cancellation denied",
+                    Detail = error,
+                    Status = StatusCodes.Status400BadRequest
+                });
+            return TypedResults.Ok(reservation!);
         })
         .WithName("CancelReservation")
         .WithSummary("Cancel a reservation")
-        .WithDescription("Cancels a pending or ready reservation.")
+        .WithDescription("Cancel a pending or ready reservation.")
         .Produces<ReservationResponse>(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status404NotFound)
-        .Produces(StatusCodes.Status409Conflict);
+        .Produces(StatusCodes.Status400BadRequest);
 
-        group.MapPost("/{id:int}/fulfill", async Task<Ok<LoanResponse>> (
+        group.MapPost("/{id:int}/fulfill", async Task<Results<Ok<LoanResponse>, NotFound, BadRequest<ProblemDetails>>> (
             int id, IReservationService service, CancellationToken ct) =>
         {
-            var result = await service.FulfillAsync(id, ct);
-            return TypedResults.Ok(result);
+            var (loan, error, notFound) = await service.FulfillReservationAsync(id, ct);
+            if (notFound) return TypedResults.NotFound();
+            if (error is not null)
+                return TypedResults.BadRequest(new ProblemDetails
+                {
+                    Title = "Fulfillment denied",
+                    Detail = error,
+                    Status = StatusCodes.Status400BadRequest
+                });
+            return TypedResults.Ok(loan!);
         })
         .WithName("FulfillReservation")
         .WithSummary("Fulfill a reservation")
-        .WithDescription("Fulfills a 'Ready' reservation by creating a loan.")
+        .WithDescription("Fulfill a 'Ready' reservation — creates a loan for the patron.")
         .Produces<LoanResponse>(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status404NotFound)
-        .Produces(StatusCodes.Status409Conflict);
+        .Produces(StatusCodes.Status400BadRequest);
     }
 }

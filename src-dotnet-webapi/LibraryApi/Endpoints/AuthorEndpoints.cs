@@ -1,74 +1,83 @@
 using LibraryApi.DTOs;
 using LibraryApi.Services;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
 
 namespace LibraryApi.Endpoints;
 
 public static class AuthorEndpoints
 {
-    public static void MapAuthorEndpoints(this IEndpointRouteBuilder app)
+    public static void MapAuthorEndpoints(this WebApplication app)
     {
         var group = app.MapGroup("/api/authors").WithTags("Authors");
 
-        group.MapGet("/", async Task<Ok<PaginatedResponse<AuthorResponse>>> (
-            string? search, int? page, int? pageSize,
-            IAuthorService service, CancellationToken ct) =>
+        group.MapGet("/", async (
+            [FromQuery] string? search,
+            [FromQuery] int page,
+            [FromQuery] int pageSize,
+            IAuthorService service,
+            CancellationToken ct) =>
         {
-            var p = Math.Clamp(page ?? 1, 1, int.MaxValue);
-            var ps = Math.Clamp(pageSize ?? 20, 1, 100);
-            var result = await service.GetAllAsync(search, p, ps, ct);
-            return TypedResults.Ok(result);
+            if (page < 1) page = 1;
+            pageSize = Math.Clamp(pageSize == 0 ? 10 : pageSize, 1, 100);
+            return TypedResults.Ok(await service.GetAuthorsAsync(search, page, pageSize, ct));
         })
         .WithName("GetAuthors")
         .WithSummary("List authors")
-        .WithDescription("Returns a paginated list of authors with optional search by name.")
+        .WithDescription("List authors with optional search by name and pagination.")
         .Produces<PaginatedResponse<AuthorResponse>>(StatusCodes.Status200OK);
 
         group.MapGet("/{id:int}", async Task<Results<Ok<AuthorDetailResponse>, NotFound>> (
             int id, IAuthorService service, CancellationToken ct) =>
         {
-            var result = await service.GetByIdAsync(id, ct);
-            return result is not null ? TypedResults.Ok(result) : TypedResults.NotFound();
+            var author = await service.GetAuthorByIdAsync(id, ct);
+            return author is not null ? TypedResults.Ok(author) : TypedResults.NotFound();
         })
         .WithName("GetAuthorById")
-        .WithSummary("Get author by ID")
-        .WithDescription("Returns author details including associated books.")
+        .WithSummary("Get author details")
+        .WithDescription("Get author details including their books.")
         .Produces<AuthorDetailResponse>(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status404NotFound);
 
         group.MapPost("/", async Task<Created<AuthorResponse>> (
             CreateAuthorRequest request, IAuthorService service, CancellationToken ct) =>
         {
-            var result = await service.CreateAsync(request, ct);
-            return TypedResults.Created($"/api/authors/{result.Id}", result);
+            var author = await service.CreateAuthorAsync(request, ct);
+            return TypedResults.Created($"/api/authors/{author.Id}", author);
         })
         .WithName("CreateAuthor")
-        .WithSummary("Create an author")
-        .WithDescription("Creates a new author record.")
-        .Produces<AuthorResponse>(StatusCodes.Status201Created)
-        .Produces(StatusCodes.Status400BadRequest);
+        .WithSummary("Create a new author")
+        .WithDescription("Create a new author record.")
+        .Produces<AuthorResponse>(StatusCodes.Status201Created);
 
         group.MapPut("/{id:int}", async Task<Results<Ok<AuthorResponse>, NotFound>> (
             int id, UpdateAuthorRequest request, IAuthorService service, CancellationToken ct) =>
         {
-            var result = await service.UpdateAsync(id, request, ct);
-            return result is not null ? TypedResults.Ok(result) : TypedResults.NotFound();
+            var author = await service.UpdateAuthorAsync(id, request, ct);
+            return author is not null ? TypedResults.Ok(author) : TypedResults.NotFound();
         })
         .WithName("UpdateAuthor")
         .WithSummary("Update an author")
-        .WithDescription("Updates an existing author by ID.")
+        .WithDescription("Update an existing author record.")
         .Produces<AuthorResponse>(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status404NotFound);
 
-        group.MapDelete("/{id:int}", async Task<Results<NoContent, NotFound>> (
+        group.MapDelete("/{id:int}", async Task<Results<NoContent, NotFound, Conflict<ProblemDetails>>> (
             int id, IAuthorService service, CancellationToken ct) =>
         {
-            await service.DeleteAsync(id, ct);
+            var (found, hasBooks) = await service.DeleteAuthorAsync(id, ct);
+            if (!found) return TypedResults.NotFound();
+            if (hasBooks) return TypedResults.Conflict(new ProblemDetails
+            {
+                Title = "Cannot delete author",
+                Detail = "Author has associated books and cannot be deleted.",
+                Status = StatusCodes.Status409Conflict
+            });
             return TypedResults.NoContent();
         })
         .WithName("DeleteAuthor")
         .WithSummary("Delete an author")
-        .WithDescription("Deletes an author. Fails if the author has associated books.")
+        .WithDescription("Delete an author. Fails if the author has any books.")
         .Produces(StatusCodes.Status204NoContent)
         .Produces(StatusCodes.Status404NotFound)
         .Produces(StatusCodes.Status409Conflict);

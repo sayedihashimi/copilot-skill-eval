@@ -59,14 +59,25 @@ public class AppointmentResponseDto
     public int PetId { get; set; }
     public PetSummaryDto? Pet { get; set; }
     public int VeterinarianId { get; set; }
-    public VeterinarianSummaryDto? Veterinarian { get; set; }
+    public VeterinarianResponseDto? Veterinarian { get; set; }
     public DateTime AppointmentDate { get; set; }
     public int DurationMinutes { get; set; }
     public AppointmentStatus Status { get; set; }
     public string Reason { get; set; } = string.Empty;
     public string? Notes { get; set; }
     public string? CancellationReason { get; set; }
+    public MedicalRecordSummaryDto? MedicalRecord { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
-    public MedicalRecordSummaryDto? MedicalRecord { get; set; }
+}
+
+public class AppointmentSummaryDto
+{
+    public int Id { get; set; }
+    public DateTime AppointmentDate { get; set; }
+    public AppointmentStatus Status { get; set; }
+    public string Reason { get; set; } = string.Empty;
+    public int DurationMinutes { get; set; }
+    public string? PetName { get; set; }
+    public string? VetName { get; set; }
 }

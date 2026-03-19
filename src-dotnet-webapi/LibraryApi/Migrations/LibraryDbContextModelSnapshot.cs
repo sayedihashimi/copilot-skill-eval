@@ -35,9 +35,7 @@ namespace LibraryApi.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT")
-                        .HasDefaultValueSql("datetime('now')");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
@@ -57,62 +55,62 @@ namespace LibraryApi.Migrations
                         new
                         {
                             Id = 1,
-                            Biography = "American novelist known for To Kill a Mockingbird.",
-                            BirthDate = new DateOnly(1926, 4, 28),
-                            Country = "United States",
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            FirstName = "Harper",
-                            LastName = "Lee"
+                            Biography = "English novelist known for her six major novels.",
+                            BirthDate = new DateOnly(1775, 12, 16),
+                            Country = "United Kingdom",
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            FirstName = "Jane",
+                            LastName = "Austen"
                         },
                         new
                         {
                             Id = 2,
-                            Biography = "English novelist and essayist, known for 1984 and Animal Farm.",
+                            Biography = "English novelist and essayist, journalist and critic.",
                             BirthDate = new DateOnly(1903, 6, 25),
                             Country = "United Kingdom",
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
                             FirstName = "George",
                             LastName = "Orwell"
                         },
                         new
                         {
                             Id = 3,
-                            Biography = "American author and biochemistry professor, prolific science fiction writer.",
-                            BirthDate = new DateOnly(1920, 1, 2),
-                            Country = "United States",
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            FirstName = "Isaac",
-                            LastName = "Asimov"
+                            Biography = "Colombian novelist and Nobel Prize winner.",
+                            BirthDate = new DateOnly(1927, 3, 6),
+                            Country = "Colombia",
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            FirstName = "Gabriel",
+                            LastName = "Garcia Marquez"
                         },
                         new
                         {
                             Id = 4,
-                            Biography = "Israeli historian and author of Sapiens and Homo Deus.",
-                            BirthDate = new DateOnly(1976, 2, 24),
-                            Country = "Israel",
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            FirstName = "Yuval Noah",
-                            LastName = "Harari"
+                            Biography = "American novelist and Nobel Prize in Literature laureate.",
+                            BirthDate = new DateOnly(1931, 2, 18),
+                            Country = "United States",
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            FirstName = "Toni",
+                            LastName = "Morrison"
                         },
                         new
                         {
                             Id = 5,
-                            Biography = "American journalist and biographer.",
-                            BirthDate = new DateOnly(1952, 5, 20),
-                            Country = "United States",
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            FirstName = "Walter",
-                            LastName = "Isaacson"
+                            Biography = "Japanese writer known for surreal and dreamlike fiction.",
+                            BirthDate = new DateOnly(1949, 1, 12),
+                            Country = "Japan",
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            FirstName = "Haruki",
+                            LastName = "Murakami"
                         },
                         new
                         {
                             Id = 6,
-                            Biography = "English novelist known for Pride and Prejudice and other classic works.",
-                            BirthDate = new DateOnly(1775, 12, 16),
-                            Country = "United Kingdom",
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            FirstName = "Jane",
-                            LastName = "Austen"
+                            Biography = "American writer and professor of biochemistry, prolific author of science fiction.",
+                            BirthDate = new DateOnly(1920, 1, 2),
+                            Country = "United States",
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            FirstName = "Isaac",
+                            LastName = "Asimov"
                         });
                 });
 
@@ -126,9 +124,7 @@ namespace LibraryApi.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT")
-                        .HasDefaultValueSql("datetime('now')");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Description")
                         .HasMaxLength(2000)
@@ -136,13 +132,12 @@ namespace LibraryApi.Migrations
 
                     b.Property<string>("ISBN")
                         .IsRequired()
-                        .HasMaxLength(20)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Language")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
-                        .HasMaxLength(50)
+                        .HasMaxLength(100)
                         .HasColumnType("TEXT")
                         .HasDefaultValue("English");
 
@@ -165,9 +160,7 @@ namespace LibraryApi.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT")
-                        .HasDefaultValueSql("datetime('now')");
+                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
@@ -181,181 +174,181 @@ namespace LibraryApi.Migrations
                         {
                             Id = 1,
                             AvailableCopies = 2,
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "A novel about racial injustice in the American South.",
-                            ISBN = "978-0-06-112008-4",
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "A romantic novel of manners.",
+                            ISBN = "978-0-14-028329-7",
                             Language = "English",
-                            PageCount = 281,
-                            PublicationYear = 1960,
-                            Publisher = "J.B. Lippincott & Co.",
-                            Title = "To Kill a Mockingbird",
+                            PageCount = 432,
+                            PublicationYear = 1813,
+                            Publisher = "Penguin Classics",
+                            Title = "Pride and Prejudice",
                             TotalCopies = 3,
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                            UpdatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 2,
-                            AvailableCopies = 3,
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "A dystopian novel set in a totalitarian society.",
-                            ISBN = "978-0-452-28423-4",
+                            AvailableCopies = 2,
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "A dystopian social science fiction novel.",
+                            ISBN = "978-0-45-152493-5",
                             Language = "English",
                             PageCount = 328,
                             PublicationYear = 1949,
-                            Publisher = "Secker & Warburg",
+                            Publisher = "Signet Classic",
                             Title = "1984",
                             TotalCopies = 4,
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                            UpdatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 3,
                             AvailableCopies = 1,
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "An allegorical novella about a group of farm animals.",
-                            ISBN = "978-0-452-28424-1",
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "The multi-generational story of the Buendia family.",
+                            ISBN = "978-0-06-088328-7",
                             Language = "English",
-                            PageCount = 112,
-                            PublicationYear = 1945,
-                            Publisher = "Secker & Warburg",
-                            Title = "Animal Farm",
+                            PageCount = 417,
+                            PublicationYear = 1967,
+                            Publisher = "Harper Perennial",
+                            Title = "One Hundred Years of Solitude",
                             TotalCopies = 2,
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                            UpdatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 4,
                             AvailableCopies = 2,
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "The first novel in Asimov's Foundation series.",
-                            ISBN = "978-0-553-29335-7",
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "A novel inspired by the story of Margaret Garner.",
+                            ISBN = "978-1-40-003341-6",
                             Language = "English",
-                            PageCount = 244,
-                            PublicationYear = 1951,
-                            Publisher = "Gnome Press",
-                            Title = "Foundation",
-                            TotalCopies = 3,
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                            PageCount = 324,
+                            PublicationYear = 1987,
+                            Publisher = "Vintage",
+                            Title = "Beloved",
+                            TotalCopies = 2,
+                            UpdatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 5,
-                            AvailableCopies = 1,
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "A collection of nine science fiction short stories.",
-                            ISBN = "978-0-553-29438-5",
+                            AvailableCopies = 0,
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "A nostalgic story of loss and sexuality.",
+                            ISBN = "978-0-37-571894-0",
                             Language = "English",
-                            PageCount = 253,
-                            PublicationYear = 1950,
-                            Publisher = "Gnome Press",
-                            Title = "I, Robot",
-                            TotalCopies = 2,
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                            PageCount = 296,
+                            PublicationYear = 1987,
+                            Publisher = "Vintage International",
+                            Title = "Norwegian Wood",
+                            TotalCopies = 1,
+                            UpdatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 6,
-                            AvailableCopies = 4,
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "A narrative history of humankind from the Stone Age to the present.",
-                            ISBN = "978-0-06-231609-7",
+                            AvailableCopies = 2,
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "The first novel in Isaac Asimov's Foundation series.",
+                            ISBN = "978-0-55-338257-3",
                             Language = "English",
-                            PageCount = 443,
-                            PublicationYear = 2011,
-                            Publisher = "Harper",
-                            Title = "Sapiens: A Brief History of Humankind",
-                            TotalCopies = 5,
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                            PageCount = 244,
+                            PublicationYear = 1951,
+                            Publisher = "Bantam Spectra",
+                            Title = "Foundation",
+                            TotalCopies = 3,
+                            UpdatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 7,
-                            AvailableCopies = 3,
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "An exploration of humanity's future.",
-                            ISBN = "978-0-06-246431-6",
+                            AvailableCopies = 4,
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "An allegorical novella about Soviet totalitarianism.",
+                            ISBN = "978-0-45-152634-2",
                             Language = "English",
-                            PageCount = 450,
-                            PublicationYear = 2015,
-                            Publisher = "Harper",
-                            Title = "Homo Deus: A Brief History of Tomorrow",
-                            TotalCopies = 3,
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                            PageCount = 112,
+                            PublicationYear = 1945,
+                            Publisher = "Signet Classic",
+                            Title = "Animal Farm",
+                            TotalCopies = 5,
+                            UpdatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 8,
-                            AvailableCopies = 4,
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "The authorized biography of Apple co-founder Steve Jobs.",
-                            ISBN = "978-1-4516-4853-9",
+                            AvailableCopies = 2,
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "A metaphysical novel by Haruki Murakami.",
+                            ISBN = "978-1-40-000290-9",
                             Language = "English",
-                            PageCount = 656,
-                            PublicationYear = 2011,
-                            Publisher = "Simon & Schuster",
-                            Title = "Steve Jobs",
-                            TotalCopies = 4,
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                            PageCount = 467,
+                            PublicationYear = 2002,
+                            Publisher = "Vintage International",
+                            Title = "Kafka on the Shore",
+                            TotalCopies = 2,
+                            UpdatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 9,
-                            AvailableCopies = 3,
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "A classic novel of manners set in Georgian England.",
-                            ISBN = "978-0-14-143951-8",
+                            AvailableCopies = 1,
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "A collection of nine science fiction short stories.",
+                            ISBN = "978-0-55-338256-6",
                             Language = "English",
-                            PageCount = 432,
-                            PublicationYear = 1813,
-                            Publisher = "T. Egerton",
-                            Title = "Pride and Prejudice",
-                            TotalCopies = 3,
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                            PageCount = 224,
+                            PublicationYear = 1950,
+                            Publisher = "Bantam Spectra",
+                            Title = "I, Robot",
+                            TotalCopies = 2,
+                            UpdatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 10,
-                            AvailableCopies = 2,
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "A novel about the Dashwood sisters and their romantic pursuits.",
-                            ISBN = "978-0-14-143966-2",
+                            AvailableCopies = 1,
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "A novel by Toni Morrison about African-American identity.",
+                            ISBN = "978-1-40-003342-3",
                             Language = "English",
-                            PageCount = 409,
-                            PublicationYear = 1811,
-                            Publisher = "T. Egerton",
-                            Title = "Sense and Sensibility",
-                            TotalCopies = 2,
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                            PageCount = 337,
+                            PublicationYear = 1977,
+                            Publisher = "Vintage",
+                            Title = "Song of Solomon",
+                            TotalCopies = 1,
+                            UpdatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 11,
                             AvailableCopies = 2,
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "A science fiction detective novel featuring robot R. Daneel Olivaw.",
-                            ISBN = "978-0-553-29340-1",
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Jane Austen's first published novel.",
+                            ISBN = "978-0-14-143966-4",
                             Language = "English",
-                            PageCount = 206,
-                            PublicationYear = 1954,
-                            Publisher = "Doubleday",
-                            Title = "The Caves of Steel",
+                            PageCount = 409,
+                            PublicationYear = 1811,
+                            Publisher = "Penguin Classics",
+                            Title = "Sense and Sensibility",
                             TotalCopies = 2,
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                            UpdatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 12,
-                            AvailableCopies = 3,
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Explores the biggest questions facing humanity today.",
-                            ISBN = "978-0-525-51217-2",
+                            AvailableCopies = 2,
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "A love story spanning over fifty years.",
+                            ISBN = "978-0-14-024990-3",
                             Language = "English",
-                            PageCount = 372,
-                            PublicationYear = 2018,
-                            Publisher = "Spiegel & Grau",
-                            Title = "21 Lessons for the 21st Century",
-                            TotalCopies = 3,
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                            PageCount = 348,
+                            PublicationYear = 1985,
+                            Publisher = "Penguin Books",
+                            Title = "Love in the Time of Cholera",
+                            TotalCopies = 2,
+                            UpdatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc)
                         });
                 });
 
@@ -387,27 +380,27 @@ namespace LibraryApi.Migrations
                         new
                         {
                             BookId = 3,
-                            AuthorId = 2
+                            AuthorId = 3
                         },
                         new
                         {
                             BookId = 4,
-                            AuthorId = 3
+                            AuthorId = 4
                         },
                         new
                         {
                             BookId = 5,
-                            AuthorId = 3
+                            AuthorId = 5
                         },
                         new
                         {
                             BookId = 6,
-                            AuthorId = 4
+                            AuthorId = 6
                         },
                         new
                         {
                             BookId = 7,
-                            AuthorId = 4
+                            AuthorId = 2
                         },
                         new
                         {
@@ -422,17 +415,17 @@ namespace LibraryApi.Migrations
                         new
                         {
                             BookId = 10,
-                            AuthorId = 6
+                            AuthorId = 4
                         },
                         new
                         {
                             BookId = 11,
-                            AuthorId = 3
+                            AuthorId = 1
                         },
                         new
                         {
                             BookId = 12,
-                            AuthorId = 4
+                            AuthorId = 3
                         });
                 });
 
@@ -458,13 +451,18 @@ namespace LibraryApi.Migrations
                         },
                         new
                         {
-                            BookId = 2,
-                            CategoryId = 1
+                            BookId = 1,
+                            CategoryId = 6
                         },
                         new
                         {
                             BookId = 2,
                             CategoryId = 2
+                        },
+                        new
+                        {
+                            BookId = 2,
+                            CategoryId = 1
                         },
                         new
                         {
@@ -473,48 +471,43 @@ namespace LibraryApi.Migrations
                         },
                         new
                         {
+                            BookId = 3,
+                            CategoryId = 6
+                        },
+                        new
+                        {
                             BookId = 4,
-                            CategoryId = 2
+                            CategoryId = 1
                         },
                         new
                         {
                             BookId = 5,
+                            CategoryId = 1
+                        },
+                        new
+                        {
+                            BookId = 6,
                             CategoryId = 2
                         },
                         new
                         {
-                            BookId = 5,
-                            CategoryId = 4
-                        },
-                        new
-                        {
-                            BookId = 6,
-                            CategoryId = 3
-                        },
-                        new
-                        {
-                            BookId = 6,
-                            CategoryId = 4
+                            BookId = 7,
+                            CategoryId = 1
                         },
                         new
                         {
                             BookId = 7,
-                            CategoryId = 3
-                        },
-                        new
-                        {
-                            BookId = 7,
-                            CategoryId = 4
+                            CategoryId = 6
                         },
                         new
                         {
                             BookId = 8,
-                            CategoryId = 5
+                            CategoryId = 1
                         },
                         new
                         {
                             BookId = 9,
-                            CategoryId = 1
+                            CategoryId = 2
                         },
                         new
                         {
@@ -524,12 +517,17 @@ namespace LibraryApi.Migrations
                         new
                         {
                             BookId = 11,
-                            CategoryId = 2
+                            CategoryId = 1
+                        },
+                        new
+                        {
+                            BookId = 11,
+                            CategoryId = 6
                         },
                         new
                         {
                             BookId = 12,
-                            CategoryId = 3
+                            CategoryId = 1
                         });
                 });
 
@@ -559,32 +557,38 @@ namespace LibraryApi.Migrations
                         new
                         {
                             Id = 1,
-                            Description = "Literary works created from the imagination",
+                            Description = "Literary and general fiction works",
                             Name = "Fiction"
                         },
                         new
                         {
                             Id = 2,
-                            Description = "Fiction dealing with futuristic science and technology",
+                            Description = "Speculative fiction dealing with futuristic concepts",
                             Name = "Science Fiction"
                         },
                         new
                         {
                             Id = 3,
-                            Description = "Non-fiction works about past events",
+                            Description = "Non-fiction works about historical events and periods",
                             Name = "History"
                         },
                         new
                         {
                             Id = 4,
-                            Description = "Non-fiction works about the natural world",
+                            Description = "Books covering scientific topics and discoveries",
                             Name = "Science"
                         },
                         new
                         {
                             Id = 5,
-                            Description = "Non-fiction accounts of a person's life",
+                            Description = "Accounts of a person's life written by someone else",
                             Name = "Biography"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Description = "Timeless works of literary significance",
+                            Name = "Classic Literature"
                         });
                 });
 
@@ -595,12 +599,11 @@ namespace LibraryApi.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(10,2)");
+                        .HasPrecision(10, 2)
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT")
-                        .HasDefaultValueSql("datetime('now')");
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTime>("IssuedDate")
                         .HasColumnType("TEXT");
@@ -616,12 +619,10 @@ namespace LibraryApi.Migrations
 
                     b.Property<string>("Reason")
                         .IsRequired()
-                        .HasMaxLength(500)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasMaxLength(20)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -637,34 +638,34 @@ namespace LibraryApi.Migrations
                         {
                             Id = 1,
                             Amount = 1.50m,
-                            CreatedAt = new DateTime(2025, 3, 15, 10, 0, 0, 0, DateTimeKind.Utc),
-                            IssuedDate = new DateTime(2025, 3, 15, 10, 0, 0, 0, DateTimeKind.Utc),
-                            LoanId = 5,
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            IssuedDate = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            LoanId = 4,
                             PatronId = 2,
-                            Reason = "Overdue: 6 days late",
+                            Reason = "Overdue return",
                             Status = "Unpaid"
                         },
                         new
                         {
                             Id = 2,
-                            Amount = 0.75m,
-                            CreatedAt = new DateTime(2025, 3, 15, 10, 0, 0, 0, DateTimeKind.Utc),
-                            IssuedDate = new DateTime(2025, 3, 15, 10, 0, 0, 0, DateTimeKind.Utc),
-                            LoanId = 7,
-                            PatronId = 6,
-                            Reason = "Overdue: 3 days late",
+                            Amount = 1.00m,
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            IssuedDate = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            LoanId = 5,
+                            PatronId = 4,
+                            Reason = "Overdue return",
                             Status = "Unpaid"
                         },
                         new
                         {
                             Id = 3,
-                            Amount = 0.50m,
-                            CreatedAt = new DateTime(2025, 2, 24, 10, 0, 0, 0, DateTimeKind.Utc),
-                            IssuedDate = new DateTime(2025, 2, 24, 10, 0, 0, 0, DateTimeKind.Utc),
-                            LoanId = 4,
-                            PaidDate = new DateTime(2025, 2, 25, 10, 0, 0, 0, DateTimeKind.Utc),
-                            PatronId = 1,
-                            Reason = "Overdue: 2 days late",
+                            Amount = 0.25m,
+                            CreatedAt = new DateTime(2025, 1, 10, 10, 0, 0, 0, DateTimeKind.Utc),
+                            IssuedDate = new DateTime(2025, 1, 10, 10, 0, 0, 0, DateTimeKind.Utc),
+                            LoanId = 7,
+                            PaidDate = new DateTime(2025, 1, 11, 10, 0, 0, 0, DateTimeKind.Utc),
+                            PatronId = 5,
+                            Reason = "Overdue return - 1 day late",
                             Status = "Paid"
                         });
                 });
@@ -679,9 +680,7 @@ namespace LibraryApi.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT")
-                        .HasDefaultValueSql("datetime('now')");
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTime>("DueDate")
                         .HasColumnType("TEXT");
@@ -700,7 +699,6 @@ namespace LibraryApi.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasMaxLength(20)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -715,10 +713,10 @@ namespace LibraryApi.Migrations
                         new
                         {
                             Id = 1,
-                            BookId = 2,
-                            CreatedAt = new DateTime(2025, 3, 10, 10, 0, 0, 0, DateTimeKind.Utc),
-                            DueDate = new DateTime(2025, 3, 31, 10, 0, 0, 0, DateTimeKind.Utc),
-                            LoanDate = new DateTime(2025, 3, 10, 10, 0, 0, 0, DateTimeKind.Utc),
+                            BookId = 1,
+                            CreatedAt = new DateTime(2025, 1, 5, 10, 0, 0, 0, DateTimeKind.Utc),
+                            DueDate = new DateTime(2025, 1, 26, 10, 0, 0, 0, DateTimeKind.Utc),
+                            LoanDate = new DateTime(2025, 1, 5, 10, 0, 0, 0, DateTimeKind.Utc),
                             PatronId = 1,
                             RenewalCount = 0,
                             Status = "Active"
@@ -726,10 +724,10 @@ namespace LibraryApi.Migrations
                         new
                         {
                             Id = 2,
-                            BookId = 4,
-                            CreatedAt = new DateTime(2025, 3, 5, 10, 0, 0, 0, DateTimeKind.Utc),
-                            DueDate = new DateTime(2025, 3, 19, 10, 0, 0, 0, DateTimeKind.Utc),
-                            LoanDate = new DateTime(2025, 3, 5, 10, 0, 0, 0, DateTimeKind.Utc),
+                            BookId = 2,
+                            CreatedAt = new DateTime(2025, 1, 8, 10, 0, 0, 0, DateTimeKind.Utc),
+                            DueDate = new DateTime(2025, 1, 22, 10, 0, 0, 0, DateTimeKind.Utc),
+                            LoanDate = new DateTime(2025, 1, 8, 10, 0, 0, 0, DateTimeKind.Utc),
                             PatronId = 2,
                             RenewalCount = 0,
                             Status = "Active"
@@ -737,10 +735,10 @@ namespace LibraryApi.Migrations
                         new
                         {
                             Id = 3,
-                            BookId = 6,
-                            CreatedAt = new DateTime(2025, 3, 12, 10, 0, 0, 0, DateTimeKind.Utc),
-                            DueDate = new DateTime(2025, 3, 19, 10, 0, 0, 0, DateTimeKind.Utc),
-                            LoanDate = new DateTime(2025, 3, 12, 10, 0, 0, 0, DateTimeKind.Utc),
+                            BookId = 5,
+                            CreatedAt = new DateTime(2025, 1, 10, 10, 0, 0, 0, DateTimeKind.Utc),
+                            DueDate = new DateTime(2025, 1, 17, 10, 0, 0, 0, DateTimeKind.Utc),
+                            LoanDate = new DateTime(2025, 1, 10, 10, 0, 0, 0, DateTimeKind.Utc),
                             PatronId = 3,
                             RenewalCount = 0,
                             Status = "Active"
@@ -748,58 +746,59 @@ namespace LibraryApi.Migrations
                         new
                         {
                             Id = 4,
-                            BookId = 9,
-                            CreatedAt = new DateTime(2025, 2, 1, 10, 0, 0, 0, DateTimeKind.Utc),
-                            DueDate = new DateTime(2025, 2, 22, 10, 0, 0, 0, DateTimeKind.Utc),
-                            LoanDate = new DateTime(2025, 2, 1, 10, 0, 0, 0, DateTimeKind.Utc),
-                            PatronId = 1,
-                            RenewalCount = 0,
-                            ReturnDate = new DateTime(2025, 2, 24, 10, 0, 0, 0, DateTimeKind.Utc),
-                            Status = "Returned"
-                        },
-                        new
-                        {
-                            Id = 5,
-                            BookId = 1,
-                            CreatedAt = new DateTime(2025, 2, 23, 10, 0, 0, 0, DateTimeKind.Utc),
-                            DueDate = new DateTime(2025, 3, 9, 10, 0, 0, 0, DateTimeKind.Utc),
-                            LoanDate = new DateTime(2025, 2, 23, 10, 0, 0, 0, DateTimeKind.Utc),
+                            BookId = 3,
+                            CreatedAt = new DateTime(2024, 12, 26, 10, 0, 0, 0, DateTimeKind.Utc),
+                            DueDate = new DateTime(2025, 1, 9, 10, 0, 0, 0, DateTimeKind.Utc),
+                            LoanDate = new DateTime(2024, 12, 26, 10, 0, 0, 0, DateTimeKind.Utc),
                             PatronId = 2,
                             RenewalCount = 0,
                             Status = "Overdue"
                         },
                         new
                         {
-                            Id = 6,
-                            BookId = 5,
-                            CreatedAt = new DateTime(2025, 3, 8, 10, 0, 0, 0, DateTimeKind.Utc),
-                            DueDate = new DateTime(2025, 3, 22, 10, 0, 0, 0, DateTimeKind.Utc),
-                            LoanDate = new DateTime(2025, 3, 8, 10, 0, 0, 0, DateTimeKind.Utc),
+                            Id = 5,
+                            BookId = 9,
+                            CreatedAt = new DateTime(2024, 12, 28, 10, 0, 0, 0, DateTimeKind.Utc),
+                            DueDate = new DateTime(2025, 1, 11, 10, 0, 0, 0, DateTimeKind.Utc),
+                            LoanDate = new DateTime(2024, 12, 28, 10, 0, 0, 0, DateTimeKind.Utc),
                             PatronId = 4,
-                            RenewalCount = 0,
-                            Status = "Active"
-                        },
-                        new
-                        {
-                            Id = 7,
-                            BookId = 3,
-                            CreatedAt = new DateTime(2025, 3, 5, 10, 0, 0, 0, DateTimeKind.Utc),
-                            DueDate = new DateTime(2025, 3, 12, 10, 0, 0, 0, DateTimeKind.Utc),
-                            LoanDate = new DateTime(2025, 3, 5, 10, 0, 0, 0, DateTimeKind.Utc),
-                            PatronId = 6,
                             RenewalCount = 0,
                             Status = "Overdue"
                         },
                         new
                         {
-                            Id = 8,
+                            Id = 6,
                             BookId = 7,
-                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
-                            DueDate = new DateTime(2025, 2, 5, 10, 0, 0, 0, DateTimeKind.Utc),
-                            LoanDate = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedAt = new DateTime(2024, 12, 16, 10, 0, 0, 0, DateTimeKind.Utc),
+                            DueDate = new DateTime(2025, 1, 6, 10, 0, 0, 0, DateTimeKind.Utc),
+                            LoanDate = new DateTime(2024, 12, 16, 10, 0, 0, 0, DateTimeKind.Utc),
                             PatronId = 1,
                             RenewalCount = 0,
-                            ReturnDate = new DateTime(2025, 2, 3, 10, 0, 0, 0, DateTimeKind.Utc),
+                            ReturnDate = new DateTime(2025, 1, 3, 10, 0, 0, 0, DateTimeKind.Utc),
+                            Status = "Returned"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            BookId = 2,
+                            CreatedAt = new DateTime(2024, 12, 21, 10, 0, 0, 0, DateTimeKind.Utc),
+                            DueDate = new DateTime(2025, 1, 11, 10, 0, 0, 0, DateTimeKind.Utc),
+                            LoanDate = new DateTime(2024, 12, 21, 10, 0, 0, 0, DateTimeKind.Utc),
+                            PatronId = 5,
+                            RenewalCount = 1,
+                            ReturnDate = new DateTime(2025, 1, 10, 10, 0, 0, 0, DateTimeKind.Utc),
+                            Status = "Returned"
+                        },
+                        new
+                        {
+                            Id = 8,
+                            BookId = 6,
+                            CreatedAt = new DateTime(2024, 12, 31, 10, 0, 0, 0, DateTimeKind.Utc),
+                            DueDate = new DateTime(2025, 1, 14, 10, 0, 0, 0, DateTimeKind.Utc),
+                            LoanDate = new DateTime(2024, 12, 31, 10, 0, 0, 0, DateTimeKind.Utc),
+                            PatronId = 4,
+                            RenewalCount = 0,
+                            ReturnDate = new DateTime(2025, 1, 13, 10, 0, 0, 0, DateTimeKind.Utc),
                             Status = "Returned"
                         });
                 });
@@ -811,17 +810,13 @@ namespace LibraryApi.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Address")
-                        .HasMaxLength(500)
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT")
-                        .HasDefaultValueSql("datetime('now')");
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("FirstName")
@@ -844,17 +839,13 @@ namespace LibraryApi.Migrations
 
                     b.Property<string>("MembershipType")
                         .IsRequired()
-                        .HasMaxLength(20)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Phone")
-                        .HasMaxLength(20)
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT")
-                        .HasDefaultValueSql("datetime('now')");
+                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
@@ -867,86 +858,86 @@ namespace LibraryApi.Migrations
                         new
                         {
                             Id = 1,
-                            Address = "123 Oak Street",
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Address = "123 Main St",
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
                             Email = "alice.johnson@email.com",
                             FirstName = "Alice",
                             IsActive = true,
                             LastName = "Johnson",
-                            MembershipDate = new DateOnly(2023, 6, 15),
+                            MembershipDate = new DateOnly(2023, 1, 15),
                             MembershipType = "Premium",
                             Phone = "555-0101",
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                            UpdatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 2,
-                            Address = "456 Elm Avenue",
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Address = "456 Oak Ave",
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
                             Email = "bob.smith@email.com",
                             FirstName = "Bob",
                             IsActive = true,
                             LastName = "Smith",
-                            MembershipDate = new DateOnly(2024, 1, 10),
+                            MembershipDate = new DateOnly(2023, 3, 20),
                             MembershipType = "Standard",
                             Phone = "555-0102",
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                            UpdatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 3,
-                            Address = "789 Pine Road",
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Address = "789 Pine Rd",
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
                             Email = "carol.williams@email.com",
                             FirstName = "Carol",
                             IsActive = true,
                             LastName = "Williams",
-                            MembershipDate = new DateOnly(2024, 9, 1),
+                            MembershipDate = new DateOnly(2023, 6, 1),
                             MembershipType = "Student",
                             Phone = "555-0103",
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                            UpdatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 4,
-                            Address = "321 Maple Drive",
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Address = "321 Elm St",
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
                             Email = "david.brown@email.com",
                             FirstName = "David",
                             IsActive = true,
                             LastName = "Brown",
-                            MembershipDate = new DateOnly(2024, 3, 20),
+                            MembershipDate = new DateOnly(2023, 9, 10),
                             MembershipType = "Standard",
                             Phone = "555-0104",
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                            UpdatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 5,
-                            Address = "654 Cedar Lane",
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Email = "eve.davis@email.com",
-                            FirstName = "Eve",
-                            IsActive = false,
-                            LastName = "Davis",
-                            MembershipDate = new DateOnly(2023, 11, 5),
+                            Address = "654 Birch Ln",
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "eva.martinez@email.com",
+                            FirstName = "Eva",
+                            IsActive = true,
+                            LastName = "Martinez",
+                            MembershipDate = new DateOnly(2024, 1, 5),
                             MembershipType = "Premium",
                             Phone = "555-0105",
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                            UpdatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc)
                         },
                         new
                         {
                             Id = 6,
-                            Address = "987 Birch Court",
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Email = "frank.wilson@email.com",
+                            Address = "987 Cedar Dr",
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "frank.davis@email.com",
                             FirstName = "Frank",
-                            IsActive = true,
-                            LastName = "Wilson",
-                            MembershipDate = new DateOnly(2024, 8, 15),
-                            MembershipType = "Student",
+                            IsActive = false,
+                            LastName = "Davis",
+                            MembershipDate = new DateOnly(2022, 5, 20),
+                            MembershipType = "Standard",
                             Phone = "555-0106",
-                            UpdatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                            UpdatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc)
                         });
                 });
 
@@ -960,9 +951,7 @@ namespace LibraryApi.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT")
-                        .HasDefaultValueSql("datetime('now')");
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("ExpirationDate")
                         .HasColumnType("TEXT");
@@ -978,7 +967,6 @@ namespace LibraryApi.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasMaxLength(20)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -993,32 +981,32 @@ namespace LibraryApi.Migrations
                         new
                         {
                             Id = 1,
-                            BookId = 1,
-                            CreatedAt = new DateTime(2025, 3, 10, 10, 0, 0, 0, DateTimeKind.Utc),
-                            PatronId = 4,
+                            BookId = 5,
+                            CreatedAt = new DateTime(2025, 1, 12, 10, 0, 0, 0, DateTimeKind.Utc),
+                            PatronId = 1,
                             QueuePosition = 1,
-                            ReservationDate = new DateTime(2025, 3, 10, 10, 0, 0, 0, DateTimeKind.Utc),
+                            ReservationDate = new DateTime(2025, 1, 12, 10, 0, 0, 0, DateTimeKind.Utc),
                             Status = "Pending"
                         },
                         new
                         {
                             Id = 2,
-                            BookId = 3,
-                            CreatedAt = new DateTime(2025, 3, 11, 10, 0, 0, 0, DateTimeKind.Utc),
-                            PatronId = 3,
-                            QueuePosition = 1,
-                            ReservationDate = new DateTime(2025, 3, 11, 10, 0, 0, 0, DateTimeKind.Utc),
+                            BookId = 5,
+                            CreatedAt = new DateTime(2025, 1, 13, 10, 0, 0, 0, DateTimeKind.Utc),
+                            PatronId = 4,
+                            QueuePosition = 2,
+                            ReservationDate = new DateTime(2025, 1, 13, 10, 0, 0, 0, DateTimeKind.Utc),
                             Status = "Pending"
                         },
                         new
                         {
                             Id = 3,
-                            BookId = 5,
-                            CreatedAt = new DateTime(2025, 3, 8, 10, 0, 0, 0, DateTimeKind.Utc),
-                            ExpirationDate = new DateTime(2025, 3, 18, 10, 0, 0, 0, DateTimeKind.Utc),
-                            PatronId = 1,
+                            BookId = 2,
+                            CreatedAt = new DateTime(2025, 1, 14, 10, 0, 0, 0, DateTimeKind.Utc),
+                            ExpirationDate = new DateTime(2025, 1, 17, 10, 0, 0, 0, DateTimeKind.Utc),
+                            PatronId = 3,
                             QueuePosition = 1,
-                            ReservationDate = new DateTime(2025, 3, 8, 10, 0, 0, 0, DateTimeKind.Utc),
+                            ReservationDate = new DateTime(2025, 1, 14, 10, 0, 0, 0, DateTimeKind.Utc),
                             Status = "Ready"
                         });
                 });
@@ -1066,13 +1054,13 @@ namespace LibraryApi.Migrations
                     b.HasOne("LibraryApi.Models.Loan", "Loan")
                         .WithMany("Fines")
                         .HasForeignKey("LoanId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("LibraryApi.Models.Patron", "Patron")
                         .WithMany("Fines")
                         .HasForeignKey("PatronId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Loan");
@@ -1085,13 +1073,13 @@ namespace LibraryApi.Migrations
                     b.HasOne("LibraryApi.Models.Book", "Book")
                         .WithMany("Loans")
                         .HasForeignKey("BookId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("LibraryApi.Models.Patron", "Patron")
                         .WithMany("Loans")
                         .HasForeignKey("PatronId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Book");
@@ -1104,13 +1092,13 @@ namespace LibraryApi.Migrations
                     b.HasOne("LibraryApi.Models.Book", "Book")
                         .WithMany("Reservations")
                         .HasForeignKey("BookId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("LibraryApi.Models.Patron", "Patron")
                         .WithMany("Reservations")
                         .HasForeignKey("PatronId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Book");

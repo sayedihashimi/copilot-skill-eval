@@ -1,36 +1,41 @@
 using FitnessStudioApi.Data;
 using FitnessStudioApi.DTOs;
+using FitnessStudioApi.Middleware;
 using FitnessStudioApi.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace FitnessStudioApi.Services;
 
-public sealed class MembershipPlanService(FitnessDbContext db, ILogger<MembershipPlanService> logger) : IMembershipPlanService
+public sealed class MembershipPlanService : IMembershipPlanService
 {
-    public async Task<IReadOnlyList<MembershipPlanResponse>> GetAllActiveAsync(CancellationToken ct)
+    private readonly FitnessDbContext _db;
+
+    public MembershipPlanService(FitnessDbContext db) => _db = db;
+
+    public async Task<PaginatedResponse<MembershipPlanResponse>> GetAllAsync(int page, int pageSize, CancellationToken ct)
     {
-        return await db.MembershipPlans
-            .AsNoTracking()
-            .Where(p => p.IsActive)
+        var query = _db.MembershipPlans.AsNoTracking().Where(p => p.IsActive);
+        var total = await query.CountAsync(ct);
+        var items = await query
             .OrderBy(p => p.Price)
-            .Select(p => MapToResponse(p))
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(p => ToResponse(p))
             .ToListAsync(ct);
+
+        return new PaginatedResponse<MembershipPlanResponse>(items, page, pageSize, total, (int)Math.Ceiling(total / (double)pageSize));
     }
 
     public async Task<MembershipPlanResponse?> GetByIdAsync(int id, CancellationToken ct)
     {
-        var plan = await db.MembershipPlans
-            .AsNoTracking()
-            .FirstOrDefaultAsync(p => p.Id == id, ct);
-
-        return plan is null ? null : MapToResponse(plan);
+        var plan = await _db.MembershipPlans.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id, ct);
+        return plan is null ? null : ToResponse(plan);
     }
 
     public async Task<MembershipPlanResponse> CreateAsync(CreateMembershipPlanRequest request, CancellationToken ct)
     {
-        var existing = await db.MembershipPlans.AnyAsync(p => p.Name == request.Name, ct);
-        if (existing)
-            throw new InvalidOperationException($"A membership plan with name '{request.Name}' already exists.");
+        if (await _db.MembershipPlans.AnyAsync(p => p.Name == request.Name, ct))
+            throw new BusinessRuleException($"A membership plan with name '{request.Name}' already exists.", 409);
 
         var plan = new MembershipPlan
         {
@@ -40,26 +45,21 @@ public sealed class MembershipPlanService(FitnessDbContext db, ILogger<Membershi
             Price = request.Price,
             MaxClassBookingsPerWeek = request.MaxClassBookingsPerWeek,
             AllowsPremiumClasses = request.AllowsPremiumClasses,
-            IsActive = true,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            IsActive = request.IsActive
         };
 
-        db.MembershipPlans.Add(plan);
-        await db.SaveChangesAsync(ct);
-
-        logger.LogInformation("Created membership plan {PlanId}: {PlanName}", plan.Id, plan.Name);
-        return MapToResponse(plan);
+        _db.MembershipPlans.Add(plan);
+        await _db.SaveChangesAsync(ct);
+        return ToResponse(plan);
     }
 
-    public async Task<MembershipPlanResponse> UpdateAsync(int id, UpdateMembershipPlanRequest request, CancellationToken ct)
+    public async Task<MembershipPlanResponse?> UpdateAsync(int id, UpdateMembershipPlanRequest request, CancellationToken ct)
     {
-        var plan = await db.MembershipPlans.FindAsync([id], ct)
-            ?? throw new KeyNotFoundException($"Membership plan with ID {id} not found.");
+        var plan = await _db.MembershipPlans.FindAsync([id], ct);
+        if (plan is null) return null;
 
-        var duplicate = await db.MembershipPlans.AnyAsync(p => p.Name == request.Name && p.Id != id, ct);
-        if (duplicate)
-            throw new InvalidOperationException($"A membership plan with name '{request.Name}' already exists.");
+        if (await _db.MembershipPlans.AnyAsync(p => p.Name == request.Name && p.Id != id, ct))
+            throw new BusinessRuleException($"A membership plan with name '{request.Name}' already exists.", 409);
 
         plan.Name = request.Name;
         plan.Description = request.Description;
@@ -70,32 +70,24 @@ public sealed class MembershipPlanService(FitnessDbContext db, ILogger<Membershi
         plan.IsActive = request.IsActive;
         plan.UpdatedAt = DateTime.UtcNow;
 
-        await db.SaveChangesAsync(ct);
-
-        logger.LogInformation("Updated membership plan {PlanId}", plan.Id);
-        return MapToResponse(plan);
+        await _db.SaveChangesAsync(ct);
+        return ToResponse(plan);
     }
 
-    public async Task DeleteAsync(int id, CancellationToken ct)
+    public async Task<bool> DeactivateAsync(int id, CancellationToken ct)
     {
-        var plan = await db.MembershipPlans.FindAsync([id], ct)
-            ?? throw new KeyNotFoundException($"Membership plan with ID {id} not found.");
-
-        var hasActiveMemberships = await db.Memberships
-            .AnyAsync(m => m.MembershipPlanId == id && m.Status == MembershipStatus.Active, ct);
-
-        if (hasActiveMemberships)
-            throw new InvalidOperationException("Cannot deactivate plan with active memberships.");
+        var plan = await _db.MembershipPlans.FindAsync([id], ct);
+        if (plan is null) return false;
 
         plan.IsActive = false;
         plan.UpdatedAt = DateTime.UtcNow;
-        await db.SaveChangesAsync(ct);
-
-        logger.LogInformation("Deactivated membership plan {PlanId}", plan.Id);
+        await _db.SaveChangesAsync(ct);
+        return true;
     }
 
-    private static MembershipPlanResponse MapToResponse(MembershipPlan p) =>
-        new(p.Id, p.Name, p.Description, p.DurationMonths, p.Price,
-            p.MaxClassBookingsPerWeek, p.AllowsPremiumClasses, p.IsActive,
-            p.CreatedAt, p.UpdatedAt);
+    private static MembershipPlanResponse ToResponse(MembershipPlan p) => new(
+        p.Id, p.Name, p.Description, p.DurationMonths, p.Price,
+        p.MaxClassBookingsPerWeek, p.AllowsPremiumClasses, p.IsActive,
+        p.CreatedAt, p.UpdatedAt
+    );
 }

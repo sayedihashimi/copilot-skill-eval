@@ -5,50 +5,41 @@ using VetClinicApi.Models;
 
 namespace VetClinicApi.Services;
 
-public sealed class VaccinationService(VetClinicDbContext context, ILogger<VaccinationService> logger) : IVaccinationService
+public sealed class VaccinationService(VetClinicDbContext db) : IVaccinationService
 {
-    public async Task<VaccinationResponse?> GetByIdAsync(int id, CancellationToken cancellationToken)
+    public async Task<VaccinationResponse?> GetByIdAsync(int id, CancellationToken ct = default)
     {
-        var vaccination = await context.Vaccinations
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+        return await db.Vaccinations.AsNoTracking()
             .Include(v => v.Pet)
             .Include(v => v.AdministeredByVet)
-            .FirstOrDefaultAsync(v => v.Id == id, cancellationToken);
-
-        if (vaccination is null)
-        {
-            return null;
-        }
-
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        return new VaccinationResponse(
-            vaccination.Id, vaccination.PetId, vaccination.Pet.Name,
-            vaccination.VaccineName, vaccination.DateAdministered,
-            vaccination.ExpirationDate, vaccination.BatchNumber,
-            vaccination.AdministeredByVetId,
-            $"{vaccination.AdministeredByVet.FirstName} {vaccination.AdministeredByVet.LastName}",
-            vaccination.Notes,
-            vaccination.ExpirationDate < today,
-            vaccination.ExpirationDate >= today && vaccination.ExpirationDate <= today.AddDays(30),
-            vaccination.CreatedAt);
+            .Where(v => v.Id == id)
+            .Select(v => new VaccinationResponse(
+                v.Id, v.PetId, v.Pet.Name, v.VaccineName,
+                v.DateAdministered, v.ExpirationDate, v.BatchNumber,
+                v.AdministeredByVetId, $"{v.AdministeredByVet.FirstName} {v.AdministeredByVet.LastName}",
+                v.Notes, v.ExpirationDate < today,
+                v.ExpirationDate >= today && v.ExpirationDate <= today.AddDays(30),
+                v.CreatedAt))
+            .FirstOrDefaultAsync(ct);
     }
 
-    public async Task<(VaccinationResponse? Result, string? Error)> CreateAsync(CreateVaccinationRequest request, CancellationToken cancellationToken)
+    public async Task<VaccinationResponse> CreateAsync(CreateVaccinationRequest request, CancellationToken ct = default)
     {
         if (request.ExpirationDate <= request.DateAdministered)
         {
-            return (null, "ExpirationDate must be after DateAdministered.");
+            throw new InvalidOperationException("Expiration date must be after the date administered.");
         }
 
-        var petExists = await context.Pets.AnyAsync(p => p.Id == request.PetId, cancellationToken);
-        if (!petExists)
+        if (!await db.Pets.AnyAsync(p => p.Id == request.PetId && p.IsActive, ct))
         {
-            return (null, "Pet not found.");
+            throw new InvalidOperationException($"Active pet with ID {request.PetId} not found.");
         }
 
-        var vetExists = await context.Veterinarians.AnyAsync(v => v.Id == request.AdministeredByVetId, cancellationToken);
-        if (!vetExists)
+        if (!await db.Veterinarians.AnyAsync(v => v.Id == request.AdministeredByVetId, ct))
         {
-            return (null, "Veterinarian not found.");
+            throw new InvalidOperationException($"Veterinarian with ID {request.AdministeredByVetId} not found.");
         }
 
         var vaccination = new Vaccination
@@ -59,27 +50,22 @@ public sealed class VaccinationService(VetClinicDbContext context, ILogger<Vacci
             ExpirationDate = request.ExpirationDate,
             BatchNumber = request.BatchNumber,
             AdministeredByVetId = request.AdministeredByVetId,
-            Notes = request.Notes
+            Notes = request.Notes,
         };
 
-        context.Vaccinations.Add(vaccination);
-        await context.SaveChangesAsync(cancellationToken);
+        db.Vaccinations.Add(vaccination);
+        await db.SaveChangesAsync(ct);
 
-        await context.Entry(vaccination).Reference(v => v.Pet).LoadAsync(cancellationToken);
-        await context.Entry(vaccination).Reference(v => v.AdministeredByVet).LoadAsync(cancellationToken);
-
-        logger.LogInformation("Vaccination recorded: {VaccinationId} for Pet {PetId}", vaccination.Id, vaccination.PetId);
+        await db.Entry(vaccination).Reference(v => v.Pet).LoadAsync(ct);
+        await db.Entry(vaccination).Reference(v => v.AdministeredByVet).LoadAsync(ct);
 
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        return (new VaccinationResponse(
-            vaccination.Id, vaccination.PetId, vaccination.Pet.Name,
-            vaccination.VaccineName, vaccination.DateAdministered,
-            vaccination.ExpirationDate, vaccination.BatchNumber,
-            vaccination.AdministeredByVetId,
-            $"{vaccination.AdministeredByVet.FirstName} {vaccination.AdministeredByVet.LastName}",
-            vaccination.Notes,
-            vaccination.ExpirationDate < today,
+        return new VaccinationResponse(
+            vaccination.Id, vaccination.PetId, vaccination.Pet.Name, vaccination.VaccineName,
+            vaccination.DateAdministered, vaccination.ExpirationDate, vaccination.BatchNumber,
+            vaccination.AdministeredByVetId, $"{vaccination.AdministeredByVet.FirstName} {vaccination.AdministeredByVet.LastName}",
+            vaccination.Notes, vaccination.ExpirationDate < today,
             vaccination.ExpirationDate >= today && vaccination.ExpirationDate <= today.AddDays(30),
-            vaccination.CreatedAt), null);
+            vaccination.CreatedAt);
     }
 }

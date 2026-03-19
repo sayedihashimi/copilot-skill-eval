@@ -5,101 +5,85 @@ using Microsoft.EntityFrameworkCore;
 
 namespace LibraryApi.Services;
 
-public sealed class FineService(LibraryDbContext context, ILogger<FineService> logger) : IFineService
+public interface IFineService
 {
-    public async Task<PaginatedResponse<FineResponse>> GetFinesAsync(string? status, int page, int pageSize, CancellationToken ct)
+    Task<PagedResult<FineResponse>> GetAllAsync(FineStatus? status, int page, int pageSize);
+    Task<FineResponse?> GetByIdAsync(int id);
+    Task<(FineResponse? Fine, string? Error)> PayAsync(int id);
+    Task<(FineResponse? Fine, string? Error)> WaiveAsync(int id);
+}
+
+public class FineService(LibraryDbContext db, ILogger<FineService> logger) : IFineService
+{
+    public async Task<PagedResult<FineResponse>> GetAllAsync(FineStatus? status, int page, int pageSize)
     {
-        var query = context.Fines.Include(f => f.Patron).AsQueryable();
+        var query = db.Fines
+            .Include(f => f.Patron)
+            .AsQueryable();
 
-        if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<FineStatus>(status, true, out var fineStatus))
-        {
-            query = query.Where(f => f.Status == fineStatus);
-        }
+        if (status.HasValue)
+            query = query.Where(f => f.Status == status.Value);
 
-        var totalCount = await query.CountAsync(ct);
+        var totalCount = await query.CountAsync();
         var items = await query
             .OrderByDescending(f => f.IssuedDate)
-            .Skip((page - 1) * pageSize).Take(pageSize)
-            .Select(f => new FineResponse(f.Id, f.PatronId,
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(f => new FineResponse(
+                f.Id, f.PatronId,
                 f.Patron.FirstName + " " + f.Patron.LastName,
                 f.LoanId, f.Amount, f.Reason, f.IssuedDate, f.PaidDate, f.Status))
-            .ToListAsync(ct);
+            .ToListAsync();
 
-        return new PaginatedResponse<FineResponse>(items, totalCount, page, pageSize, (int)Math.Ceiling((double)totalCount / pageSize));
+        return new PagedResult<FineResponse>(items, totalCount, page, pageSize);
     }
 
-    public async Task<FineDetailResponse?> GetFineByIdAsync(int id, CancellationToken ct)
+    public async Task<FineResponse?> GetByIdAsync(int id)
     {
-        var fine = await context.Fines
+        return await db.Fines
+            .Where(f => f.Id == id)
             .Include(f => f.Patron)
-            .Include(f => f.Loan).ThenInclude(l => l.Book)
-            .FirstOrDefaultAsync(f => f.Id == id, ct);
-
-        if (fine is null)
-        {
-            return null;
-        }
-
-        return new FineDetailResponse(fine.Id, fine.PatronId,
-            fine.Patron.FirstName + " " + fine.Patron.LastName,
-            fine.LoanId, fine.Loan.Book.Title, fine.Amount, fine.Reason,
-            fine.IssuedDate, fine.PaidDate, fine.Status, fine.CreatedAt);
+            .Select(f => new FineResponse(
+                f.Id, f.PatronId,
+                f.Patron.FirstName + " " + f.Patron.LastName,
+                f.LoanId, f.Amount, f.Reason, f.IssuedDate, f.PaidDate, f.Status))
+            .FirstOrDefaultAsync();
     }
 
-    public async Task<Result<FineDetailResponse>> PayFineAsync(int id, CancellationToken ct)
+    public async Task<(FineResponse? Fine, string? Error)> PayAsync(int id)
     {
-        var fine = await context.Fines
-            .Include(f => f.Patron)
-            .Include(f => f.Loan).ThenInclude(l => l.Book)
-            .FirstOrDefaultAsync(f => f.Id == id, ct);
-
-        if (fine is null)
-        {
-            return Result<FineDetailResponse>.Failure("Fine not found.", 404);
-        }
-
-        if (fine.Status != FineStatus.Unpaid)
-        {
-            return Result<FineDetailResponse>.Failure($"Fine is already '{fine.Status}'. Only unpaid fines can be paid.");
-        }
+        var fine = await db.Fines.Include(f => f.Patron).FirstOrDefaultAsync(f => f.Id == id);
+        if (fine is null) return (null, "Fine not found.");
+        if (fine.Status == FineStatus.Paid) return (null, "Fine is already paid.");
+        if (fine.Status == FineStatus.Waived) return (null, "Fine has been waived.");
 
         fine.Status = FineStatus.Paid;
         fine.PaidDate = DateTime.UtcNow;
-        await context.SaveChangesAsync(ct);
+        await db.SaveChangesAsync();
 
-        logger.LogInformation("Fine {FineId} paid by patron {PatronId}", id, fine.PatronId);
+        logger.LogInformation("Fine {FineId} paid by patron {PatronId}", fine.Id, fine.PatronId);
 
-        return Result<FineDetailResponse>.Success(new FineDetailResponse(
-            fine.Id, fine.PatronId, fine.Patron.FirstName + " " + fine.Patron.LastName,
-            fine.LoanId, fine.Loan.Book.Title, fine.Amount, fine.Reason,
-            fine.IssuedDate, fine.PaidDate, fine.Status, fine.CreatedAt));
+        return (new FineResponse(
+            fine.Id, fine.PatronId,
+            fine.Patron.FirstName + " " + fine.Patron.LastName,
+            fine.LoanId, fine.Amount, fine.Reason, fine.IssuedDate, fine.PaidDate, fine.Status), null);
     }
 
-    public async Task<Result<FineDetailResponse>> WaiveFineAsync(int id, CancellationToken ct)
+    public async Task<(FineResponse? Fine, string? Error)> WaiveAsync(int id)
     {
-        var fine = await context.Fines
-            .Include(f => f.Patron)
-            .Include(f => f.Loan).ThenInclude(l => l.Book)
-            .FirstOrDefaultAsync(f => f.Id == id, ct);
-
-        if (fine is null)
-        {
-            return Result<FineDetailResponse>.Failure("Fine not found.", 404);
-        }
-
-        if (fine.Status != FineStatus.Unpaid)
-        {
-            return Result<FineDetailResponse>.Failure($"Fine is already '{fine.Status}'. Only unpaid fines can be waived.");
-        }
+        var fine = await db.Fines.Include(f => f.Patron).FirstOrDefaultAsync(f => f.Id == id);
+        if (fine is null) return (null, "Fine not found.");
+        if (fine.Status == FineStatus.Paid) return (null, "Fine is already paid.");
+        if (fine.Status == FineStatus.Waived) return (null, "Fine is already waived.");
 
         fine.Status = FineStatus.Waived;
-        await context.SaveChangesAsync(ct);
+        await db.SaveChangesAsync();
 
-        logger.LogInformation("Fine {FineId} waived for patron {PatronId}", id, fine.PatronId);
+        logger.LogInformation("Fine {FineId} waived for patron {PatronId}", fine.Id, fine.PatronId);
 
-        return Result<FineDetailResponse>.Success(new FineDetailResponse(
-            fine.Id, fine.PatronId, fine.Patron.FirstName + " " + fine.Patron.LastName,
-            fine.LoanId, fine.Loan.Book.Title, fine.Amount, fine.Reason,
-            fine.IssuedDate, fine.PaidDate, fine.Status, fine.CreatedAt));
+        return (new FineResponse(
+            fine.Id, fine.PatronId,
+            fine.Patron.FirstName + " " + fine.Patron.LastName,
+            fine.LoanId, fine.Amount, fine.Reason, fine.IssuedDate, fine.PaidDate, fine.Status), null);
     }
 }

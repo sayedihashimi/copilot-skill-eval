@@ -11,104 +11,99 @@ public static class ClassScheduleEndpoints
         var group = app.MapGroup("/api/classes").WithTags("Class Schedules");
 
         group.MapGet("/", async Task<Ok<PaginatedResponse<ClassScheduleResponse>>> (
-            DateOnly? fromDate, DateOnly? toDate, int? classTypeId, int? instructorId,
-            bool? hasAvailability, int? page, int? pageSize,
-            IClassScheduleService service, CancellationToken ct) =>
+            IClassScheduleService service,
+            DateTime? fromDate = null, DateTime? toDate = null,
+            int? classTypeId = null, int? instructorId = null,
+            bool? hasAvailability = null,
+            int page = 1, int pageSize = 20,
+            CancellationToken ct = default) =>
         {
-            var p = Math.Clamp(page ?? 1, 1, int.MaxValue);
-            var ps = Math.Clamp(pageSize ?? 20, 1, 100);
-            var result = await service.GetAllAsync(fromDate, toDate, classTypeId, instructorId, hasAvailability, p, ps, ct);
+            pageSize = Math.Clamp(pageSize, 1, 100);
+            var result = await service.GetAllAsync(fromDate, toDate, classTypeId, instructorId, hasAvailability, page, pageSize, ct);
             return TypedResults.Ok(result);
         })
         .WithName("GetClassSchedules")
-        .WithSummary("List class schedules")
-        .WithDescription("Returns a paginated list of class schedules. Filter by date, type, instructor, and availability.")
-        .Produces<PaginatedResponse<ClassScheduleResponse>>(StatusCodes.Status200OK);
+        .WithSummary("List scheduled classes")
+        .WithDescription("Returns a paginated list of class schedules with optional filters for date, type, instructor, and availability.")
+        .Produces<PaginatedResponse<ClassScheduleResponse>>(200);
 
         group.MapGet("/{id:int}", async Task<Results<Ok<ClassScheduleResponse>, NotFound>> (
             int id, IClassScheduleService service, CancellationToken ct) =>
         {
-            var schedule = await service.GetByIdAsync(id, ct);
-            return schedule is null ? TypedResults.NotFound() : TypedResults.Ok(schedule);
+            var result = await service.GetByIdAsync(id, ct);
+            return result is not null ? TypedResults.Ok(result) : TypedResults.NotFound();
         })
-        .WithName("GetClassScheduleById")
-        .WithSummary("Get a class schedule by ID")
-        .WithDescription("Returns the full details of a specific class schedule including enrollment and waitlist counts.")
-        .Produces<ClassScheduleResponse>(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status404NotFound);
+        .WithName("GetClassSchedule")
+        .WithSummary("Get class details")
+        .WithDescription("Returns details of a specific class including enrollment and waitlist counts.")
+        .Produces<ClassScheduleResponse>(200)
+        .Produces(404);
 
         group.MapPost("/", async Task<Created<ClassScheduleResponse>> (
             CreateClassScheduleRequest request, IClassScheduleService service, CancellationToken ct) =>
         {
-            var schedule = await service.CreateAsync(request, ct);
-            return TypedResults.Created($"/api/classes/{schedule.Id}", schedule);
+            var result = await service.CreateAsync(request, ct);
+            return TypedResults.Created($"/api/classes/{result.Id}", result);
         })
         .WithName("CreateClassSchedule")
         .WithSummary("Schedule a new class")
-        .WithDescription("Creates a new class schedule. Enforces instructor schedule conflict rules.")
-        .Produces<ClassScheduleResponse>(StatusCodes.Status201Created)
-        .Produces(StatusCodes.Status400BadRequest)
-        .Produces(StatusCodes.Status409Conflict);
+        .WithDescription("Creates a new class schedule. Validates instructor availability.")
+        .Produces<ClassScheduleResponse>(201);
 
         group.MapPut("/{id:int}", async Task<Results<Ok<ClassScheduleResponse>, NotFound>> (
             int id, UpdateClassScheduleRequest request, IClassScheduleService service, CancellationToken ct) =>
         {
-            var schedule = await service.UpdateAsync(id, request, ct);
-            return TypedResults.Ok(schedule);
+            var result = await service.UpdateAsync(id, request, ct);
+            return result is not null ? TypedResults.Ok(result) : TypedResults.NotFound();
         })
         .WithName("UpdateClassSchedule")
-        .WithSummary("Update a class schedule")
-        .WithDescription("Updates an existing class schedule. Checks for instructor conflicts.")
-        .Produces<ClassScheduleResponse>(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status400BadRequest)
-        .Produces(StatusCodes.Status404NotFound);
+        .WithSummary("Update class details")
+        .WithDescription("Updates an existing class schedule. Validates instructor availability.")
+        .Produces<ClassScheduleResponse>(200)
+        .Produces(404);
 
-        group.MapPatch("/{id:int}/cancel", async Task<Results<Ok<ClassScheduleResponse>, NotFound>> (
+        group.MapPatch("/{id:int}/cancel", async Task<Ok<ClassScheduleResponse>> (
             int id, CancelClassRequest request, IClassScheduleService service, CancellationToken ct) =>
         {
-            var schedule = await service.CancelAsync(id, request, ct);
-            return TypedResults.Ok(schedule);
+            var result = await service.CancelAsync(id, request, ct);
+            return TypedResults.Ok(result);
         })
-        .WithName("CancelClassSchedule")
+        .WithName("CancelClass")
         .WithSummary("Cancel a class")
-        .WithDescription("Cancels a class and all associated bookings. Waitlisted bookings are also cancelled.")
-        .Produces<ClassScheduleResponse>(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status400BadRequest)
-        .Produces(StatusCodes.Status404NotFound);
+        .WithDescription("Cancels a scheduled class. All active bookings are automatically cancelled with reason 'Class cancelled by studio'.")
+        .Produces<ClassScheduleResponse>(200);
 
-        group.MapGet("/{id:int}/roster", async Task<Ok<IReadOnlyList<ClassRosterEntryResponse>>> (
+        group.MapGet("/{id:int}/roster", async Task<Ok<IReadOnlyList<RosterEntryResponse>>> (
             int id, IClassScheduleService service, CancellationToken ct) =>
         {
-            var roster = await service.GetRosterAsync(id, ct);
-            return TypedResults.Ok(roster);
+            var result = await service.GetRosterAsync(id, ct);
+            return TypedResults.Ok(result);
         })
         .WithName("GetClassRoster")
         .WithSummary("Get class roster")
         .WithDescription("Returns the list of confirmed and attended members for a class.")
-        .Produces<IReadOnlyList<ClassRosterEntryResponse>>(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status404NotFound);
+        .Produces<IReadOnlyList<RosterEntryResponse>>(200);
 
         group.MapGet("/{id:int}/waitlist", async Task<Ok<IReadOnlyList<WaitlistEntryResponse>>> (
             int id, IClassScheduleService service, CancellationToken ct) =>
         {
-            var waitlist = await service.GetWaitlistAsync(id, ct);
-            return TypedResults.Ok(waitlist);
+            var result = await service.GetWaitlistAsync(id, ct);
+            return TypedResults.Ok(result);
         })
         .WithName("GetClassWaitlist")
         .WithSummary("Get class waitlist")
-        .WithDescription("Returns the waitlisted members for a class, ordered by position.")
-        .Produces<IReadOnlyList<WaitlistEntryResponse>>(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status404NotFound);
+        .WithDescription("Returns the waitlist for a class ordered by position.")
+        .Produces<IReadOnlyList<WaitlistEntryResponse>>(200);
 
         group.MapGet("/available", async Task<Ok<IReadOnlyList<ClassScheduleResponse>>> (
             IClassScheduleService service, CancellationToken ct) =>
         {
-            var classes = await service.GetAvailableAsync(ct);
-            return TypedResults.Ok(classes);
+            var result = await service.GetAvailableAsync(ct);
+            return TypedResults.Ok(result);
         })
         .WithName("GetAvailableClasses")
         .WithSummary("Get available classes")
         .WithDescription("Returns classes with available spots in the next 7 days.")
-        .Produces<IReadOnlyList<ClassScheduleResponse>>(StatusCodes.Status200OK);
+        .Produces<IReadOnlyList<ClassScheduleResponse>>(200);
     }
 }

@@ -13,32 +13,45 @@ public class FinesController : ControllerBase
 
     public FinesController(IFineService service) => _service = service;
 
-    /// <summary>List fines with filter by status and pagination</summary>
+    /// <summary>List fines with optional status filter and pagination.</summary>
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<FineDto>), 200)]
     public async Task<IActionResult> GetFines([FromQuery] string? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         => Ok(await _service.GetFinesAsync(status, page, pageSize));
 
-    /// <summary>Get fine details</summary>
+    /// <summary>Get fine details.</summary>
     [HttpGet("{id}")]
     [ProducesResponseType(typeof(FineDto), 200)]
     [ProducesResponseType(404)]
     public async Task<IActionResult> GetFine(int id)
-        => Ok(await _service.GetFineByIdAsync(id));
+    {
+        var fine = await _service.GetFineByIdAsync(id);
+        return fine == null ? NotFound() : Ok(fine);
+    }
 
-    /// <summary>Pay a fine</summary>
+    /// <summary>Pay a fine.</summary>
     [HttpPost("{id}/pay")]
     [ProducesResponseType(typeof(FineDto), 200)]
     [ProducesResponseType(400)]
     [ProducesResponseType(404)]
     public async Task<IActionResult> PayFine(int id)
-        => Ok(await _service.PayFineAsync(id));
+    {
+        var (fine, error) = await _service.PayFineAsync(id);
+        if (fine == null && error!.Contains("not found")) return NotFound();
+        if (fine == null) return BadRequest(new ProblemDetails { Title = "Payment failed", Detail = error, Status = 400 });
+        return Ok(fine);
+    }
 
-    /// <summary>Waive a fine</summary>
+    /// <summary>Waive a fine.</summary>
     [HttpPost("{id}/waive")]
     [ProducesResponseType(typeof(FineDto), 200)]
     [ProducesResponseType(400)]
     [ProducesResponseType(404)]
     public async Task<IActionResult> WaiveFine(int id)
-        => Ok(await _service.WaiveFineAsync(id));
+    {
+        var (fine, error) = await _service.WaiveFineAsync(id);
+        if (fine == null && error!.Contains("not found")) return NotFound();
+        if (fine == null) return BadRequest(new ProblemDetails { Title = "Waive failed", Detail = error, Status = 400 });
+        return Ok(fine);
+    }
 }

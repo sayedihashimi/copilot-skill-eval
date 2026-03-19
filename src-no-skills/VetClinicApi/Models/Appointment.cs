@@ -2,6 +2,16 @@ using System.ComponentModel.DataAnnotations;
 
 namespace VetClinicApi.Models;
 
+public enum AppointmentStatus
+{
+    Scheduled,
+    CheckedIn,
+    InProgress,
+    Completed,
+    Cancelled,
+    NoShow
+}
+
 public class Appointment
 {
     public int Id { get; set; }

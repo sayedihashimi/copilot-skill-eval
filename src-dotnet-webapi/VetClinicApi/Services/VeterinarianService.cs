@@ -5,11 +5,9 @@ using VetClinicApi.Models;
 
 namespace VetClinicApi.Services;
 
-public sealed class VeterinarianService(VetClinicDbContext db, ILogger<VeterinarianService> logger)
-    : IVeterinarianService
+public sealed class VeterinarianService(VetClinicDbContext db, ILogger<VeterinarianService> logger) : IVeterinarianService
 {
-    public async Task<PaginatedResponse<VeterinarianResponse>> GetAllAsync(
-        string? specialization, bool? isAvailable, int page, int pageSize, CancellationToken ct)
+    public async Task<PaginatedResponse<VeterinarianResponse>> GetAllAsync(string? specialization, bool? isAvailable, int page, int pageSize, CancellationToken ct)
     {
         var query = db.Veterinarians.AsNoTracking().AsQueryable();
 
@@ -38,10 +36,12 @@ public sealed class VeterinarianService(VetClinicDbContext db, ILogger<Veterinar
 
     public async Task<VeterinarianResponse> CreateAsync(CreateVeterinarianRequest request, CancellationToken ct)
     {
-        if (await db.Veterinarians.AnyAsync(v => v.Email == request.Email, ct))
+        var emailExists = await db.Veterinarians.AnyAsync(v => v.Email == request.Email, ct);
+        if (emailExists)
             throw new InvalidOperationException($"A veterinarian with email '{request.Email}' already exists.");
 
-        if (await db.Veterinarians.AnyAsync(v => v.LicenseNumber == request.LicenseNumber, ct))
+        var licenseExists = await db.Veterinarians.AnyAsync(v => v.LicenseNumber == request.LicenseNumber, ct);
+        if (licenseExists)
             throw new InvalidOperationException($"A veterinarian with license number '{request.LicenseNumber}' already exists.");
 
         var vet = new Veterinarian
@@ -52,25 +52,28 @@ public sealed class VeterinarianService(VetClinicDbContext db, ILogger<Veterinar
             Phone = request.Phone,
             Specialization = request.Specialization,
             LicenseNumber = request.LicenseNumber,
-            IsAvailable = true,
+            IsAvailable = request.IsAvailable,
             HireDate = request.HireDate
         };
 
         db.Veterinarians.Add(vet);
         await db.SaveChangesAsync(ct);
-        logger.LogInformation("Created veterinarian {VetId}: Dr. {Name}", vet.Id, $"{vet.FirstName} {vet.LastName}");
+
+        logger.LogInformation("Veterinarian created with ID {VetId}", vet.Id);
         return MapToResponse(vet);
     }
 
     public async Task<VeterinarianResponse?> UpdateAsync(int id, UpdateVeterinarianRequest request, CancellationToken ct)
     {
-        var vet = await db.Veterinarians.FindAsync([id], ct);
+        var vet = await db.Veterinarians.FirstOrDefaultAsync(v => v.Id == id, ct);
         if (vet is null) return null;
 
-        if (await db.Veterinarians.AnyAsync(v => v.Email == request.Email && v.Id != id, ct))
+        var emailExists = await db.Veterinarians.AnyAsync(v => v.Email == request.Email && v.Id != id, ct);
+        if (emailExists)
             throw new InvalidOperationException($"A veterinarian with email '{request.Email}' already exists.");
 
-        if (await db.Veterinarians.AnyAsync(v => v.LicenseNumber == request.LicenseNumber && v.Id != id, ct))
+        var licenseExists = await db.Veterinarians.AnyAsync(v => v.LicenseNumber == request.LicenseNumber && v.Id != id, ct);
+        if (licenseExists)
             throw new InvalidOperationException($"A veterinarian with license number '{request.LicenseNumber}' already exists.");
 
         vet.FirstName = request.FirstName;
@@ -80,49 +83,51 @@ public sealed class VeterinarianService(VetClinicDbContext db, ILogger<Veterinar
         vet.Specialization = request.Specialization;
         vet.LicenseNumber = request.LicenseNumber;
         vet.IsAvailable = request.IsAvailable;
+        vet.HireDate = request.HireDate;
 
         await db.SaveChangesAsync(ct);
-        logger.LogInformation("Updated veterinarian {VetId}", id);
+
+        logger.LogInformation("Veterinarian updated with ID {VetId}", vet.Id);
         return MapToResponse(vet);
     }
 
     public async Task<IReadOnlyList<AppointmentResponse>> GetScheduleAsync(int vetId, DateOnly date, CancellationToken ct)
     {
-        if (!await db.Veterinarians.AnyAsync(v => v.Id == vetId, ct))
+        var vetExists = await db.Veterinarians.AnyAsync(v => v.Id == vetId, ct);
+        if (!vetExists)
             throw new KeyNotFoundException($"Veterinarian with ID {vetId} not found.");
 
-        var startOfDay = date.ToDateTime(TimeOnly.MinValue);
-        var endOfDay = date.ToDateTime(TimeOnly.MaxValue);
+        var startOfDay = date.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+        var endOfDay = date.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc);
 
-        return await db.Appointments.AsNoTracking()
-            .Include(a => a.Pet).Include(a => a.Veterinarian)
-            .Where(a => a.VeterinarianId == vetId &&
-                        a.AppointmentDate >= startOfDay &&
-                        a.AppointmentDate <= endOfDay &&
-                        a.Status != AppointmentStatus.Cancelled &&
-                        a.Status != AppointmentStatus.NoShow)
+        return await db.Appointments
+            .AsNoTracking()
+            .Include(a => a.Pet)
+            .Include(a => a.Veterinarian)
+            .Where(a => a.VeterinarianId == vetId && a.AppointmentDate >= startOfDay && a.AppointmentDate <= endOfDay)
             .OrderBy(a => a.AppointmentDate)
             .Select(a => new AppointmentResponse(
                 a.Id, a.PetId, a.Pet.Name, a.VeterinarianId,
-                a.Veterinarian.FirstName + " " + a.Veterinarian.LastName,
+                $"{a.Veterinarian.FirstName} {a.Veterinarian.LastName}",
                 a.AppointmentDate, a.DurationMinutes, a.Status,
-                a.Reason, a.Notes, a.CancellationReason,
-                a.CreatedAt, a.UpdatedAt))
+                a.Reason, a.Notes, a.CancellationReason, a.CreatedAt, a.UpdatedAt))
             .ToListAsync(ct);
     }
 
-    public async Task<PaginatedResponse<AppointmentResponse>> GetAppointmentsAsync(
-        int vetId, string? status, int page, int pageSize, CancellationToken ct)
+    public async Task<PaginatedResponse<AppointmentResponse>> GetAppointmentsAsync(int vetId, string? status, int page, int pageSize, CancellationToken ct)
     {
-        if (!await db.Veterinarians.AnyAsync(v => v.Id == vetId, ct))
+        var vetExists = await db.Veterinarians.AnyAsync(v => v.Id == vetId, ct);
+        if (!vetExists)
             throw new KeyNotFoundException($"Veterinarian with ID {vetId} not found.");
 
-        var query = db.Appointments.AsNoTracking()
-            .Include(a => a.Pet).Include(a => a.Veterinarian)
+        var query = db.Appointments
+            .AsNoTracking()
+            .Include(a => a.Pet)
+            .Include(a => a.Veterinarian)
             .Where(a => a.VeterinarianId == vetId);
 
-        if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<AppointmentStatus>(status, true, out var statusEnum))
-            query = query.Where(a => a.Status == statusEnum);
+        if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<AppointmentStatus>(status, true, out var parsedStatus))
+            query = query.Where(a => a.Status == parsedStatus);
 
         var totalCount = await query.CountAsync(ct);
         var items = await query
@@ -131,16 +136,14 @@ public sealed class VeterinarianService(VetClinicDbContext db, ILogger<Veterinar
             .Take(pageSize)
             .Select(a => new AppointmentResponse(
                 a.Id, a.PetId, a.Pet.Name, a.VeterinarianId,
-                a.Veterinarian.FirstName + " " + a.Veterinarian.LastName,
+                $"{a.Veterinarian.FirstName} {a.Veterinarian.LastName}",
                 a.AppointmentDate, a.DurationMinutes, a.Status,
-                a.Reason, a.Notes, a.CancellationReason,
-                a.CreatedAt, a.UpdatedAt))
+                a.Reason, a.Notes, a.CancellationReason, a.CreatedAt, a.UpdatedAt))
             .ToListAsync(ct);
 
         return PaginatedResponse<AppointmentResponse>.Create(items, page, pageSize, totalCount);
     }
 
     private static VeterinarianResponse MapToResponse(Veterinarian v) =>
-        new(v.Id, v.FirstName, v.LastName, v.Email, v.Phone,
-            v.Specialization, v.LicenseNumber, v.IsAvailable, v.HireDate);
+        new(v.Id, v.FirstName, v.LastName, v.Email, v.Phone, v.Specialization, v.LicenseNumber, v.IsAvailable, v.HireDate);
 }

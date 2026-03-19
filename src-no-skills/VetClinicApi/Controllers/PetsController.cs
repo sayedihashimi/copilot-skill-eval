@@ -16,7 +16,7 @@ public class PetsController : ControllerBase
     }
 
     [HttpGet]
-    [ProducesResponseType(typeof(PaginatedResponse<PetResponseDto>), 200)]
+    [ProducesResponseType(typeof(PagedResult<PetResponseDto>), 200)]
     public async Task<IActionResult> GetAll(
         [FromQuery] string? search,
         [FromQuery] string? species,

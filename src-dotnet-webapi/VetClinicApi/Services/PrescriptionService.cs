@@ -5,28 +5,28 @@ using VetClinicApi.Models;
 
 namespace VetClinicApi.Services;
 
-public sealed class PrescriptionService(VetClinicDbContext db, ILogger<PrescriptionService> logger)
-    : IPrescriptionService
+public sealed class PrescriptionService(VetClinicDbContext db, ILogger<PrescriptionService> logger) : IPrescriptionService
 {
     public async Task<PrescriptionResponse?> GetByIdAsync(int id, CancellationToken ct)
     {
-        var prescription = await db.Prescriptions.AsNoTracking()
+        var prescription = await db.Prescriptions
+            .AsNoTracking()
             .FirstOrDefaultAsync(p => p.Id == id, ct);
 
         if (prescription is null) return null;
 
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         return new PrescriptionResponse(
-            prescription.Id, prescription.MedicalRecordId,
-            prescription.MedicationName, prescription.Dosage,
-            prescription.DurationDays, prescription.StartDate, prescription.EndDate,
-            prescription.Instructions, prescription.EndDate >= today,
-            prescription.CreatedAt);
+            prescription.Id, prescription.MedicalRecordId, prescription.MedicationName,
+            prescription.Dosage, prescription.DurationDays, prescription.StartDate,
+            prescription.EndDate, prescription.Instructions,
+            prescription.EndDate >= today, prescription.CreatedAt);
     }
 
     public async Task<PrescriptionResponse> CreateAsync(CreatePrescriptionRequest request, CancellationToken ct)
     {
-        if (!await db.MedicalRecords.AnyAsync(m => m.Id == request.MedicalRecordId, ct))
+        var recordExists = await db.MedicalRecords.AnyAsync(mr => mr.Id == request.MedicalRecordId, ct);
+        if (!recordExists)
             throw new KeyNotFoundException($"Medical record with ID {request.MedicalRecordId} not found.");
 
         var endDate = request.StartDate.AddDays(request.DurationDays);
@@ -46,14 +46,12 @@ public sealed class PrescriptionService(VetClinicDbContext db, ILogger<Prescript
 
         db.Prescriptions.Add(prescription);
         await db.SaveChangesAsync(ct);
-        logger.LogInformation("Created prescription {PrescriptionId} for medical record {RecordId}",
-            prescription.Id, prescription.MedicalRecordId);
 
+        logger.LogInformation("Prescription created with ID {PrescriptionId}", prescription.Id);
         return new PrescriptionResponse(
-            prescription.Id, prescription.MedicalRecordId,
-            prescription.MedicationName, prescription.Dosage,
-            prescription.DurationDays, prescription.StartDate, prescription.EndDate,
-            prescription.Instructions, prescription.EndDate >= today,
-            prescription.CreatedAt);
+            prescription.Id, prescription.MedicalRecordId, prescription.MedicationName,
+            prescription.Dosage, prescription.DurationDays, prescription.StartDate,
+            prescription.EndDate, prescription.Instructions,
+            prescription.EndDate >= today, prescription.CreatedAt);
     }
 }

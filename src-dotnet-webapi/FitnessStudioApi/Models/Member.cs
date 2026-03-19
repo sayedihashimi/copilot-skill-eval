@@ -10,10 +10,10 @@ public sealed class Member
     public DateOnly DateOfBirth { get; set; }
     public required string EmergencyContactName { get; set; }
     public required string EmergencyContactPhone { get; set; }
-    public DateOnly JoinDate { get; set; }
+    public DateOnly JoinDate { get; set; } = DateOnly.FromDateTime(DateTime.UtcNow);
     public bool IsActive { get; set; } = true;
-    public DateTime CreatedAt { get; set; }
-    public DateTime UpdatedAt { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     public ICollection<Membership> Memberships { get; set; } = new List<Membership>();
     public ICollection<Booking> Bookings { get; set; } = new List<Booking>();

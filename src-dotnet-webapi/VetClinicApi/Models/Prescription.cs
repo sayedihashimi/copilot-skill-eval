@@ -12,5 +12,7 @@ public sealed class Prescription
     public string? Instructions { get; set; }
     public DateTime CreatedAt { get; set; }
 
+    public bool IsActive => EndDate >= DateOnly.FromDateTime(DateTime.UtcNow);
+
     public MedicalRecord MedicalRecord { get; set; } = null!;
 }

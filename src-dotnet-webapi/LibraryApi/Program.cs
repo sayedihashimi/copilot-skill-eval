@@ -7,17 +7,20 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// OpenAPI
-builder.Services.AddOpenApi();
-
-// JSON enum as string
+// Configure JSON serialization — enums as strings
 builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
-// Database
+// OpenAPI
+builder.Services.AddOpenApi();
+
+// EF Core with SQLite
 builder.Services.AddDbContext<LibraryDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")
-        ?? "Data Source=library.db"));
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Exception handling
+builder.Services.AddExceptionHandler<ApiExceptionHandler>();
+builder.Services.AddProblemDetails();
 
 // Services
 builder.Services.AddScoped<IAuthorService, AuthorService>();
@@ -28,29 +31,18 @@ builder.Services.AddScoped<ILoanService, LoanService>();
 builder.Services.AddScoped<IReservationService, ReservationService>();
 builder.Services.AddScoped<IFineService, FineService>();
 
-// Error handling
-builder.Services.AddExceptionHandler<ApiExceptionHandler>();
-builder.Services.AddProblemDetails();
-
 var app = builder.Build();
 
-// Middleware
+// Exception handler middleware
 app.UseExceptionHandler();
-app.UseStatusCodePages();
 
+// OpenAPI / Swagger
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
 
-// Apply migrations on startup
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<LibraryDbContext>();
-    db.Database.Migrate();
-}
-
-// Map endpoints
+// Map all endpoints
 app.MapAuthorEndpoints();
 app.MapCategoryEndpoints();
 app.MapBookEndpoints();

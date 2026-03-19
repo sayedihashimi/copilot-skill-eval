@@ -20,12 +20,12 @@ public sealed class Prescription
 
     public DateOnly StartDate { get; set; }
 
-    public DateOnly EndDate { get; set; }
+    public DateOnly EndDate => StartDate.AddDays(DurationDays);
+
+    public bool IsActive => EndDate >= DateOnly.FromDateTime(DateTime.UtcNow);
 
     [MaxLength(500)]
     public string? Instructions { get; set; }
-
-    public bool IsActive => EndDate >= DateOnly.FromDateTime(DateTime.UtcNow);
 
     public DateTime CreatedAt { get; set; }
 }

@@ -38,9 +38,12 @@ public class FitnessDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(e => e.MembershipPlan)
-                .WithMany(p => p.Memberships)
+                .WithMany()
                 .HasForeignKey(e => e.MembershipPlanId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            entity.Property(e => e.Status).HasConversion<string>();
+            entity.Property(e => e.PaymentStatus).HasConversion<string>();
         });
 
         modelBuilder.Entity<Instructor>(entity =>
@@ -51,12 +54,13 @@ public class FitnessDbContext : DbContext
         modelBuilder.Entity<ClassType>(entity =>
         {
             entity.HasIndex(e => e.Name).IsUnique();
+            entity.Property(e => e.DifficultyLevel).HasConversion<string>();
         });
 
         modelBuilder.Entity<ClassSchedule>(entity =>
         {
             entity.HasOne(e => e.ClassType)
-                .WithMany(ct => ct.ClassSchedules)
+                .WithMany()
                 .HasForeignKey(e => e.ClassTypeId)
                 .OnDelete(DeleteBehavior.Restrict);
 
@@ -64,6 +68,8 @@ public class FitnessDbContext : DbContext
                 .WithMany(i => i.ClassSchedules)
                 .HasForeignKey(e => e.InstructorId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            entity.Property(e => e.Status).HasConversion<string>();
         });
 
         modelBuilder.Entity<Booking>(entity =>
@@ -77,6 +83,8 @@ public class FitnessDbContext : DbContext
                 .WithMany(m => m.Bookings)
                 .HasForeignKey(e => e.MemberId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            entity.Property(e => e.Status).HasConversion<string>();
         });
     }
 }

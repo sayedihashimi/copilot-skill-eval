@@ -19,7 +19,6 @@ public class Booking
     public DateTime? CheckInTime { get; set; }
 
     public DateTime? CancellationDate { get; set; }
-
     public string? CancellationReason { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

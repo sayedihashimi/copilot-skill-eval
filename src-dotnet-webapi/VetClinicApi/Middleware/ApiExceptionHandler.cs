@@ -3,8 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace VetClinicApi.Middleware;
 
-internal sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger)
-    : IExceptionHandler
+internal sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) : IExceptionHandler
 {
     public async ValueTask<bool> TryHandleAsync(
         HttpContext httpContext,
@@ -20,7 +19,10 @@ internal sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger)
         };
 
         if (statusCode == 0)
+        {
+            logger.LogError(exception, "Unhandled exception occurred");
             return false;
+        }
 
         logger.LogWarning(exception, "Handled API exception: {Title}", title);
 

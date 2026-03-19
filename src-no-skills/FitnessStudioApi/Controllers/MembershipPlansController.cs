@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using FitnessStudioApi.DTOs;
-using FitnessStudioApi.Services;
+using FitnessStudioApi.Services.Interfaces;
 
 namespace FitnessStudioApi.Controllers;
 
@@ -11,37 +11,50 @@ public class MembershipPlansController : ControllerBase
 {
     private readonly IMembershipPlanService _service;
 
-    public MembershipPlansController(IMembershipPlanService service) => _service = service;
+    public MembershipPlansController(IMembershipPlanService service)
+    {
+        _service = service;
+    }
 
     /// <summary>List all active membership plans</summary>
     [HttpGet]
     [ProducesResponseType(typeof(List<MembershipPlanDto>), 200)]
-    public async Task<IActionResult> GetAll() => Ok(await _service.GetAllAsync());
+    public async Task<IActionResult> GetAll()
+    {
+        var plans = await _service.GetAllAsync();
+        return Ok(plans);
+    }
 
-    /// <summary>Get membership plan details</summary>
+    /// <summary>Get plan details by ID</summary>
     [HttpGet("{id}")]
     [ProducesResponseType(typeof(MembershipPlanDto), 200)]
     [ProducesResponseType(404)]
-    public async Task<IActionResult> GetById(int id) => Ok(await _service.GetByIdAsync(id));
+    public async Task<IActionResult> GetById(int id)
+    {
+        var plan = await _service.GetByIdAsync(id);
+        return plan == null ? NotFound() : Ok(plan);
+    }
 
     /// <summary>Create a new membership plan</summary>
     [HttpPost]
     [ProducesResponseType(typeof(MembershipPlanDto), 201)]
-    [ProducesResponseType(400)]
-    [ProducesResponseType(409)]
+    [ProducesResponseType(typeof(ProblemDetails), 400)]
     public async Task<IActionResult> Create([FromBody] CreateMembershipPlanDto dto)
     {
-        var result = await _service.CreateAsync(dto);
-        return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+        var plan = await _service.CreateAsync(dto);
+        return CreatedAtAction(nameof(GetById), new { id = plan.Id }, plan);
     }
 
-    /// <summary>Update a membership plan</summary>
+    /// <summary>Update an existing membership plan</summary>
     [HttpPut("{id}")]
     [ProducesResponseType(typeof(MembershipPlanDto), 200)]
-    [ProducesResponseType(400)]
     [ProducesResponseType(404)]
+    [ProducesResponseType(typeof(ProblemDetails), 400)]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateMembershipPlanDto dto)
-        => Ok(await _service.UpdateAsync(id, dto));
+    {
+        var plan = await _service.UpdateAsync(id, dto);
+        return plan == null ? NotFound() : Ok(plan);
+    }
 
     /// <summary>Deactivate a membership plan</summary>
     [HttpDelete("{id}")]
@@ -49,7 +62,7 @@ public class MembershipPlansController : ControllerBase
     [ProducesResponseType(404)]
     public async Task<IActionResult> Delete(int id)
     {
-        await _service.DeleteAsync(id);
-        return NoContent();
+        var result = await _service.DeactivateAsync(id);
+        return result ? NoContent() : NotFound();
     }
 }

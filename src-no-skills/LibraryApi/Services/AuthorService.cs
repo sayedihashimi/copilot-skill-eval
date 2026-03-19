@@ -1,6 +1,5 @@
 using LibraryApi.Data;
 using LibraryApi.DTOs;
-using LibraryApi.Middleware;
 using LibraryApi.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,7 +16,7 @@ public class AuthorService : IAuthorService
         _logger = logger;
     }
 
-    public async Task<PagedResult<AuthorDto>> GetAuthorsAsync(string? search, int page, int pageSize)
+    public async Task<PagedResult<AuthorSummaryDto>> GetAuthorsAsync(string? search, int page, int pageSize)
     {
         var query = _db.Authors.AsQueryable();
         if (!string.IsNullOrWhiteSpace(search))
@@ -26,24 +25,23 @@ public class AuthorService : IAuthorService
             query = query.Where(a => a.FirstName.ToLower().Contains(s) || a.LastName.ToLower().Contains(s));
         }
 
-        var totalCount = await query.CountAsync();
-        var items = await query
-            .OrderBy(a => a.LastName).ThenBy(a => a.FirstName)
+        var total = await query.CountAsync();
+        var items = await query.OrderBy(a => a.LastName).ThenBy(a => a.FirstName)
             .Skip((page - 1) * pageSize).Take(pageSize)
-            .Select(a => MapToDto(a))
+            .Select(a => new AuthorSummaryDto { Id = a.Id, FirstName = a.FirstName, LastName = a.LastName })
             .ToListAsync();
 
-        return new PagedResult<AuthorDto> { Items = items, TotalCount = totalCount, Page = page, PageSize = pageSize };
+        return new PagedResult<AuthorSummaryDto> { Items = items, TotalCount = total, Page = page, PageSize = pageSize };
     }
 
-    public async Task<AuthorDetailDto> GetAuthorByIdAsync(int id)
+    public async Task<AuthorDto?> GetAuthorByIdAsync(int id)
     {
         var author = await _db.Authors
             .Include(a => a.BookAuthors).ThenInclude(ba => ba.Book)
-            .FirstOrDefaultAsync(a => a.Id == id)
-            ?? throw new NotFoundException($"Author with ID {id} not found.");
+            .FirstOrDefaultAsync(a => a.Id == id);
+        if (author == null) return null;
 
-        return new AuthorDetailDto
+        return new AuthorDto
         {
             Id = author.Id,
             FirstName = author.FirstName,
@@ -54,16 +52,13 @@ public class AuthorService : IAuthorService
             CreatedAt = author.CreatedAt,
             Books = author.BookAuthors.Select(ba => new BookSummaryDto
             {
-                Id = ba.Book.Id,
-                Title = ba.Book.Title,
-                ISBN = ba.Book.ISBN,
-                TotalCopies = ba.Book.TotalCopies,
-                AvailableCopies = ba.Book.AvailableCopies
+                Id = ba.Book.Id, Title = ba.Book.Title, ISBN = ba.Book.ISBN,
+                AvailableCopies = ba.Book.AvailableCopies, TotalCopies = ba.Book.TotalCopies
             }).ToList()
         };
     }
 
-    public async Task<AuthorDto> CreateAuthorAsync(AuthorCreateDto dto)
+    public async Task<AuthorDto> CreateAuthorAsync(CreateAuthorDto dto)
     {
         var author = new Author
         {
@@ -76,14 +71,14 @@ public class AuthorService : IAuthorService
         };
         _db.Authors.Add(author);
         await _db.SaveChangesAsync();
-        _logger.LogInformation("Author created: {AuthorId} - {FirstName} {LastName}", author.Id, author.FirstName, author.LastName);
-        return MapToDto(author);
+        _logger.LogInformation("Author created: {Id} {FirstName} {LastName}", author.Id, author.FirstName, author.LastName);
+        return (await GetAuthorByIdAsync(author.Id))!;
     }
 
-    public async Task<AuthorDto> UpdateAuthorAsync(int id, AuthorUpdateDto dto)
+    public async Task<AuthorDto?> UpdateAuthorAsync(int id, UpdateAuthorDto dto)
     {
-        var author = await _db.Authors.FindAsync(id)
-            ?? throw new NotFoundException($"Author with ID {id} not found.");
+        var author = await _db.Authors.FindAsync(id);
+        if (author == null) return null;
 
         author.FirstName = dto.FirstName;
         author.LastName = dto.LastName;
@@ -91,30 +86,17 @@ public class AuthorService : IAuthorService
         author.BirthDate = dto.BirthDate;
         author.Country = dto.Country;
         await _db.SaveChangesAsync();
-        return MapToDto(author);
+        return (await GetAuthorByIdAsync(id))!;
     }
 
-    public async Task DeleteAuthorAsync(int id)
+    public async Task<(bool Success, string? Error)> DeleteAuthorAsync(int id)
     {
-        var author = await _db.Authors.Include(a => a.BookAuthors).FirstOrDefaultAsync(a => a.Id == id)
-            ?? throw new NotFoundException($"Author with ID {id} not found.");
-
-        if (author.BookAuthors.Any())
-            throw new ConflictException($"Cannot delete author with ID {id} because they have associated books.");
+        var author = await _db.Authors.Include(a => a.BookAuthors).FirstOrDefaultAsync(a => a.Id == id);
+        if (author == null) return (false, "Author not found.");
+        if (author.BookAuthors.Any()) return (false, "Cannot delete author that has books associated.");
 
         _db.Authors.Remove(author);
         await _db.SaveChangesAsync();
-        _logger.LogInformation("Author deleted: {AuthorId}", id);
+        return (true, null);
     }
-
-    private static AuthorDto MapToDto(Author a) => new()
-    {
-        Id = a.Id,
-        FirstName = a.FirstName,
-        LastName = a.LastName,
-        Biography = a.Biography,
-        BirthDate = a.BirthDate,
-        Country = a.Country,
-        CreatedAt = a.CreatedAt
-    };
 }

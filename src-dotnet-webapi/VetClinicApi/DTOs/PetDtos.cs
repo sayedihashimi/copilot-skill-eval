@@ -2,6 +2,21 @@ using System.ComponentModel.DataAnnotations;
 
 namespace VetClinicApi.DTOs;
 
+public sealed record PetResponse(
+    int Id,
+    string Name,
+    string Species,
+    string? Breed,
+    DateOnly? DateOfBirth,
+    decimal? Weight,
+    string? Color,
+    string? MicrochipNumber,
+    bool IsActive,
+    int OwnerId,
+    OwnerSummaryResponse Owner,
+    DateTime CreatedAt,
+    DateTime UpdatedAt);
+
 public sealed record CreatePetRequest
 {
     [Required, MaxLength(100)]
@@ -15,7 +30,7 @@ public sealed record CreatePetRequest
 
     public DateOnly? DateOfBirth { get; init; }
 
-    [Range(0.01, 9999.99)]
+    [Range(0.01, double.MaxValue, ErrorMessage = "Weight must be positive")]
     public decimal? Weight { get; init; }
 
     public string? Color { get; init; }
@@ -38,7 +53,7 @@ public sealed record UpdatePetRequest
 
     public DateOnly? DateOfBirth { get; init; }
 
-    [Range(0.01, 9999.99)]
+    [Range(0.01, double.MaxValue, ErrorMessage = "Weight must be positive")]
     public decimal? Weight { get; init; }
 
     public string? Color { get; init; }
@@ -47,34 +62,3 @@ public sealed record UpdatePetRequest
     [Required]
     public required int OwnerId { get; init; }
 }
-
-public sealed record PetResponse(
-    int Id,
-    string Name,
-    string Species,
-    string? Breed,
-    DateOnly? DateOfBirth,
-    decimal? Weight,
-    string? Color,
-    string? MicrochipNumber,
-    bool IsActive,
-    int OwnerId,
-    string OwnerName,
-    DateTime CreatedAt,
-    DateTime UpdatedAt);
-
-public sealed record PetDetailResponse(
-    int Id,
-    string Name,
-    string Species,
-    string? Breed,
-    DateOnly? DateOfBirth,
-    decimal? Weight,
-    string? Color,
-    string? MicrochipNumber,
-    bool IsActive,
-    int OwnerId,
-    string OwnerName,
-    DateTime CreatedAt,
-    DateTime UpdatedAt,
-    OwnerResponse Owner);

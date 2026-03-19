@@ -16,7 +16,7 @@ public class AppointmentsController : ControllerBase
     }
 
     [HttpGet]
-    [ProducesResponseType(typeof(PaginatedResponse<AppointmentResponseDto>), 200)]
+    [ProducesResponseType(typeof(PagedResult<AppointmentResponseDto>), 200)]
     public async Task<IActionResult> GetAll(
         [FromQuery] DateTime? fromDate,
         [FromQuery] DateTime? toDate,
@@ -61,6 +61,7 @@ public class AppointmentsController : ControllerBase
     [ProducesResponseType(typeof(AppointmentResponseDto), 200)]
     [ProducesResponseType(400)]
     [ProducesResponseType(404)]
+    [ProducesResponseType(409)]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateAppointmentDto dto)
     {
         var result = await _service.UpdateAsync(id, dto);

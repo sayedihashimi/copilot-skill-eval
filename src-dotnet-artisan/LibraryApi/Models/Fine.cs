@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace LibraryApi.Models;
 
-public sealed class Fine
+public class Fine
 {
     public int Id { get; set; }
 
@@ -19,7 +19,6 @@ public sealed class Fine
     public string Reason { get; set; } = string.Empty;
 
     public DateTime IssuedDate { get; set; } = DateTime.UtcNow;
-
     public DateTime? PaidDate { get; set; }
 
     public FineStatus Status { get; set; } = FineStatus.Unpaid;

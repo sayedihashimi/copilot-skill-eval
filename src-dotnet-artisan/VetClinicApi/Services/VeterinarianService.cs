@@ -5,15 +5,15 @@ using VetClinicApi.Models;
 
 namespace VetClinicApi.Services;
 
-public sealed class VeterinarianService(VetClinicDbContext context, ILogger<VeterinarianService> logger) : IVeterinarianService
+public sealed class VeterinarianService(VetClinicDbContext db) : IVeterinarianService
 {
-    public async Task<PagedResult<VeterinarianResponse>> GetAllAsync(string? specialization, bool? isAvailable, int page, int pageSize, CancellationToken cancellationToken)
+    public async Task<PagedResult<VeterinarianResponse>> GetAllAsync(string? specialization, bool? isAvailable, int page, int pageSize, CancellationToken ct = default)
     {
-        var query = context.Veterinarians.AsQueryable();
+        var query = db.Veterinarians.AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(specialization))
         {
-            query = query.Where(v => v.Specialization != null && v.Specialization.ToLower().Contains(specialization.ToLower()));
+            query = query.Where(v => v.Specialization != null && v.Specialization.ToLower().Contains(specialization.Trim().ToLower()));
         }
 
         if (isAvailable.HasValue)
@@ -21,25 +21,35 @@ public sealed class VeterinarianService(VetClinicDbContext context, ILogger<Vete
             query = query.Where(v => v.IsAvailable == isAvailable.Value);
         }
 
-        var totalCount = await query.CountAsync(cancellationToken);
+        var totalCount = await query.CountAsync(ct);
         var items = await query
             .OrderBy(v => v.LastName).ThenBy(v => v.FirstName)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(v => MapToResponse(v))
-            .ToListAsync(cancellationToken);
+            .ToListAsync(ct);
 
         return new PagedResult<VeterinarianResponse>(items, totalCount, page, pageSize);
     }
 
-    public async Task<VeterinarianResponse?> GetByIdAsync(int id, CancellationToken cancellationToken)
+    public async Task<VeterinarianResponse?> GetByIdAsync(int id, CancellationToken ct = default)
     {
-        var vet = await context.Veterinarians.FindAsync([id], cancellationToken);
+        var vet = await db.Veterinarians.AsNoTracking().FirstOrDefaultAsync(v => v.Id == id, ct);
         return vet is null ? null : MapToResponse(vet);
     }
 
-    public async Task<VeterinarianResponse> CreateAsync(CreateVeterinarianRequest request, CancellationToken cancellationToken)
+    public async Task<VeterinarianResponse> CreateAsync(CreateVeterinarianRequest request, CancellationToken ct = default)
     {
+        if (await db.Veterinarians.AnyAsync(v => v.Email == request.Email, ct))
+        {
+            throw new InvalidOperationException($"A veterinarian with email '{request.Email}' already exists.");
+        }
+
+        if (await db.Veterinarians.AnyAsync(v => v.LicenseNumber == request.LicenseNumber, ct))
+        {
+            throw new InvalidOperationException($"A veterinarian with license number '{request.LicenseNumber}' already exists.");
+        }
+
         var vet = new Veterinarian
         {
             FirstName = request.FirstName,
@@ -48,22 +58,30 @@ public sealed class VeterinarianService(VetClinicDbContext context, ILogger<Vete
             Phone = request.Phone,
             Specialization = request.Specialization,
             LicenseNumber = request.LicenseNumber,
-            HireDate = request.HireDate
+            HireDate = request.HireDate,
         };
 
-        context.Veterinarians.Add(vet);
-        await context.SaveChangesAsync(cancellationToken);
-        logger.LogInformation("Veterinarian created: {VetId} {FirstName} {LastName}", vet.Id, vet.FirstName, vet.LastName);
-
+        db.Veterinarians.Add(vet);
+        await db.SaveChangesAsync(ct);
         return MapToResponse(vet);
     }
 
-    public async Task<VeterinarianResponse?> UpdateAsync(int id, UpdateVeterinarianRequest request, CancellationToken cancellationToken)
+    public async Task<VeterinarianResponse?> UpdateAsync(int id, UpdateVeterinarianRequest request, CancellationToken ct = default)
     {
-        var vet = await context.Veterinarians.FindAsync([id], cancellationToken);
+        var vet = await db.Veterinarians.FindAsync([id], ct);
         if (vet is null)
         {
             return null;
+        }
+
+        if (await db.Veterinarians.AnyAsync(v => v.Email == request.Email && v.Id != id, ct))
+        {
+            throw new InvalidOperationException($"A veterinarian with email '{request.Email}' already exists.");
+        }
+
+        if (await db.Veterinarians.AnyAsync(v => v.LicenseNumber == request.LicenseNumber && v.Id != id, ct))
+        {
+            throw new InvalidOperationException($"A veterinarian with license number '{request.LicenseNumber}' already exists.");
         }
 
         vet.FirstName = request.FirstName;
@@ -74,62 +92,56 @@ public sealed class VeterinarianService(VetClinicDbContext context, ILogger<Vete
         vet.LicenseNumber = request.LicenseNumber;
         vet.IsAvailable = request.IsAvailable;
 
-        await context.SaveChangesAsync(cancellationToken);
-        logger.LogInformation("Veterinarian updated: {VetId}", vet.Id);
-
+        await db.SaveChangesAsync(ct);
         return MapToResponse(vet);
     }
 
-    public async Task<IReadOnlyList<AppointmentResponse>> GetScheduleAsync(int vetId, DateOnly date, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<AppointmentResponse>> GetScheduleAsync(int vetId, DateOnly date, CancellationToken ct = default)
     {
         var startOfDay = date.ToDateTime(TimeOnly.MinValue);
         var endOfDay = date.ToDateTime(TimeOnly.MaxValue);
 
-        return await context.Appointments
+        return await db.Appointments.AsNoTracking()
             .Include(a => a.Pet)
             .Include(a => a.Veterinarian)
-            .Where(a => a.VeterinarianId == vetId &&
-                        a.AppointmentDate >= startOfDay &&
-                        a.AppointmentDate <= endOfDay)
+            .Where(a => a.VeterinarianId == vetId && a.AppointmentDate >= startOfDay && a.AppointmentDate <= endOfDay)
             .OrderBy(a => a.AppointmentDate)
             .Select(a => new AppointmentResponse(
-                a.Id, a.PetId, a.Pet.Name,
-                a.VeterinarianId, $"{a.Veterinarian.FirstName} {a.Veterinarian.LastName}",
-                a.AppointmentDate, a.DurationMinutes, a.Status,
-                a.Reason, a.Notes, a.CancellationReason,
-                a.CreatedAt, a.UpdatedAt))
-            .ToListAsync(cancellationToken);
+                a.Id, a.PetId, a.Pet.Name, a.VeterinarianId,
+                $"{a.Veterinarian.FirstName} {a.Veterinarian.LastName}",
+                a.AppointmentDate, a.DurationMinutes, a.Status.ToString(),
+                a.Reason, a.Notes, a.CancellationReason, a.CreatedAt, a.UpdatedAt))
+            .ToListAsync(ct);
     }
 
-    public async Task<PagedResult<AppointmentResponse>> GetAppointmentsAsync(int vetId, string? status, int page, int pageSize, CancellationToken cancellationToken)
+    public async Task<PagedResult<AppointmentResponse>> GetAppointmentsAsync(int vetId, string? status, int page, int pageSize, CancellationToken ct = default)
     {
-        var query = context.Appointments
+        var query = db.Appointments.AsNoTracking()
             .Include(a => a.Pet)
             .Include(a => a.Veterinarian)
             .Where(a => a.VeterinarianId == vetId);
 
-        if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<AppointmentStatus>(status, true, out var statusEnum))
+        if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<AppointmentStatus>(status, true, out var parsedStatus))
         {
-            query = query.Where(a => a.Status == statusEnum);
+            query = query.Where(a => a.Status == parsedStatus);
         }
 
-        var totalCount = await query.CountAsync(cancellationToken);
+        var totalCount = await query.CountAsync(ct);
         var items = await query
             .OrderByDescending(a => a.AppointmentDate)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(a => new AppointmentResponse(
-                a.Id, a.PetId, a.Pet.Name,
-                a.VeterinarianId, $"{a.Veterinarian.FirstName} {a.Veterinarian.LastName}",
-                a.AppointmentDate, a.DurationMinutes, a.Status,
-                a.Reason, a.Notes, a.CancellationReason,
-                a.CreatedAt, a.UpdatedAt))
-            .ToListAsync(cancellationToken);
+                a.Id, a.PetId, a.Pet.Name, a.VeterinarianId,
+                $"{a.Veterinarian.FirstName} {a.Veterinarian.LastName}",
+                a.AppointmentDate, a.DurationMinutes, a.Status.ToString(),
+                a.Reason, a.Notes, a.CancellationReason, a.CreatedAt, a.UpdatedAt))
+            .ToListAsync(ct);
 
         return new PagedResult<AppointmentResponse>(items, totalCount, page, pageSize);
     }
 
-    private static VeterinarianResponse MapToResponse(Veterinarian vet) =>
-        new(vet.Id, vet.FirstName, vet.LastName, vet.Email, vet.Phone,
-            vet.Specialization, vet.LicenseNumber, vet.IsAvailable, vet.HireDate);
+    private static VeterinarianResponse MapToResponse(Veterinarian v) =>
+        new(v.Id, v.FirstName, v.LastName, v.Email, v.Phone,
+            v.Specialization, v.LicenseNumber, v.IsAvailable, v.HireDate);
 }

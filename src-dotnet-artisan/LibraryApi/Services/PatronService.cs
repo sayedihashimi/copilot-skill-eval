@@ -5,16 +5,27 @@ using Microsoft.EntityFrameworkCore;
 
 namespace LibraryApi.Services;
 
-public sealed class PatronService(LibraryDbContext context, ILogger<PatronService> logger) : IPatronService
+public interface IPatronService
 {
-    public async Task<PaginatedResponse<PatronResponse>> GetPatronsAsync(
-        string? search, MembershipType? membershipType, int page, int pageSize, CancellationToken ct)
+    Task<PagedResult<PatronResponse>> GetAllAsync(string? search, MembershipType? membershipType, int page, int pageSize);
+    Task<PatronDetailResponse?> GetByIdAsync(int id);
+    Task<PatronResponse> CreateAsync(CreatePatronRequest request);
+    Task<PatronResponse?> UpdateAsync(int id, UpdatePatronRequest request);
+    Task<(bool Success, string? Error)> DeleteAsync(int id);
+    Task<List<LoanResponse>> GetPatronLoansAsync(int patronId, LoanStatus? status);
+    Task<List<ReservationResponse>> GetPatronReservationsAsync(int patronId);
+    Task<List<FineResponse>> GetPatronFinesAsync(int patronId, FineStatus? status);
+}
+
+public class PatronService(LibraryDbContext db) : IPatronService
+{
+    public async Task<PagedResult<PatronResponse>> GetAllAsync(string? search, MembershipType? membershipType, int page, int pageSize)
     {
-        var query = context.Patrons.AsQueryable();
+        var query = db.Patrons.AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(search))
         {
-            var term = search.ToLower();
+            var term = search.Trim().ToLower();
             query = query.Where(p =>
                 p.FirstName.ToLower().Contains(term) ||
                 p.LastName.ToLower().Contains(term) ||
@@ -22,41 +33,33 @@ public sealed class PatronService(LibraryDbContext context, ILogger<PatronServic
         }
 
         if (membershipType.HasValue)
-        {
             query = query.Where(p => p.MembershipType == membershipType.Value);
-        }
 
-        var totalCount = await query.CountAsync(ct);
+        var totalCount = await query.CountAsync();
         var items = await query
             .OrderBy(p => p.LastName).ThenBy(p => p.FirstName)
-            .Skip((page - 1) * pageSize).Take(pageSize)
-            .Select(p => new PatronResponse(p.Id, p.FirstName, p.LastName, p.Email, p.MembershipType, p.IsActive, p.MembershipDate))
-            .ToListAsync(ct);
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(p => new PatronResponse(p.Id, p.FirstName, p.LastName, p.Email, p.MembershipType, p.MembershipDate, p.IsActive))
+            .ToListAsync();
 
-        return new PaginatedResponse<PatronResponse>(items, totalCount, page, pageSize, (int)Math.Ceiling((double)totalCount / pageSize));
+        return new PagedResult<PatronResponse>(items, totalCount, page, pageSize);
     }
 
-    public async Task<PatronDetailResponse?> GetPatronByIdAsync(int id, CancellationToken ct)
+    public async Task<PatronDetailResponse?> GetByIdAsync(int id)
     {
-        var patron = await context.Patrons.FirstOrDefaultAsync(p => p.Id == id, ct);
-        if (patron is null)
-        {
-            return null;
-        }
-
-        var activeLoansCount = await context.Loans.CountAsync(l => l.PatronId == id && l.Status == LoanStatus.Active, ct);
-        var totalUnpaidFines = await context.Fines
-            .Where(f => f.PatronId == id && f.Status == FineStatus.Unpaid)
-            .SumAsync(f => f.Amount, ct);
-
-        return new PatronDetailResponse(
-            patron.Id, patron.FirstName, patron.LastName, patron.Email,
-            patron.Phone, patron.Address, patron.MembershipDate, patron.MembershipType,
-            patron.IsActive, patron.CreatedAt, patron.UpdatedAt,
-            activeLoansCount, totalUnpaidFines);
+        return await db.Patrons
+            .Where(p => p.Id == id)
+            .Select(p => new PatronDetailResponse(
+                p.Id, p.FirstName, p.LastName, p.Email, p.Phone, p.Address,
+                p.MembershipType, p.MembershipDate, p.IsActive,
+                p.Loans.Count(l => l.Status == LoanStatus.Active),
+                p.Fines.Where(f => f.Status == FineStatus.Unpaid).Sum(f => f.Amount),
+                p.CreatedAt, p.UpdatedAt))
+            .FirstOrDefaultAsync();
     }
 
-    public async Task<PatronResponse> CreatePatronAsync(CreatePatronRequest request, CancellationToken ct)
+    public async Task<PatronResponse> CreateAsync(CreatePatronRequest request)
     {
         var patron = new Patron
         {
@@ -65,27 +68,19 @@ public sealed class PatronService(LibraryDbContext context, ILogger<PatronServic
             Email = request.Email,
             Phone = request.Phone,
             Address = request.Address,
-            MembershipType = request.MembershipType,
-            MembershipDate = DateOnly.FromDateTime(DateTime.UtcNow),
-            IsActive = true,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            MembershipType = request.MembershipType
         };
 
-        context.Patrons.Add(patron);
-        await context.SaveChangesAsync(ct);
+        db.Patrons.Add(patron);
+        await db.SaveChangesAsync();
 
-        logger.LogInformation("Created patron {PatronId}: {FirstName} {LastName}", patron.Id, patron.FirstName, patron.LastName);
-        return new PatronResponse(patron.Id, patron.FirstName, patron.LastName, patron.Email, patron.MembershipType, patron.IsActive, patron.MembershipDate);
+        return new PatronResponse(patron.Id, patron.FirstName, patron.LastName, patron.Email, patron.MembershipType, patron.MembershipDate, patron.IsActive);
     }
 
-    public async Task<PatronResponse?> UpdatePatronAsync(int id, UpdatePatronRequest request, CancellationToken ct)
+    public async Task<PatronResponse?> UpdateAsync(int id, UpdatePatronRequest request)
     {
-        var patron = await context.Patrons.FindAsync([id], ct);
-        if (patron is null)
-        {
-            return null;
-        }
+        var patron = await db.Patrons.FindAsync(id);
+        if (patron is null) return null;
 
         patron.FirstName = request.FirstName;
         patron.LastName = request.LastName;
@@ -95,92 +90,75 @@ public sealed class PatronService(LibraryDbContext context, ILogger<PatronServic
         patron.MembershipType = request.MembershipType;
         patron.UpdatedAt = DateTime.UtcNow;
 
-        await context.SaveChangesAsync(ct);
-        return new PatronResponse(patron.Id, patron.FirstName, patron.LastName, patron.Email, patron.MembershipType, patron.IsActive, patron.MembershipDate);
+        await db.SaveChangesAsync();
+
+        return new PatronResponse(patron.Id, patron.FirstName, patron.LastName, patron.Email, patron.MembershipType, patron.MembershipDate, patron.IsActive);
     }
 
-    public async Task<(bool Found, bool HasActiveLoans)> DeactivatePatronAsync(int id, CancellationToken ct)
+    public async Task<(bool Success, string? Error)> DeleteAsync(int id)
     {
-        var patron = await context.Patrons.FindAsync([id], ct);
-        if (patron is null)
-        {
-            return (false, false);
-        }
+        var patron = await db.Patrons.FindAsync(id);
+        if (patron is null) return (false, "Patron not found.");
 
-        var hasActiveLoans = await context.Loans.AnyAsync(l => l.PatronId == id && l.Status == LoanStatus.Active, ct);
-        if (hasActiveLoans)
-        {
-            return (true, true);
-        }
+        var hasActiveLoans = await db.Loans.AnyAsync(l => l.PatronId == id && l.Status == LoanStatus.Active);
+        if (hasActiveLoans) return (false, "Cannot deactivate patron with active loans.");
 
         patron.IsActive = false;
         patron.UpdatedAt = DateTime.UtcNow;
-        await context.SaveChangesAsync(ct);
-        logger.LogInformation("Deactivated patron {PatronId}", id);
-        return (true, false);
+        await db.SaveChangesAsync();
+        return (true, null);
     }
 
-    public async Task<PaginatedResponse<LoanResponse>> GetPatronLoansAsync(int patronId, string? status, int page, int pageSize, CancellationToken ct)
+    public async Task<List<LoanResponse>> GetPatronLoansAsync(int patronId, LoanStatus? status)
     {
-        var query = context.Loans
-            .Include(l => l.Book).Include(l => l.Patron)
-            .Where(l => l.PatronId == patronId);
+        var query = db.Loans
+            .Where(l => l.PatronId == patronId)
+            .Include(l => l.Book)
+            .Include(l => l.Patron)
+            .AsQueryable();
 
-        if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<LoanStatus>(status, true, out var loanStatus))
-        {
-            query = query.Where(l => l.Status == loanStatus);
-        }
+        if (status.HasValue)
+            query = query.Where(l => l.Status == status.Value);
 
-        var totalCount = await query.CountAsync(ct);
-        var items = await query
+        return await query
             .OrderByDescending(l => l.LoanDate)
-            .Skip((page - 1) * pageSize).Take(pageSize)
-            .Select(l => new LoanResponse(l.Id, l.BookId, l.Book.Title, l.PatronId,
+            .Select(l => new LoanResponse(
+                l.Id, l.BookId, l.Book.Title, l.PatronId,
                 l.Patron.FirstName + " " + l.Patron.LastName,
                 l.LoanDate, l.DueDate, l.ReturnDate, l.Status, l.RenewalCount))
-            .ToListAsync(ct);
-
-        return new PaginatedResponse<LoanResponse>(items, totalCount, page, pageSize, (int)Math.Ceiling((double)totalCount / pageSize));
+            .ToListAsync();
     }
 
-    public async Task<PaginatedResponse<ReservationResponse>> GetPatronReservationsAsync(int patronId, int page, int pageSize, CancellationToken ct)
+    public async Task<List<ReservationResponse>> GetPatronReservationsAsync(int patronId)
     {
-        var query = context.Reservations
-            .Include(r => r.Book).Include(r => r.Patron)
+        return await db.Reservations
             .Where(r => r.PatronId == patronId)
-            .OrderByDescending(r => r.ReservationDate);
-
-        var totalCount = await query.CountAsync(ct);
-        var items = await query
-            .Skip((page - 1) * pageSize).Take(pageSize)
-            .Select(r => new ReservationResponse(r.Id, r.BookId, r.Book.Title, r.PatronId,
+            .Include(r => r.Book)
+            .Include(r => r.Patron)
+            .OrderByDescending(r => r.ReservationDate)
+            .Select(r => new ReservationResponse(
+                r.Id, r.BookId, r.Book.Title, r.PatronId,
                 r.Patron.FirstName + " " + r.Patron.LastName,
                 r.ReservationDate, r.ExpirationDate, r.Status, r.QueuePosition))
-            .ToListAsync(ct);
-
-        return new PaginatedResponse<ReservationResponse>(items, totalCount, page, pageSize, (int)Math.Ceiling((double)totalCount / pageSize));
+            .ToListAsync();
     }
 
-    public async Task<PaginatedResponse<FineResponse>> GetPatronFinesAsync(int patronId, string? status, int page, int pageSize, CancellationToken ct)
+    public async Task<List<FineResponse>> GetPatronFinesAsync(int patronId, FineStatus? status)
     {
-        var query = context.Fines
+        var query = db.Fines
+            .Where(f => f.PatronId == patronId)
             .Include(f => f.Patron)
-            .Where(f => f.PatronId == patronId);
+            .AsQueryable();
 
-        if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<FineStatus>(status, true, out var fineStatus))
-        {
-            query = query.Where(f => f.Status == fineStatus);
-        }
+        if (status.HasValue)
+            query = query.Where(f => f.Status == status.Value);
 
-        var totalCount = await query.CountAsync(ct);
-        var items = await query
+        return await query
             .OrderByDescending(f => f.IssuedDate)
-            .Skip((page - 1) * pageSize).Take(pageSize)
-            .Select(f => new FineResponse(f.Id, f.PatronId,
+            .Select(f => new FineResponse(
+                f.Id, f.PatronId,
                 f.Patron.FirstName + " " + f.Patron.LastName,
                 f.LoanId, f.Amount, f.Reason, f.IssuedDate, f.PaidDate, f.Status))
-            .ToListAsync(ct);
-
-        return new PaginatedResponse<FineResponse>(items, totalCount, page, pageSize, (int)Math.Ceiling((double)totalCount / pageSize));
+            .ToListAsync();
     }
 }

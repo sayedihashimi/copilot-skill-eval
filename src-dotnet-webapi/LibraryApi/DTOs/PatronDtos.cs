@@ -3,50 +3,8 @@ using LibraryApi.Models;
 
 namespace LibraryApi.DTOs;
 
-// Requests
-public sealed record CreatePatronRequest
-{
-    [Required, MaxLength(100)]
-    public required string FirstName { get; init; }
+// --- Patron DTOs ---
 
-    [Required, MaxLength(100)]
-    public required string LastName { get; init; }
-
-    [Required, EmailAddress, MaxLength(200)]
-    public required string Email { get; init; }
-
-    [MaxLength(20)]
-    public string? Phone { get; init; }
-
-    [MaxLength(500)]
-    public string? Address { get; init; }
-
-    [Required]
-    public required MembershipType MembershipType { get; init; }
-}
-
-public sealed record UpdatePatronRequest
-{
-    [Required, MaxLength(100)]
-    public required string FirstName { get; init; }
-
-    [Required, MaxLength(100)]
-    public required string LastName { get; init; }
-
-    [Required, EmailAddress, MaxLength(200)]
-    public required string Email { get; init; }
-
-    [MaxLength(20)]
-    public string? Phone { get; init; }
-
-    [MaxLength(500)]
-    public string? Address { get; init; }
-
-    [Required]
-    public required MembershipType MembershipType { get; init; }
-}
-
-// Responses
 public sealed record PatronResponse(
     int Id,
     string FirstName,
@@ -58,7 +16,8 @@ public sealed record PatronResponse(
     MembershipType MembershipType,
     bool IsActive,
     DateTime CreatedAt,
-    DateTime UpdatedAt);
+    DateTime UpdatedAt
+);
 
 public sealed record PatronDetailResponse(
     int Id,
@@ -70,7 +29,42 @@ public sealed record PatronDetailResponse(
     DateOnly MembershipDate,
     MembershipType MembershipType,
     bool IsActive,
+    int ActiveLoansCount,
+    decimal TotalUnpaidFines,
     DateTime CreatedAt,
-    DateTime UpdatedAt,
-    int ActiveLoans,
-    decimal UnpaidFines);
+    DateTime UpdatedAt
+);
+
+public sealed record CreatePatronRequest
+{
+    [Required, MaxLength(100)]
+    public required string FirstName { get; init; }
+
+    [Required, MaxLength(100)]
+    public required string LastName { get; init; }
+
+    [Required, EmailAddress]
+    public required string Email { get; init; }
+
+    public string? Phone { get; init; }
+    public string? Address { get; init; }
+
+    public MembershipType MembershipType { get; init; } = MembershipType.Standard;
+}
+
+public sealed record UpdatePatronRequest
+{
+    [Required, MaxLength(100)]
+    public required string FirstName { get; init; }
+
+    [Required, MaxLength(100)]
+    public required string LastName { get; init; }
+
+    [Required, EmailAddress]
+    public required string Email { get; init; }
+
+    public string? Phone { get; init; }
+    public string? Address { get; init; }
+
+    public MembershipType MembershipType { get; init; } = MembershipType.Standard;
+}

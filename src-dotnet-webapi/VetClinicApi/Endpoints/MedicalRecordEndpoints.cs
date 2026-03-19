@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
 using VetClinicApi.DTOs;
 using VetClinicApi.Services;
 
@@ -9,19 +11,19 @@ public static class MedicalRecordEndpoints
     {
         var group = app.MapGroup("/api/medical-records").WithTags("Medical Records");
 
-        group.MapGet("/{id:int}", async Task<Results<Ok<MedicalRecordDetailResponse>, NotFound>> (
+        group.MapGet("/{id:int}", async Task<Results<Ok<MedicalRecordResponse>, NotFound>> (
             int id, IMedicalRecordService service, CancellationToken ct) =>
         {
             var record = await service.GetByIdAsync(id, ct);
             return record is null ? TypedResults.NotFound() : TypedResults.Ok(record);
         })
         .WithName("GetMedicalRecordById")
-        .WithSummary("Get a medical record by ID")
+        .WithSummary("Get medical record by ID")
         .WithDescription("Returns medical record details including prescriptions.")
-        .Produces<MedicalRecordDetailResponse>(StatusCodes.Status200OK)
+        .Produces<MedicalRecordResponse>()
         .Produces(StatusCodes.Status404NotFound);
 
-        group.MapPost("/", async Task<Created<MedicalRecordResponse>> (
+        group.MapPost("/", async Task<Results<Created<MedicalRecordResponse>, BadRequest<ProblemDetails>>> (
             CreateMedicalRecordRequest request, IMedicalRecordService service, CancellationToken ct) =>
         {
             var record = await service.CreateAsync(request, ct);
@@ -29,7 +31,7 @@ public static class MedicalRecordEndpoints
         })
         .WithName("CreateMedicalRecord")
         .WithSummary("Create a medical record")
-        .WithDescription("Creates a medical record for a completed or in-progress appointment. Only one record per appointment.")
+        .WithDescription("Creates a medical record for a completed or in-progress appointment. Each appointment can have at most one medical record.")
         .Produces<MedicalRecordResponse>(StatusCodes.Status201Created)
         .Produces(StatusCodes.Status400BadRequest)
         .Produces(StatusCodes.Status409Conflict);
@@ -42,9 +44,8 @@ public static class MedicalRecordEndpoints
         })
         .WithName("UpdateMedicalRecord")
         .WithSummary("Update a medical record")
-        .WithDescription("Updates diagnosis, treatment, notes, and follow-up date.")
-        .Produces<MedicalRecordResponse>(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status400BadRequest)
+        .WithDescription("Updates diagnosis, treatment, notes, and follow-up date of a medical record.")
+        .Produces<MedicalRecordResponse>()
         .Produces(StatusCodes.Status404NotFound);
     }
 }

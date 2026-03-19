@@ -4,6 +4,6 @@ namespace VetClinicApi.Services;
 
 public interface IPrescriptionService
 {
-    Task<PrescriptionResponse?> GetByIdAsync(int id, CancellationToken cancellationToken);
-    Task<(PrescriptionResponse? Result, string? Error)> CreateAsync(CreatePrescriptionRequest request, CancellationToken cancellationToken);
+    Task<PrescriptionResponse?> GetByIdAsync(int id, CancellationToken ct = default);
+    Task<PrescriptionResponse> CreateAsync(CreatePrescriptionRequest request, CancellationToken ct = default);
 }

@@ -2,7 +2,31 @@ using System.ComponentModel.DataAnnotations;
 
 namespace LibraryApi.DTOs;
 
-public sealed record BookResponse(
+public record CreateBookRequest(
+    [Required, MaxLength(300)] string Title,
+    [Required, MaxLength(20)] string ISBN,
+    [MaxLength(200)] string? Publisher,
+    int? PublicationYear,
+    [MaxLength(2000)] string? Description,
+    int? PageCount,
+    [MaxLength(50)] string? Language,
+    [Range(1, int.MaxValue)] int TotalCopies,
+    List<int> AuthorIds,
+    List<int> CategoryIds);
+
+public record UpdateBookRequest(
+    [Required, MaxLength(300)] string Title,
+    [Required, MaxLength(20)] string ISBN,
+    [MaxLength(200)] string? Publisher,
+    int? PublicationYear,
+    [MaxLength(2000)] string? Description,
+    int? PageCount,
+    [MaxLength(50)] string? Language,
+    [Range(1, int.MaxValue)] int TotalCopies,
+    List<int> AuthorIds,
+    List<int> CategoryIds);
+
+public record BookResponse(
     int Id,
     string Title,
     string ISBN,
@@ -10,11 +34,9 @@ public sealed record BookResponse(
     int? PublicationYear,
     string Language,
     int TotalCopies,
-    int AvailableCopies,
-    IReadOnlyList<string> Authors,
-    IReadOnlyList<string> Categories);
+    int AvailableCopies);
 
-public sealed record BookDetailResponse(
+public record BookDetailResponse(
     int Id,
     string Title,
     string ISBN,
@@ -27,63 +49,8 @@ public sealed record BookDetailResponse(
     int AvailableCopies,
     DateTime CreatedAt,
     DateTime UpdatedAt,
-    IReadOnlyList<AuthorResponse> Authors,
-    IReadOnlyList<CategoryResponse> Categories);
+    IReadOnlyList<BookAuthorResponse> Authors,
+    IReadOnlyList<BookCategoryResponse> Categories);
 
-public sealed class CreateBookRequest
-{
-    [Required, MaxLength(300)]
-    public string Title { get; init; } = string.Empty;
-
-    [Required, MaxLength(20)]
-    public string ISBN { get; init; } = string.Empty;
-
-    [MaxLength(200)]
-    public string? Publisher { get; init; }
-
-    public int? PublicationYear { get; init; }
-
-    [MaxLength(2000)]
-    public string? Description { get; init; }
-
-    public int? PageCount { get; init; }
-
-    [MaxLength(50)]
-    public string Language { get; init; } = "English";
-
-    [Range(1, int.MaxValue)]
-    public int TotalCopies { get; init; }
-
-    public List<int> AuthorIds { get; init; } = [];
-
-    public List<int> CategoryIds { get; init; } = [];
-}
-
-public sealed class UpdateBookRequest
-{
-    [Required, MaxLength(300)]
-    public string Title { get; init; } = string.Empty;
-
-    [Required, MaxLength(20)]
-    public string ISBN { get; init; } = string.Empty;
-
-    [MaxLength(200)]
-    public string? Publisher { get; init; }
-
-    public int? PublicationYear { get; init; }
-
-    [MaxLength(2000)]
-    public string? Description { get; init; }
-
-    public int? PageCount { get; init; }
-
-    [MaxLength(50)]
-    public string Language { get; init; } = "English";
-
-    [Range(1, int.MaxValue)]
-    public int TotalCopies { get; init; }
-
-    public List<int> AuthorIds { get; init; } = [];
-
-    public List<int> CategoryIds { get; init; } = [];
-}
+public record BookAuthorResponse(int Id, string FirstName, string LastName);
+public record BookCategoryResponse(int Id, string Name);

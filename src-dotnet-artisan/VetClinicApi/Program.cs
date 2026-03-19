@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using VetClinicApi.Data;
-using VetClinicApi.Endpoints;
+using VetClinicApi.Middleware;
 using VetClinicApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,42 +18,39 @@ builder.Services.AddScoped<IMedicalRecordService, MedicalRecordService>();
 builder.Services.AddScoped<IPrescriptionService, PrescriptionService>();
 builder.Services.AddScoped<IVaccinationService, VaccinationService>();
 
-// OpenAPI
-builder.Services.AddOpenApi();
-
-// Global error handling
+// Error handling
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
+
+// Controllers & OpenAPI
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+    });
+builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-// Global exception handler returning RFC 7807 ProblemDetails
+// Apply migrations and seed
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<VetClinicDbContext>();
+    db.Database.EnsureCreated();
+    DbSeeder.Seed(db);
+}
+
 app.UseExceptionHandler();
-app.UseStatusCodePages();
 
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-    // Swagger UI redirect
-    app.MapGet("/", () => Results.Redirect("/openapi/v1.json")).ExcludeFromDescription();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/openapi/v1.json", "VetClinicApi v1");
+    });
 }
 
-// Map all API endpoints
-var api = app.MapGroup("/api");
-api.MapOwnerEndpoints();
-api.MapPetEndpoints();
-api.MapVeterinarianEndpoints();
-api.MapAppointmentEndpoints();
-api.MapMedicalRecordEndpoints();
-api.MapPrescriptionEndpoints();
-api.MapVaccinationEndpoints();
-
-// Database initialization and seeding
-using (var scope = app.Services.CreateScope())
-{
-    var context = scope.ServiceProvider.GetRequiredService<VetClinicDbContext>();
-    await context.Database.EnsureCreatedAsync();
-    await DataSeeder.SeedAsync(context);
-}
-
+app.UseHttpsRedirection();
+app.MapControllers();
 app.Run();
-

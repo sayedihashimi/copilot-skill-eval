@@ -2,40 +2,39 @@ using Microsoft.EntityFrameworkCore;
 using FitnessStudioApi.Data;
 using FitnessStudioApi.DTOs;
 using FitnessStudioApi.Models;
-using FitnessStudioApi.Middleware;
+using FitnessStudioApi.Services.Interfaces;
 
 namespace FitnessStudioApi.Services;
 
 public class MembershipPlanService : IMembershipPlanService
 {
-    private readonly FitnessDbContext _db;
+    private readonly FitnessDbContext _context;
     private readonly ILogger<MembershipPlanService> _logger;
 
-    public MembershipPlanService(FitnessDbContext db, ILogger<MembershipPlanService> logger)
+    public MembershipPlanService(FitnessDbContext context, ILogger<MembershipPlanService> logger)
     {
-        _db = db;
+        _context = context;
         _logger = logger;
     }
 
     public async Task<List<MembershipPlanDto>> GetAllAsync()
     {
-        return await _db.MembershipPlans
+        return await _context.MembershipPlans
             .Where(p => p.IsActive)
             .Select(p => MapToDto(p))
             .ToListAsync();
     }
 
-    public async Task<MembershipPlanDto> GetByIdAsync(int id)
+    public async Task<MembershipPlanDto?> GetByIdAsync(int id)
     {
-        var plan = await _db.MembershipPlans.FindAsync(id)
-            ?? throw new KeyNotFoundException($"Membership plan with ID {id} not found.");
-        return MapToDto(plan);
+        var plan = await _context.MembershipPlans.FindAsync(id);
+        return plan == null ? null : MapToDto(plan);
     }
 
     public async Task<MembershipPlanDto> CreateAsync(CreateMembershipPlanDto dto)
     {
-        if (await _db.MembershipPlans.AnyAsync(p => p.Name == dto.Name))
-            throw new BusinessRuleException($"A membership plan with name '{dto.Name}' already exists.", 409);
+        if (await _context.MembershipPlans.AnyAsync(p => p.Name == dto.Name))
+            throw new InvalidOperationException($"A membership plan with name '{dto.Name}' already exists.");
 
         var plan = new MembershipPlan
         {
@@ -47,19 +46,19 @@ public class MembershipPlanService : IMembershipPlanService
             AllowsPremiumClasses = dto.AllowsPremiumClasses
         };
 
-        _db.MembershipPlans.Add(plan);
-        await _db.SaveChangesAsync();
-        _logger.LogInformation("Created membership plan: {PlanName}", plan.Name);
+        _context.MembershipPlans.Add(plan);
+        await _context.SaveChangesAsync();
+        _logger.LogInformation("Created membership plan: {PlanName} (ID: {PlanId})", plan.Name, plan.Id);
         return MapToDto(plan);
     }
 
-    public async Task<MembershipPlanDto> UpdateAsync(int id, UpdateMembershipPlanDto dto)
+    public async Task<MembershipPlanDto?> UpdateAsync(int id, UpdateMembershipPlanDto dto)
     {
-        var plan = await _db.MembershipPlans.FindAsync(id)
-            ?? throw new KeyNotFoundException($"Membership plan with ID {id} not found.");
+        var plan = await _context.MembershipPlans.FindAsync(id);
+        if (plan == null) return null;
 
-        if (await _db.MembershipPlans.AnyAsync(p => p.Name == dto.Name && p.Id != id))
-            throw new BusinessRuleException($"A membership plan with name '{dto.Name}' already exists.", 409);
+        if (await _context.MembershipPlans.AnyAsync(p => p.Name == dto.Name && p.Id != id))
+            throw new InvalidOperationException($"A membership plan with name '{dto.Name}' already exists.");
 
         plan.Name = dto.Name;
         plan.Description = dto.Description;
@@ -70,19 +69,20 @@ public class MembershipPlanService : IMembershipPlanService
         plan.IsActive = dto.IsActive;
         plan.UpdatedAt = DateTime.UtcNow;
 
-        await _db.SaveChangesAsync();
+        await _context.SaveChangesAsync();
         return MapToDto(plan);
     }
 
-    public async Task DeleteAsync(int id)
+    public async Task<bool> DeactivateAsync(int id)
     {
-        var plan = await _db.MembershipPlans.FindAsync(id)
-            ?? throw new KeyNotFoundException($"Membership plan with ID {id} not found.");
+        var plan = await _context.MembershipPlans.FindAsync(id);
+        if (plan == null) return false;
 
         plan.IsActive = false;
         plan.UpdatedAt = DateTime.UtcNow;
-        await _db.SaveChangesAsync();
-        _logger.LogInformation("Deactivated membership plan: {PlanName}", plan.Name);
+        await _context.SaveChangesAsync();
+        _logger.LogInformation("Deactivated membership plan: {PlanName} (ID: {PlanId})", plan.Name, plan.Id);
+        return true;
     }
 
     private static MembershipPlanDto MapToDto(MembershipPlan p) => new()

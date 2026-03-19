@@ -3,6 +3,37 @@ using VetClinicApi.Models;
 
 namespace VetClinicApi.DTOs;
 
+public sealed record AppointmentResponse(
+    int Id,
+    int PetId,
+    string PetName,
+    int VeterinarianId,
+    string VeterinarianName,
+    DateTime AppointmentDate,
+    int DurationMinutes,
+    AppointmentStatus Status,
+    string Reason,
+    string? Notes,
+    string? CancellationReason,
+    DateTime CreatedAt,
+    DateTime UpdatedAt);
+
+public sealed record AppointmentDetailResponse(
+    int Id,
+    int PetId,
+    string PetName,
+    int VeterinarianId,
+    string VeterinarianName,
+    DateTime AppointmentDate,
+    int DurationMinutes,
+    AppointmentStatus Status,
+    string Reason,
+    string? Notes,
+    string? CancellationReason,
+    MedicalRecordResponse? MedicalRecord,
+    DateTime CreatedAt,
+    DateTime UpdatedAt);
+
 public sealed record CreateAppointmentRequest
 {
     [Required]
@@ -36,7 +67,7 @@ public sealed record UpdateAppointmentRequest
     public required DateTime AppointmentDate { get; init; }
 
     [Range(15, 120)]
-    public required int DurationMinutes { get; init; }
+    public int DurationMinutes { get; init; } = 30;
 
     [Required, MaxLength(500)]
     public required string Reason { get; init; }
@@ -50,37 +81,5 @@ public sealed record UpdateAppointmentStatusRequest
     [Required]
     public required AppointmentStatus Status { get; init; }
 
-    [MaxLength(500)]
     public string? CancellationReason { get; init; }
 }
-
-public sealed record AppointmentResponse(
-    int Id,
-    int PetId,
-    string PetName,
-    int VeterinarianId,
-    string VeterinarianName,
-    DateTime AppointmentDate,
-    int DurationMinutes,
-    AppointmentStatus Status,
-    string Reason,
-    string? Notes,
-    string? CancellationReason,
-    DateTime CreatedAt,
-    DateTime UpdatedAt);
-
-public sealed record AppointmentDetailResponse(
-    int Id,
-    int PetId,
-    string PetName,
-    int VeterinarianId,
-    string VeterinarianName,
-    DateTime AppointmentDate,
-    int DurationMinutes,
-    AppointmentStatus Status,
-    string Reason,
-    string? Notes,
-    string? CancellationReason,
-    DateTime CreatedAt,
-    DateTime UpdatedAt,
-    MedicalRecordResponse? MedicalRecord);

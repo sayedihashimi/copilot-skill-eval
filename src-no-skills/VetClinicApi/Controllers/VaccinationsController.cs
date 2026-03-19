@@ -15,6 +15,16 @@ public class VaccinationsController : ControllerBase
         _service = service;
     }
 
+    [HttpPost]
+    [ProducesResponseType(typeof(VaccinationResponseDto), 201)]
+    [ProducesResponseType(400)]
+    [ProducesResponseType(404)]
+    public async Task<IActionResult> Create([FromBody] CreateVaccinationDto dto)
+    {
+        var result = await _service.CreateAsync(dto);
+        return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+    }
+
     [HttpGet("{id}")]
     [ProducesResponseType(typeof(VaccinationResponseDto), 200)]
     [ProducesResponseType(404)]
@@ -22,14 +32,5 @@ public class VaccinationsController : ControllerBase
     {
         var result = await _service.GetByIdAsync(id);
         return Ok(result);
-    }
-
-    [HttpPost]
-    [ProducesResponseType(typeof(VaccinationResponseDto), 201)]
-    [ProducesResponseType(400)]
-    public async Task<IActionResult> Create([FromBody] CreateVaccinationDto dto)
-    {
-        var result = await _service.CreateAsync(dto);
-        return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
     }
 }

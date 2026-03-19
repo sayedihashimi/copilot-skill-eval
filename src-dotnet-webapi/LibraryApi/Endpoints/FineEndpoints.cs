@@ -1,66 +1,84 @@
 using LibraryApi.DTOs;
-using LibraryApi.Models;
 using LibraryApi.Services;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
 
 namespace LibraryApi.Endpoints;
 
 public static class FineEndpoints
 {
-    public static void MapFineEndpoints(this IEndpointRouteBuilder app)
+    public static void MapFineEndpoints(this WebApplication app)
     {
         var group = app.MapGroup("/api/fines").WithTags("Fines");
 
-        group.MapGet("/", async Task<Ok<PaginatedResponse<FineResponse>>> (
-            FineStatus? status, int? page, int? pageSize,
-            IFineService service, CancellationToken ct) =>
+        group.MapGet("/", async (
+            [FromQuery] string? status,
+            [FromQuery] int page,
+            [FromQuery] int pageSize,
+            IFineService service,
+            CancellationToken ct) =>
         {
-            var p = Math.Clamp(page ?? 1, 1, int.MaxValue);
-            var ps = Math.Clamp(pageSize ?? 20, 1, 100);
-            var result = await service.GetAllAsync(status, p, ps, ct);
-            return TypedResults.Ok(result);
+            if (page < 1) page = 1;
+            pageSize = Math.Clamp(pageSize == 0 ? 10 : pageSize, 1, 100);
+            return TypedResults.Ok(await service.GetFinesAsync(status, page, pageSize, ct));
         })
         .WithName("GetFines")
         .WithSummary("List fines")
-        .WithDescription("Returns a paginated list of fines, optionally filtered by status.")
+        .WithDescription("List fines with optional filter by status and pagination.")
         .Produces<PaginatedResponse<FineResponse>>(StatusCodes.Status200OK);
 
         group.MapGet("/{id:int}", async Task<Results<Ok<FineResponse>, NotFound>> (
             int id, IFineService service, CancellationToken ct) =>
         {
-            var result = await service.GetByIdAsync(id, ct);
-            return result is not null ? TypedResults.Ok(result) : TypedResults.NotFound();
+            var fine = await service.GetFineByIdAsync(id, ct);
+            return fine is not null ? TypedResults.Ok(fine) : TypedResults.NotFound();
         })
         .WithName("GetFineById")
-        .WithSummary("Get fine by ID")
-        .WithDescription("Returns fine details.")
+        .WithSummary("Get fine details")
+        .WithDescription("Get details for a specific fine.")
         .Produces<FineResponse>(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status404NotFound);
 
-        group.MapPost("/{id:int}/pay", async Task<Ok<FineResponse>> (
+        group.MapPost("/{id:int}/pay", async Task<Results<Ok<FineResponse>, NotFound, BadRequest<ProblemDetails>>> (
             int id, IFineService service, CancellationToken ct) =>
         {
-            var result = await service.PayAsync(id, ct);
-            return TypedResults.Ok(result);
+            var (fine, error, notFound) = await service.PayFineAsync(id, ct);
+            if (notFound) return TypedResults.NotFound();
+            if (error is not null)
+                return TypedResults.BadRequest(new ProblemDetails
+                {
+                    Title = "Payment failed",
+                    Detail = error,
+                    Status = StatusCodes.Status400BadRequest
+                });
+            return TypedResults.Ok(fine!);
         })
         .WithName("PayFine")
         .WithSummary("Pay a fine")
-        .WithDescription("Marks an unpaid fine as paid.")
+        .WithDescription("Pay a fine — sets PaidDate and updates status to Paid.")
         .Produces<FineResponse>(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status404NotFound)
-        .Produces(StatusCodes.Status409Conflict);
+        .Produces(StatusCodes.Status400BadRequest);
 
-        group.MapPost("/{id:int}/waive", async Task<Ok<FineResponse>> (
+        group.MapPost("/{id:int}/waive", async Task<Results<Ok<FineResponse>, NotFound, BadRequest<ProblemDetails>>> (
             int id, IFineService service, CancellationToken ct) =>
         {
-            var result = await service.WaiveAsync(id, ct);
-            return TypedResults.Ok(result);
+            var (fine, error, notFound) = await service.WaiveFineAsync(id, ct);
+            if (notFound) return TypedResults.NotFound();
+            if (error is not null)
+                return TypedResults.BadRequest(new ProblemDetails
+                {
+                    Title = "Waive failed",
+                    Detail = error,
+                    Status = StatusCodes.Status400BadRequest
+                });
+            return TypedResults.Ok(fine!);
         })
         .WithName("WaiveFine")
         .WithSummary("Waive a fine")
-        .WithDescription("Waives an unpaid fine.")
+        .WithDescription("Waive a fine — updates status to Waived.")
         .Produces<FineResponse>(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status404NotFound)
-        .Produces(StatusCodes.Status409Conflict);
+        .Produces(StatusCodes.Status400BadRequest);
     }
 }

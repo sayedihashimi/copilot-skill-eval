@@ -5,44 +5,51 @@ using Microsoft.EntityFrameworkCore;
 
 namespace LibraryApi.Services;
 
-public sealed class AuthorService(LibraryDbContext context, ILogger<AuthorService> logger) : IAuthorService
+public interface IAuthorService
 {
-    public async Task<PaginatedResponse<AuthorResponse>> GetAuthorsAsync(string? search, int page, int pageSize, CancellationToken ct)
+    Task<PagedResult<AuthorResponse>> GetAllAsync(string? search, int page, int pageSize);
+    Task<AuthorDetailResponse?> GetByIdAsync(int id);
+    Task<AuthorResponse> CreateAsync(CreateAuthorRequest request);
+    Task<AuthorResponse?> UpdateAsync(int id, UpdateAuthorRequest request);
+    Task<(bool Success, string? Error)> DeleteAsync(int id);
+}
+
+public class AuthorService(LibraryDbContext db) : IAuthorService
+{
+    public async Task<PagedResult<AuthorResponse>> GetAllAsync(string? search, int page, int pageSize)
     {
-        var query = context.Authors.AsQueryable();
+        var query = db.Authors.AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(search))
         {
-            var term = search.ToLower();
-            query = query.Where(a => a.FirstName.ToLower().Contains(term) || a.LastName.ToLower().Contains(term));
+            var term = search.Trim().ToLower();
+            query = query.Where(a =>
+                a.FirstName.ToLower().Contains(term) ||
+                a.LastName.ToLower().Contains(term));
         }
 
-        var totalCount = await query.CountAsync(ct);
+        var totalCount = await query.CountAsync();
         var items = await query
             .OrderBy(a => a.LastName).ThenBy(a => a.FirstName)
-            .Skip((page - 1) * pageSize).Take(pageSize)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(a => new AuthorResponse(a.Id, a.FirstName, a.LastName, a.Biography, a.BirthDate, a.Country, a.CreatedAt))
-            .ToListAsync(ct);
+            .ToListAsync();
 
-        return new PaginatedResponse<AuthorResponse>(items, totalCount, page, pageSize, (int)Math.Ceiling((double)totalCount / pageSize));
+        return new PagedResult<AuthorResponse>(items, totalCount, page, pageSize);
     }
 
-    public async Task<AuthorDetailResponse?> GetAuthorByIdAsync(int id, CancellationToken ct)
+    public async Task<AuthorDetailResponse?> GetByIdAsync(int id)
     {
-        var author = await context.Authors
-            .Include(a => a.BookAuthors).ThenInclude(ba => ba.Book)
-            .FirstOrDefaultAsync(a => a.Id == id, ct);
-
-        if (author is null)
-        {
-            return null;
-        }
-
-        var books = author.BookAuthors.Select(ba => new AuthorBookResponse(ba.Book.Id, ba.Book.Title, ba.Book.ISBN)).ToList();
-        return new AuthorDetailResponse(author.Id, author.FirstName, author.LastName, author.Biography, author.BirthDate, author.Country, author.CreatedAt, books);
+        return await db.Authors
+            .Where(a => a.Id == id)
+            .Select(a => new AuthorDetailResponse(
+                a.Id, a.FirstName, a.LastName, a.Biography, a.BirthDate, a.Country, a.CreatedAt,
+                a.BookAuthors.Select(ba => new AuthorBookResponse(ba.Book.Id, ba.Book.Title, ba.Book.ISBN)).ToList()))
+            .FirstOrDefaultAsync();
     }
 
-    public async Task<AuthorResponse> CreateAuthorAsync(CreateAuthorRequest request, CancellationToken ct)
+    public async Task<AuthorResponse> CreateAsync(CreateAuthorRequest request)
     {
         var author = new Author
         {
@@ -50,24 +57,19 @@ public sealed class AuthorService(LibraryDbContext context, ILogger<AuthorServic
             LastName = request.LastName,
             Biography = request.Biography,
             BirthDate = request.BirthDate,
-            Country = request.Country,
-            CreatedAt = DateTime.UtcNow
+            Country = request.Country
         };
 
-        context.Authors.Add(author);
-        await context.SaveChangesAsync(ct);
+        db.Authors.Add(author);
+        await db.SaveChangesAsync();
 
-        logger.LogInformation("Created author {AuthorId}: {FirstName} {LastName}", author.Id, author.FirstName, author.LastName);
         return new AuthorResponse(author.Id, author.FirstName, author.LastName, author.Biography, author.BirthDate, author.Country, author.CreatedAt);
     }
 
-    public async Task<AuthorResponse?> UpdateAuthorAsync(int id, UpdateAuthorRequest request, CancellationToken ct)
+    public async Task<AuthorResponse?> UpdateAsync(int id, UpdateAuthorRequest request)
     {
-        var author = await context.Authors.FindAsync([id], ct);
-        if (author is null)
-        {
-            return null;
-        }
+        var author = await db.Authors.FindAsync(id);
+        if (author is null) return null;
 
         author.FirstName = request.FirstName;
         author.LastName = request.LastName;
@@ -75,26 +77,22 @@ public sealed class AuthorService(LibraryDbContext context, ILogger<AuthorServic
         author.BirthDate = request.BirthDate;
         author.Country = request.Country;
 
-        await context.SaveChangesAsync(ct);
+        await db.SaveChangesAsync();
+
         return new AuthorResponse(author.Id, author.FirstName, author.LastName, author.Biography, author.BirthDate, author.Country, author.CreatedAt);
     }
 
-    public async Task<(bool Found, bool HasBooks)> DeleteAuthorAsync(int id, CancellationToken ct)
+    public async Task<(bool Success, string? Error)> DeleteAsync(int id)
     {
-        var author = await context.Authors.Include(a => a.BookAuthors).FirstOrDefaultAsync(a => a.Id == id, ct);
-        if (author is null)
-        {
-            return (false, false);
-        }
+        var author = await db.Authors
+            .Include(a => a.BookAuthors)
+            .FirstOrDefaultAsync(a => a.Id == id);
 
-        if (author.BookAuthors.Count > 0)
-        {
-            return (true, true);
-        }
+        if (author is null) return (false, "Author not found.");
+        if (author.BookAuthors.Count > 0) return (false, "Cannot delete author with associated books.");
 
-        context.Authors.Remove(author);
-        await context.SaveChangesAsync(ct);
-        logger.LogInformation("Deleted author {AuthorId}", id);
-        return (true, false);
+        db.Authors.Remove(author);
+        await db.SaveChangesAsync();
+        return (true, null);
     }
 }

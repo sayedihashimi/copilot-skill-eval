@@ -10,109 +10,103 @@ public static class MemberEndpoints
     {
         var group = app.MapGroup("/api/members").WithTags("Members");
 
-        group.MapGet("/", async Task<Ok<PaginatedResponse<MemberListResponse>>> (
-            string? search, bool? isActive, int? page, int? pageSize,
-            IMemberService service, CancellationToken ct) =>
+        group.MapGet("/", async Task<Ok<PaginatedResponse<MemberResponse>>> (
+            IMemberService service,
+            string? search = null, bool? isActive = null,
+            int page = 1, int pageSize = 20,
+            CancellationToken ct = default) =>
         {
-            var p = Math.Clamp(page ?? 1, 1, int.MaxValue);
-            var ps = Math.Clamp(pageSize ?? 20, 1, 100);
-            var result = await service.GetAllAsync(search, isActive, p, ps, ct);
+            pageSize = Math.Clamp(pageSize, 1, 100);
+            var result = await service.GetAllAsync(search, isActive, page, pageSize, ct);
             return TypedResults.Ok(result);
         })
         .WithName("GetMembers")
         .WithSummary("List members")
-        .WithDescription("Returns a paginated list of members. Filter by name, email, or active status.")
-        .Produces<PaginatedResponse<MemberListResponse>>(StatusCodes.Status200OK);
+        .WithDescription("Returns a paginated list of members with optional search and active status filter.")
+        .Produces<PaginatedResponse<MemberResponse>>(200);
 
-        group.MapGet("/{id:int}", async Task<Results<Ok<MemberResponse>, NotFound>> (
+        group.MapGet("/{id:int}", async Task<Results<Ok<MemberDetailResponse>, NotFound>> (
             int id, IMemberService service, CancellationToken ct) =>
         {
-            var member = await service.GetByIdAsync(id, ct);
-            return member is null ? TypedResults.NotFound() : TypedResults.Ok(member);
+            var result = await service.GetByIdAsync(id, ct);
+            return result is not null ? TypedResults.Ok(result) : TypedResults.NotFound();
         })
-        .WithName("GetMemberById")
-        .WithSummary("Get a member by ID")
-        .WithDescription("Returns full member details including active membership and booking stats.")
-        .Produces<MemberResponse>(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status404NotFound);
+        .WithName("GetMember")
+        .WithSummary("Get member details")
+        .WithDescription("Returns detailed member information including active membership and booking stats.")
+        .Produces<MemberDetailResponse>(200)
+        .Produces(404);
 
         group.MapPost("/", async Task<Created<MemberResponse>> (
             CreateMemberRequest request, IMemberService service, CancellationToken ct) =>
         {
-            var member = await service.CreateAsync(request, ct);
-            return TypedResults.Created($"/api/members/{member.Id}", member);
+            var result = await service.CreateAsync(request, ct);
+            return TypedResults.Created($"/api/members/{result.Id}", result);
         })
         .WithName("CreateMember")
         .WithSummary("Register a new member")
-        .WithDescription("Registers a new member. Must be at least 16 years old. Email must be unique.")
-        .Produces<MemberResponse>(StatusCodes.Status201Created)
-        .Produces(StatusCodes.Status400BadRequest)
-        .Produces(StatusCodes.Status409Conflict);
+        .WithDescription("Creates a new member. Member must be at least 16 years old.")
+        .Produces<MemberResponse>(201);
 
         group.MapPut("/{id:int}", async Task<Results<Ok<MemberResponse>, NotFound>> (
             int id, UpdateMemberRequest request, IMemberService service, CancellationToken ct) =>
         {
-            var member = await service.UpdateAsync(id, request, ct);
-            return TypedResults.Ok(member);
+            var result = await service.UpdateAsync(id, request, ct);
+            return result is not null ? TypedResults.Ok(result) : TypedResults.NotFound();
         })
         .WithName("UpdateMember")
-        .WithSummary("Update a member")
-        .WithDescription("Updates an existing member's details.")
-        .Produces<MemberResponse>(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status400BadRequest)
-        .Produces(StatusCodes.Status404NotFound);
+        .WithSummary("Update member profile")
+        .WithDescription("Updates an existing member's profile information.")
+        .Produces<MemberResponse>(200)
+        .Produces(404);
 
         group.MapDelete("/{id:int}", async Task<Results<NoContent, NotFound>> (
             int id, IMemberService service, CancellationToken ct) =>
         {
-            await service.DeleteAsync(id, ct);
-            return TypedResults.NoContent();
+            var result = await service.DeactivateAsync(id, ct);
+            return result ? TypedResults.NoContent() : TypedResults.NotFound();
         })
-        .WithName("DeleteMember")
+        .WithName("DeactivateMember")
         .WithSummary("Deactivate a member")
-        .WithDescription("Deactivates a member. Fails if they have future confirmed bookings.")
-        .Produces(StatusCodes.Status204NoContent)
-        .Produces(StatusCodes.Status404NotFound)
-        .Produces(StatusCodes.Status409Conflict);
+        .WithDescription("Deactivates a member. Fails if they have active bookings.")
+        .Produces(204)
+        .Produces(404);
 
         group.MapGet("/{id:int}/bookings", async Task<Ok<PaginatedResponse<BookingResponse>>> (
-            int id, string? status, DateOnly? fromDate, DateOnly? toDate,
-            int? page, int? pageSize,
-            IMemberService service, CancellationToken ct) =>
+            int id, IMemberService service,
+            string? status = null, DateTime? fromDate = null, DateTime? toDate = null,
+            int page = 1, int pageSize = 20,
+            CancellationToken ct = default) =>
         {
-            var p = Math.Clamp(page ?? 1, 1, int.MaxValue);
-            var ps = Math.Clamp(pageSize ?? 20, 1, 100);
-            var result = await service.GetMemberBookingsAsync(id, status, fromDate, toDate, p, ps, ct);
+            pageSize = Math.Clamp(pageSize, 1, 100);
+            var result = await service.GetMemberBookingsAsync(id, status, fromDate, toDate, page, pageSize, ct);
             return TypedResults.Ok(result);
         })
         .WithName("GetMemberBookings")
         .WithSummary("Get member's bookings")
-        .WithDescription("Returns a paginated list of a member's bookings. Filter by status and date range.")
-        .Produces<PaginatedResponse<BookingResponse>>(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status404NotFound);
+        .WithDescription("Returns a paginated list of bookings for a member with optional status and date range filters.")
+        .Produces<PaginatedResponse<BookingResponse>>(200);
 
         group.MapGet("/{id:int}/bookings/upcoming", async Task<Ok<IReadOnlyList<BookingResponse>>> (
             int id, IMemberService service, CancellationToken ct) =>
         {
-            var bookings = await service.GetUpcomingBookingsAsync(id, ct);
-            return TypedResults.Ok(bookings);
+            var result = await service.GetUpcomingBookingsAsync(id, ct);
+            return TypedResults.Ok(result);
         })
         .WithName("GetMemberUpcomingBookings")
         .WithSummary("Get member's upcoming bookings")
-        .WithDescription("Returns all confirmed bookings for future classes.")
-        .Produces<IReadOnlyList<BookingResponse>>(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status404NotFound);
+        .WithDescription("Returns upcoming confirmed bookings for a member.")
+        .Produces<IReadOnlyList<BookingResponse>>(200);
 
         group.MapGet("/{id:int}/memberships", async Task<Ok<IReadOnlyList<MembershipResponse>>> (
             int id, IMemberService service, CancellationToken ct) =>
         {
-            var memberships = await service.GetMembershipHistoryAsync(id, ct);
-            return TypedResults.Ok(memberships);
+            var result = await service.GetMemberMembershipsAsync(id, ct);
+            return TypedResults.Ok(result);
         })
         .WithName("GetMemberMemberships")
-        .WithSummary("Get member's membership history")
-        .WithDescription("Returns all memberships for a member, ordered by start date descending.")
-        .Produces<IReadOnlyList<MembershipResponse>>(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status404NotFound);
+        .WithSummary("Get membership history")
+        .WithDescription("Returns all memberships (current and historical) for a member.")
+        .Produces<IReadOnlyList<MembershipResponse>>(200);
     }
 }

@@ -1,6 +1,5 @@
 using LibraryApi.Data;
 using LibraryApi.DTOs;
-using LibraryApi.Middleware;
 using LibraryApi.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,7 +16,7 @@ public class BookService : IBookService
         _logger = logger;
     }
 
-    public async Task<PagedResult<BookDto>> GetBooksAsync(string? search, string? category, bool? available, string? sortBy, string? sortOrder, int page, int pageSize)
+    public async Task<PagedResult<BookDto>> GetBooksAsync(string? search, string? category, bool? available, string? sortBy, int page, int pageSize)
     {
         var query = _db.Books
             .Include(b => b.BookAuthors).ThenInclude(ba => ba.Author)
@@ -44,52 +43,35 @@ public class BookService : IBookService
         else if (available == false)
             query = query.Where(b => b.AvailableCopies == 0);
 
-        query = (sortBy?.ToLower(), sortOrder?.ToLower()) switch
+        query = sortBy?.ToLower() switch
         {
-            ("title", "desc") => query.OrderByDescending(b => b.Title),
-            ("title", _) => query.OrderBy(b => b.Title),
-            ("year", "desc") => query.OrderByDescending(b => b.PublicationYear),
-            ("year", _) => query.OrderBy(b => b.PublicationYear),
-            ("created", "desc") => query.OrderByDescending(b => b.CreatedAt),
+            "title" => query.OrderBy(b => b.Title),
+            "year" => query.OrderByDescending(b => b.PublicationYear),
+            "recent" => query.OrderByDescending(b => b.CreatedAt),
             _ => query.OrderBy(b => b.Title)
         };
 
-        var totalCount = await query.CountAsync();
-        var books = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        var total = await query.CountAsync();
+        var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
 
         return new PagedResult<BookDto>
         {
-            Items = books.Select(MapToDto).ToList(),
-            TotalCount = totalCount,
-            Page = page,
-            PageSize = pageSize
+            Items = items.Select(MapToDto).ToList(),
+            TotalCount = total, Page = page, PageSize = pageSize
         };
     }
 
-    public async Task<BookDetailDto> GetBookByIdAsync(int id)
+    public async Task<BookDto?> GetBookByIdAsync(int id)
     {
         var book = await _db.Books
             .Include(b => b.BookAuthors).ThenInclude(ba => ba.Author)
             .Include(b => b.BookCategories).ThenInclude(bc => bc.Category)
-            .FirstOrDefaultAsync(b => b.Id == id)
-            ?? throw new NotFoundException($"Book with ID {id} not found.");
-
-        var dto = MapToDto(book);
-        return new BookDetailDto
-        {
-            Id = dto.Id, Title = dto.Title, ISBN = dto.ISBN, Publisher = dto.Publisher,
-            PublicationYear = dto.PublicationYear, Description = dto.Description, PageCount = dto.PageCount,
-            Language = dto.Language, TotalCopies = dto.TotalCopies, AvailableCopies = dto.AvailableCopies,
-            CreatedAt = dto.CreatedAt, UpdatedAt = dto.UpdatedAt,
-            Authors = dto.Authors, Categories = dto.Categories
-        };
+            .FirstOrDefaultAsync(b => b.Id == id);
+        return book == null ? null : MapToDto(book);
     }
 
-    public async Task<BookDto> CreateBookAsync(BookCreateDto dto)
+    public async Task<BookDto> CreateBookAsync(CreateBookDto dto)
     {
-        if (await _db.Books.AnyAsync(b => b.ISBN == dto.ISBN))
-            throw new ConflictException($"A book with ISBN '{dto.ISBN}' already exists.");
-
         var book = new Book
         {
             Title = dto.Title,
@@ -98,7 +80,7 @@ public class BookService : IBookService
             PublicationYear = dto.PublicationYear,
             Description = dto.Description,
             PageCount = dto.PageCount,
-            Language = dto.Language ?? "English",
+            Language = dto.Language,
             TotalCopies = dto.TotalCopies,
             AvailableCopies = dto.TotalCopies,
             CreatedAt = DateTime.UtcNow,
@@ -106,42 +88,26 @@ public class BookService : IBookService
         };
 
         foreach (var authorId in dto.AuthorIds)
-        {
-            if (!await _db.Authors.AnyAsync(a => a.Id == authorId))
-                throw new NotFoundException($"Author with ID {authorId} not found.");
             book.BookAuthors.Add(new BookAuthor { AuthorId = authorId });
-        }
-
         foreach (var categoryId in dto.CategoryIds)
-        {
-            if (!await _db.Categories.AnyAsync(c => c.Id == categoryId))
-                throw new NotFoundException($"Category with ID {categoryId} not found.");
             book.BookCategories.Add(new BookCategory { CategoryId = categoryId });
-        }
 
         _db.Books.Add(book);
         await _db.SaveChangesAsync();
-
-        _logger.LogInformation("Book created: {BookId} - {Title}", book.Id, book.Title);
-
-        return await ReloadBookDto(book.Id);
+        _logger.LogInformation("Book created: {Id} {Title}", book.Id, book.Title);
+        return (await GetBookByIdAsync(book.Id))!;
     }
 
-    public async Task<BookDto> UpdateBookAsync(int id, BookUpdateDto dto)
+    public async Task<BookDto?> UpdateBookAsync(int id, UpdateBookDto dto)
     {
         var book = await _db.Books
             .Include(b => b.BookAuthors)
             .Include(b => b.BookCategories)
-            .FirstOrDefaultAsync(b => b.Id == id)
-            ?? throw new NotFoundException($"Book with ID {id} not found.");
-
-        if (await _db.Books.AnyAsync(b => b.ISBN == dto.ISBN && b.Id != id))
-            throw new ConflictException($"A book with ISBN '{dto.ISBN}' already exists.");
+            .FirstOrDefaultAsync(b => b.Id == id);
+        if (book == null) return null;
 
         var activeLoans = await _db.Loans.CountAsync(l => l.BookId == id && l.Status == LoanStatus.Active);
         var newAvailable = dto.TotalCopies - activeLoans;
-        if (newAvailable < 0)
-            throw new BusinessRuleException($"Cannot set TotalCopies to {dto.TotalCopies} because there are {activeLoans} active loans.");
 
         book.Title = dto.Title;
         book.ISBN = dto.ISBN;
@@ -149,120 +115,99 @@ public class BookService : IBookService
         book.PublicationYear = dto.PublicationYear;
         book.Description = dto.Description;
         book.PageCount = dto.PageCount;
-        book.Language = dto.Language ?? "English";
+        book.Language = dto.Language;
         book.TotalCopies = dto.TotalCopies;
-        book.AvailableCopies = newAvailable;
+        book.AvailableCopies = Math.Max(0, newAvailable);
         book.UpdatedAt = DateTime.UtcNow;
 
         // Update authors
-        book.BookAuthors.Clear();
+        _db.BookAuthors.RemoveRange(book.BookAuthors);
         foreach (var authorId in dto.AuthorIds)
-        {
-            if (!await _db.Authors.AnyAsync(a => a.Id == authorId))
-                throw new NotFoundException($"Author with ID {authorId} not found.");
             book.BookAuthors.Add(new BookAuthor { BookId = id, AuthorId = authorId });
-        }
 
         // Update categories
-        book.BookCategories.Clear();
+        _db.BookCategories.RemoveRange(book.BookCategories);
         foreach (var categoryId in dto.CategoryIds)
-        {
-            if (!await _db.Categories.AnyAsync(c => c.Id == categoryId))
-                throw new NotFoundException($"Category with ID {categoryId} not found.");
             book.BookCategories.Add(new BookCategory { BookId = id, CategoryId = categoryId });
-        }
 
         await _db.SaveChangesAsync();
-        return await ReloadBookDto(id);
+        return (await GetBookByIdAsync(id))!;
     }
 
-    public async Task DeleteBookAsync(int id)
+    public async Task<(bool Success, string? Error)> DeleteBookAsync(int id)
     {
-        var book = await _db.Books.FindAsync(id)
-            ?? throw new NotFoundException($"Book with ID {id} not found.");
+        var book = await _db.Books.FindAsync(id);
+        if (book == null) return (false, "Book not found.");
 
         var hasActiveLoans = await _db.Loans.AnyAsync(l => l.BookId == id && l.Status == LoanStatus.Active);
-        if (hasActiveLoans)
-            throw new ConflictException($"Cannot delete book with ID {id} because it has active loans.");
+        if (hasActiveLoans) return (false, "Cannot delete book with active loans.");
 
         _db.Books.Remove(book);
         await _db.SaveChangesAsync();
-        _logger.LogInformation("Book deleted: {BookId}", id);
+        return (true, null);
     }
 
     public async Task<PagedResult<LoanDto>> GetBookLoansAsync(int bookId, int page, int pageSize)
     {
-        if (!await _db.Books.AnyAsync(b => b.Id == bookId))
-            throw new NotFoundException($"Book with ID {bookId} not found.");
+        var query = _db.Loans.Include(l => l.Book).Include(l => l.Patron)
+            .Where(l => l.BookId == bookId).OrderByDescending(l => l.LoanDate);
 
-        var query = _db.Loans
-            .Include(l => l.Book).Include(l => l.Patron)
-            .Where(l => l.BookId == bookId)
-            .OrderByDescending(l => l.LoanDate);
-
-        var totalCount = await query.CountAsync();
+        var total = await query.CountAsync();
         var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
 
         return new PagedResult<LoanDto>
         {
-            Items = items.Select(LoanService.MapToDto).ToList(),
-            TotalCount = totalCount, Page = page, PageSize = pageSize
+            Items = items.Select(MapLoanToDto).ToList(),
+            TotalCount = total, Page = page, PageSize = pageSize
         };
     }
 
     public async Task<PagedResult<ReservationDto>> GetBookReservationsAsync(int bookId, int page, int pageSize)
     {
-        if (!await _db.Books.AnyAsync(b => b.Id == bookId))
-            throw new NotFoundException($"Book with ID {bookId} not found.");
-
-        var query = _db.Reservations
-            .Include(r => r.Book).Include(r => r.Patron)
+        var query = _db.Reservations.Include(r => r.Book).Include(r => r.Patron)
             .Where(r => r.BookId == bookId && (r.Status == ReservationStatus.Pending || r.Status == ReservationStatus.Ready))
             .OrderBy(r => r.QueuePosition);
 
-        var totalCount = await query.CountAsync();
+        var total = await query.CountAsync();
         var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
 
         return new PagedResult<ReservationDto>
         {
-            Items = items.Select(ReservationService.MapToDto).ToList(),
-            TotalCount = totalCount, Page = page, PageSize = pageSize
+            Items = items.Select(MapReservationToDto).ToList(),
+            TotalCount = total, Page = page, PageSize = pageSize
         };
     }
 
-    private async Task<BookDto> ReloadBookDto(int bookId)
+    private static BookDto MapToDto(Book b) => new()
     {
-        var book = await _db.Books
-            .Include(b => b.BookAuthors).ThenInclude(ba => ba.Author)
-            .Include(b => b.BookCategories).ThenInclude(bc => bc.Category)
-            .FirstAsync(b => b.Id == bookId);
-        return MapToDto(book);
-    }
-
-    internal static BookDto MapToDto(Book b) => new()
-    {
-        Id = b.Id,
-        Title = b.Title,
-        ISBN = b.ISBN,
-        Publisher = b.Publisher,
-        PublicationYear = b.PublicationYear,
-        Description = b.Description,
-        PageCount = b.PageCount,
-        Language = b.Language,
-        TotalCopies = b.TotalCopies,
-        AvailableCopies = b.AvailableCopies,
-        CreatedAt = b.CreatedAt,
-        UpdatedAt = b.UpdatedAt,
+        Id = b.Id, Title = b.Title, ISBN = b.ISBN, Publisher = b.Publisher,
+        PublicationYear = b.PublicationYear, Description = b.Description,
+        PageCount = b.PageCount, Language = b.Language,
+        TotalCopies = b.TotalCopies, AvailableCopies = b.AvailableCopies,
+        CreatedAt = b.CreatedAt, UpdatedAt = b.UpdatedAt,
         Authors = b.BookAuthors.Select(ba => new AuthorSummaryDto
         {
-            Id = ba.Author.Id,
-            FirstName = ba.Author.FirstName,
-            LastName = ba.Author.LastName
+            Id = ba.Author.Id, FirstName = ba.Author.FirstName, LastName = ba.Author.LastName
         }).ToList(),
         Categories = b.BookCategories.Select(bc => new CategorySummaryDto
         {
-            Id = bc.Category.Id,
-            Name = bc.Category.Name
+            Id = bc.Category.Id, Name = bc.Category.Name
         }).ToList()
+    };
+
+    internal static LoanDto MapLoanToDto(Loan l) => new()
+    {
+        Id = l.Id, BookId = l.BookId, BookTitle = l.Book.Title,
+        PatronId = l.PatronId, PatronName = $"{l.Patron.FirstName} {l.Patron.LastName}",
+        LoanDate = l.LoanDate, DueDate = l.DueDate, ReturnDate = l.ReturnDate,
+        Status = l.Status, RenewalCount = l.RenewalCount, CreatedAt = l.CreatedAt
+    };
+
+    internal static ReservationDto MapReservationToDto(Reservation r) => new()
+    {
+        Id = r.Id, BookId = r.BookId, BookTitle = r.Book.Title,
+        PatronId = r.PatronId, PatronName = $"{r.Patron.FirstName} {r.Patron.LastName}",
+        ReservationDate = r.ReservationDate, ExpirationDate = r.ExpirationDate,
+        Status = r.Status, QueuePosition = r.QueuePosition, CreatedAt = r.CreatedAt
     };
 }

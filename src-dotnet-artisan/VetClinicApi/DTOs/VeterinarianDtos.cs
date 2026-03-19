@@ -2,24 +2,6 @@ using System.ComponentModel.DataAnnotations;
 
 namespace VetClinicApi.DTOs;
 
-public sealed record CreateVeterinarianRequest(
-    [Required, MaxLength(100)] string FirstName,
-    [Required, MaxLength(100)] string LastName,
-    [Required, EmailAddress] string Email,
-    [Required] string Phone,
-    string? Specialization,
-    [Required] string LicenseNumber,
-    [Required] DateOnly HireDate);
-
-public sealed record UpdateVeterinarianRequest(
-    [Required, MaxLength(100)] string FirstName,
-    [Required, MaxLength(100)] string LastName,
-    [Required, EmailAddress] string Email,
-    [Required] string Phone,
-    string? Specialization,
-    [Required] string LicenseNumber,
-    bool IsAvailable);
-
 public sealed record VeterinarianResponse(
     int Id,
     string FirstName,
@@ -30,3 +12,48 @@ public sealed record VeterinarianResponse(
     string LicenseNumber,
     bool IsAvailable,
     DateOnly HireDate);
+
+public sealed record CreateVeterinarianRequest
+{
+    [Required, MaxLength(100)]
+    public string FirstName { get; init; } = string.Empty;
+
+    [Required, MaxLength(100)]
+    public string LastName { get; init; } = string.Empty;
+
+    [Required, EmailAddress]
+    public string Email { get; init; } = string.Empty;
+
+    [Required]
+    public string Phone { get; init; } = string.Empty;
+
+    public string? Specialization { get; init; }
+
+    [Required]
+    public string LicenseNumber { get; init; } = string.Empty;
+
+    [Required]
+    public DateOnly HireDate { get; init; }
+}
+
+public sealed record UpdateVeterinarianRequest
+{
+    [Required, MaxLength(100)]
+    public string FirstName { get; init; } = string.Empty;
+
+    [Required, MaxLength(100)]
+    public string LastName { get; init; } = string.Empty;
+
+    [Required, EmailAddress]
+    public string Email { get; init; } = string.Empty;
+
+    [Required]
+    public string Phone { get; init; } = string.Empty;
+
+    public string? Specialization { get; init; }
+
+    [Required]
+    public string LicenseNumber { get; init; } = string.Empty;
+
+    public bool IsAvailable { get; init; } = true;
+}

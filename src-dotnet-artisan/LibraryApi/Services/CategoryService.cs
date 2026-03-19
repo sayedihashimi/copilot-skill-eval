@@ -5,35 +5,34 @@ using Microsoft.EntityFrameworkCore;
 
 namespace LibraryApi.Services;
 
-public sealed class CategoryService(LibraryDbContext context, ILogger<CategoryService> logger) : ICategoryService
+public interface ICategoryService
 {
-    public async Task<PaginatedResponse<CategoryResponse>> GetCategoriesAsync(int page, int pageSize, CancellationToken ct)
+    Task<List<CategoryResponse>> GetAllAsync();
+    Task<CategoryDetailResponse?> GetByIdAsync(int id);
+    Task<CategoryResponse> CreateAsync(CreateCategoryRequest request);
+    Task<CategoryResponse?> UpdateAsync(int id, UpdateCategoryRequest request);
+    Task<(bool Success, string? Error)> DeleteAsync(int id);
+}
+
+public class CategoryService(LibraryDbContext db) : ICategoryService
+{
+    public async Task<List<CategoryResponse>> GetAllAsync()
     {
-        var totalCount = await context.Categories.CountAsync(ct);
-        var items = await context.Categories
+        return await db.Categories
             .OrderBy(c => c.Name)
-            .Skip((page - 1) * pageSize).Take(pageSize)
             .Select(c => new CategoryResponse(c.Id, c.Name, c.Description))
-            .ToListAsync(ct);
-
-        return new PaginatedResponse<CategoryResponse>(items, totalCount, page, pageSize, (int)Math.Ceiling((double)totalCount / pageSize));
+            .ToListAsync();
     }
 
-    public async Task<CategoryDetailResponse?> GetCategoryByIdAsync(int id, CancellationToken ct)
+    public async Task<CategoryDetailResponse?> GetByIdAsync(int id)
     {
-        var category = await context.Categories
-            .Include(c => c.BookCategories)
-            .FirstOrDefaultAsync(c => c.Id == id, ct);
-
-        if (category is null)
-        {
-            return null;
-        }
-
-        return new CategoryDetailResponse(category.Id, category.Name, category.Description, category.BookCategories.Count);
+        return await db.Categories
+            .Where(c => c.Id == id)
+            .Select(c => new CategoryDetailResponse(c.Id, c.Name, c.Description, c.BookCategories.Count))
+            .FirstOrDefaultAsync();
     }
 
-    public async Task<CategoryResponse> CreateCategoryAsync(CreateCategoryRequest request, CancellationToken ct)
+    public async Task<CategoryResponse> CreateAsync(CreateCategoryRequest request)
     {
         var category = new Category
         {
@@ -41,44 +40,36 @@ public sealed class CategoryService(LibraryDbContext context, ILogger<CategorySe
             Description = request.Description
         };
 
-        context.Categories.Add(category);
-        await context.SaveChangesAsync(ct);
+        db.Categories.Add(category);
+        await db.SaveChangesAsync();
 
-        logger.LogInformation("Created category {CategoryId}: {Name}", category.Id, category.Name);
         return new CategoryResponse(category.Id, category.Name, category.Description);
     }
 
-    public async Task<CategoryResponse?> UpdateCategoryAsync(int id, UpdateCategoryRequest request, CancellationToken ct)
+    public async Task<CategoryResponse?> UpdateAsync(int id, UpdateCategoryRequest request)
     {
-        var category = await context.Categories.FindAsync([id], ct);
-        if (category is null)
-        {
-            return null;
-        }
+        var category = await db.Categories.FindAsync(id);
+        if (category is null) return null;
 
         category.Name = request.Name;
         category.Description = request.Description;
 
-        await context.SaveChangesAsync(ct);
+        await db.SaveChangesAsync();
+
         return new CategoryResponse(category.Id, category.Name, category.Description);
     }
 
-    public async Task<(bool Found, bool HasBooks)> DeleteCategoryAsync(int id, CancellationToken ct)
+    public async Task<(bool Success, string? Error)> DeleteAsync(int id)
     {
-        var category = await context.Categories.Include(c => c.BookCategories).FirstOrDefaultAsync(c => c.Id == id, ct);
-        if (category is null)
-        {
-            return (false, false);
-        }
+        var category = await db.Categories
+            .Include(c => c.BookCategories)
+            .FirstOrDefaultAsync(c => c.Id == id);
 
-        if (category.BookCategories.Count > 0)
-        {
-            return (true, true);
-        }
+        if (category is null) return (false, "Category not found.");
+        if (category.BookCategories.Count > 0) return (false, "Cannot delete category with associated books.");
 
-        context.Categories.Remove(category);
-        await context.SaveChangesAsync(ct);
-        logger.LogInformation("Deleted category {CategoryId}", id);
-        return (true, false);
+        db.Categories.Remove(category);
+        await db.SaveChangesAsync();
+        return (true, null);
     }
 }

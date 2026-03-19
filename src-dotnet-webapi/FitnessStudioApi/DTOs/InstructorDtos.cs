@@ -2,7 +2,19 @@ using System.ComponentModel.DataAnnotations;
 
 namespace FitnessStudioApi.DTOs;
 
-// --- Requests ---
+public sealed record InstructorResponse(
+    int Id,
+    string FirstName,
+    string LastName,
+    string Email,
+    string Phone,
+    string? Bio,
+    string? Specializations,
+    DateOnly HireDate,
+    bool IsActive,
+    DateTime CreatedAt,
+    DateTime UpdatedAt
+);
 
 public sealed record CreateInstructorRequest
 {
@@ -15,7 +27,7 @@ public sealed record CreateInstructorRequest
     [Required, EmailAddress]
     public required string Email { get; init; }
 
-    [Required, Phone]
+    [Required]
     public required string Phone { get; init; }
 
     [MaxLength(1000)]
@@ -25,6 +37,8 @@ public sealed record CreateInstructorRequest
 
     [Required]
     public required DateOnly HireDate { get; init; }
+
+    public bool IsActive { get; init; } = true;
 }
 
 public sealed record UpdateInstructorRequest
@@ -38,7 +52,7 @@ public sealed record UpdateInstructorRequest
     [Required, EmailAddress]
     public required string Email { get; init; }
 
-    [Required, Phone]
+    [Required]
     public required string Phone { get; init; }
 
     [MaxLength(1000)]
@@ -46,20 +60,8 @@ public sealed record UpdateInstructorRequest
 
     public string? Specializations { get; init; }
 
-    public required bool IsActive { get; init; }
+    [Required]
+    public required DateOnly HireDate { get; init; }
+
+    public bool IsActive { get; init; } = true;
 }
-
-// --- Response ---
-
-public sealed record InstructorResponse(
-    int Id,
-    string FirstName,
-    string LastName,
-    string Email,
-    string Phone,
-    string? Bio,
-    string? Specializations,
-    DateOnly HireDate,
-    bool IsActive,
-    DateTime CreatedAt,
-    DateTime UpdatedAt);

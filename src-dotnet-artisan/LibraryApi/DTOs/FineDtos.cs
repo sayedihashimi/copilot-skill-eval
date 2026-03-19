@@ -2,7 +2,7 @@ using LibraryApi.Models;
 
 namespace LibraryApi.DTOs;
 
-public sealed record FineResponse(
+public record FineResponse(
     int Id,
     int PatronId,
     string PatronName,
@@ -12,16 +12,3 @@ public sealed record FineResponse(
     DateTime IssuedDate,
     DateTime? PaidDate,
     FineStatus Status);
-
-public sealed record FineDetailResponse(
-    int Id,
-    int PatronId,
-    string PatronName,
-    int LoanId,
-    string BookTitle,
-    decimal Amount,
-    string Reason,
-    DateTime IssuedDate,
-    DateTime? PaidDate,
-    FineStatus Status,
-    DateTime CreatedAt);

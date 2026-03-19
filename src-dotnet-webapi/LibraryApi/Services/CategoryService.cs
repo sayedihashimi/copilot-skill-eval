@@ -7,30 +7,29 @@ namespace LibraryApi.Services;
 
 public sealed class CategoryService(LibraryDbContext db, ILogger<CategoryService> logger) : ICategoryService
 {
-    public async Task<IReadOnlyList<CategoryResponse>> GetAllAsync(CancellationToken ct)
+    public async Task<PaginatedResponse<CategoryResponse>> GetCategoriesAsync(int page, int pageSize, CancellationToken ct)
     {
-        return await db.Categories.AsNoTracking()
+        var totalCount = await db.Categories.CountAsync(ct);
+        var items = await db.Categories.AsNoTracking()
             .OrderBy(c => c.Name)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(c => new CategoryResponse(c.Id, c.Name, c.Description))
             .ToListAsync(ct);
+
+        return new PaginatedResponse<CategoryResponse>(items, totalCount, page, pageSize, (int)Math.Ceiling(totalCount / (double)pageSize));
     }
 
-    public async Task<CategoryDetailResponse?> GetByIdAsync(int id, CancellationToken ct)
+    public async Task<CategoryDetailResponse?> GetCategoryByIdAsync(int id, CancellationToken ct)
     {
         return await db.Categories.AsNoTracking()
             .Where(c => c.Id == id)
-            .Select(c => new CategoryDetailResponse(
-                c.Id, c.Name, c.Description, c.BookCategories.Count))
+            .Select(c => new CategoryDetailResponse(c.Id, c.Name, c.Description, c.BookCategories.Count))
             .FirstOrDefaultAsync(ct);
     }
 
-    public async Task<CategoryResponse> CreateAsync(CreateCategoryRequest request, CancellationToken ct)
+    public async Task<CategoryResponse> CreateCategoryAsync(CreateCategoryRequest request, CancellationToken ct)
     {
-        var exists = await db.Categories.AsNoTracking()
-            .AnyAsync(c => c.Name.ToLower() == request.Name.ToLower(), ct);
-        if (exists)
-            throw new InvalidOperationException($"A category with the name '{request.Name}' already exists.");
-
         var category = new Category
         {
             Name = request.Name,
@@ -39,44 +38,32 @@ public sealed class CategoryService(LibraryDbContext db, ILogger<CategoryService
 
         db.Categories.Add(category);
         await db.SaveChangesAsync(ct);
-        logger.LogInformation("Created category {CategoryId}: {Name}", category.Id, category.Name);
+        logger.LogInformation("Category created: {Id} - {Name}", category.Id, category.Name);
 
         return new CategoryResponse(category.Id, category.Name, category.Description);
     }
 
-    public async Task<CategoryResponse?> UpdateAsync(int id, UpdateCategoryRequest request, CancellationToken ct)
+    public async Task<CategoryResponse?> UpdateCategoryAsync(int id, UpdateCategoryRequest request, CancellationToken ct)
     {
         var category = await db.Categories.FindAsync([id], ct);
         if (category is null) return null;
-
-        var duplicate = await db.Categories.AsNoTracking()
-            .AnyAsync(c => c.Id != id && c.Name.ToLower() == request.Name.ToLower(), ct);
-        if (duplicate)
-            throw new InvalidOperationException($"A category with the name '{request.Name}' already exists.");
 
         category.Name = request.Name;
         category.Description = request.Description;
 
         await db.SaveChangesAsync(ct);
-        logger.LogInformation("Updated category {CategoryId}", id);
-
         return new CategoryResponse(category.Id, category.Name, category.Description);
     }
 
-    public async Task DeleteAsync(int id, CancellationToken ct)
+    public async Task<(bool Found, bool HasBooks)> DeleteCategoryAsync(int id, CancellationToken ct)
     {
-        var category = await db.Categories
-            .Include(c => c.BookCategories)
-            .FirstOrDefaultAsync(c => c.Id == id, ct);
-
-        if (category is null)
-            throw new KeyNotFoundException($"Category with ID {id} not found.");
-
-        if (category.BookCategories.Count > 0)
-            throw new InvalidOperationException($"Cannot delete category with ID {id} because it has associated books.");
+        var category = await db.Categories.Include(c => c.BookCategories).FirstOrDefaultAsync(c => c.Id == id, ct);
+        if (category is null) return (false, false);
+        if (category.BookCategories.Count > 0) return (true, true);
 
         db.Categories.Remove(category);
         await db.SaveChangesAsync(ct);
-        logger.LogInformation("Deleted category {CategoryId}", id);
+        logger.LogInformation("Category deleted: {Id}", id);
+        return (true, false);
     }
 }

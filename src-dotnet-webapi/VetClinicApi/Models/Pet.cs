@@ -16,7 +16,7 @@ public sealed class Pet
     public DateTime UpdatedAt { get; set; }
 
     public Owner Owner { get; set; } = null!;
-    public ICollection<Appointment> Appointments { get; set; } = [];
-    public ICollection<MedicalRecord> MedicalRecords { get; set; } = [];
-    public ICollection<Vaccination> Vaccinations { get; set; } = [];
+    public ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
+    public ICollection<MedicalRecord> MedicalRecords { get; set; } = new List<MedicalRecord>();
+    public ICollection<Vaccination> Vaccinations { get; set; } = new List<Vaccination>();
 }

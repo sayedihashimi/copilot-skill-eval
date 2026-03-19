@@ -11,8 +11,8 @@ public sealed class Membership
     public PaymentStatus PaymentStatus { get; set; } = PaymentStatus.Paid;
     public DateOnly? FreezeStartDate { get; set; }
     public DateOnly? FreezeEndDate { get; set; }
-    public DateTime CreatedAt { get; set; }
-    public DateTime UpdatedAt { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     public Member Member { get; set; } = null!;
     public MembershipPlan MembershipPlan { get; set; } = null!;

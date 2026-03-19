@@ -12,5 +12,5 @@ public sealed class Veterinarian
     public bool IsAvailable { get; set; } = true;
     public DateOnly HireDate { get; set; }
 
-    public ICollection<Appointment> Appointments { get; set; } = [];
+    public ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
 }

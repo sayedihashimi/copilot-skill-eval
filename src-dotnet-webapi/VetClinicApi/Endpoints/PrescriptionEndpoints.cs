@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
 using VetClinicApi.DTOs;
 using VetClinicApi.Services;
 
@@ -16,12 +18,12 @@ public static class PrescriptionEndpoints
             return prescription is null ? TypedResults.NotFound() : TypedResults.Ok(prescription);
         })
         .WithName("GetPrescriptionById")
-        .WithSummary("Get a prescription by ID")
+        .WithSummary("Get prescription by ID")
         .WithDescription("Returns prescription details including active status.")
-        .Produces<PrescriptionResponse>(StatusCodes.Status200OK)
+        .Produces<PrescriptionResponse>()
         .Produces(StatusCodes.Status404NotFound);
 
-        group.MapPost("/", async Task<Created<PrescriptionResponse>> (
+        group.MapPost("/", async Task<Results<Created<PrescriptionResponse>, BadRequest<ProblemDetails>>> (
             CreatePrescriptionRequest request, IPrescriptionService service, CancellationToken ct) =>
         {
             var prescription = await service.CreateAsync(request, ct);
@@ -29,7 +31,7 @@ public static class PrescriptionEndpoints
         })
         .WithName("CreatePrescription")
         .WithSummary("Create a prescription")
-        .WithDescription("Creates a prescription for a medical record. EndDate is computed from StartDate + DurationDays.")
+        .WithDescription("Creates a new prescription for a medical record. EndDate is calculated from StartDate + DurationDays.")
         .Produces<PrescriptionResponse>(StatusCodes.Status201Created)
         .Produces(StatusCodes.Status400BadRequest);
     }

@@ -3,26 +3,6 @@ using VetClinicApi.Models;
 
 namespace VetClinicApi.DTOs;
 
-public sealed record CreateAppointmentRequest(
-    [Required] int PetId,
-    [Required] int VeterinarianId,
-    [Required] DateTime AppointmentDate,
-    [Range(15, 120)] int DurationMinutes = 30,
-    [Required, MaxLength(500)] string Reason = "",
-    [MaxLength(2000)] string? Notes = null);
-
-public sealed record UpdateAppointmentRequest(
-    [Required] int PetId,
-    [Required] int VeterinarianId,
-    [Required] DateTime AppointmentDate,
-    [Range(15, 120)] int DurationMinutes = 30,
-    [Required, MaxLength(500)] string Reason = "",
-    [MaxLength(2000)] string? Notes = null);
-
-public sealed record UpdateAppointmentStatusRequest(
-    [Required] AppointmentStatus Status,
-    string? CancellationReason = null);
-
 public sealed record AppointmentResponse(
     int Id,
     int PetId,
@@ -31,7 +11,7 @@ public sealed record AppointmentResponse(
     string VeterinarianName,
     DateTime AppointmentDate,
     int DurationMinutes,
-    AppointmentStatus Status,
+    string Status,
     string Reason,
     string? Notes,
     string? CancellationReason,
@@ -41,18 +21,65 @@ public sealed record AppointmentResponse(
 public sealed record AppointmentDetailResponse(
     int Id,
     int PetId,
-    string PetName,
-    string PetSpecies,
-    int OwnerId,
-    string OwnerName,
+    PetResponse Pet,
     int VeterinarianId,
-    string VeterinarianName,
+    VeterinarianResponse Veterinarian,
     DateTime AppointmentDate,
     int DurationMinutes,
-    AppointmentStatus Status,
+    string Status,
     string Reason,
     string? Notes,
     string? CancellationReason,
+    MedicalRecordResponse? MedicalRecord,
     DateTime CreatedAt,
-    DateTime UpdatedAt,
-    MedicalRecordResponse? MedicalRecord);
+    DateTime UpdatedAt);
+
+public sealed record CreateAppointmentRequest
+{
+    [Required]
+    public int PetId { get; init; }
+
+    [Required]
+    public int VeterinarianId { get; init; }
+
+    [Required]
+    public DateTime AppointmentDate { get; init; }
+
+    [Range(15, 120)]
+    public int DurationMinutes { get; init; } = 30;
+
+    [Required, MaxLength(500)]
+    public string Reason { get; init; } = string.Empty;
+
+    [MaxLength(2000)]
+    public string? Notes { get; init; }
+}
+
+public sealed record UpdateAppointmentRequest
+{
+    [Required]
+    public int PetId { get; init; }
+
+    [Required]
+    public int VeterinarianId { get; init; }
+
+    [Required]
+    public DateTime AppointmentDate { get; init; }
+
+    [Range(15, 120)]
+    public int DurationMinutes { get; init; } = 30;
+
+    [Required, MaxLength(500)]
+    public string Reason { get; init; } = string.Empty;
+
+    [MaxLength(2000)]
+    public string? Notes { get; init; }
+}
+
+public sealed record UpdateAppointmentStatusRequest
+{
+    [Required]
+    public AppointmentStatus Status { get; init; }
+
+    public string? CancellationReason { get; init; }
+}

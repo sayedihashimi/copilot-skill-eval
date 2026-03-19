@@ -15,5 +15,5 @@ public sealed class MedicalRecord
     public Appointment Appointment { get; set; } = null!;
     public Pet Pet { get; set; } = null!;
     public Veterinarian Veterinarian { get; set; } = null!;
-    public ICollection<Prescription> Prescriptions { get; set; } = [];
+    public ICollection<Prescription> Prescriptions { get; set; } = new List<Prescription>();
 }

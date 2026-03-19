@@ -3,7 +3,11 @@ using LibraryApi.Models;
 
 namespace LibraryApi.DTOs;
 
-public sealed record LoanResponse(
+public record CreateLoanRequest(
+    [Required] int BookId,
+    [Required] int PatronId);
+
+public record LoanResponse(
     int Id,
     int BookId,
     string BookTitle,
@@ -15,7 +19,7 @@ public sealed record LoanResponse(
     LoanStatus Status,
     int RenewalCount);
 
-public sealed record LoanDetailResponse(
+public record LoanDetailResponse(
     int Id,
     int BookId,
     string BookTitle,
@@ -29,12 +33,3 @@ public sealed record LoanDetailResponse(
     LoanStatus Status,
     int RenewalCount,
     DateTime CreatedAt);
-
-public sealed class CreateLoanRequest
-{
-    [Required]
-    public int BookId { get; init; }
-
-    [Required]
-    public int PatronId { get; init; }
-}

@@ -1,92 +1,115 @@
 using LibraryApi.DTOs;
-using LibraryApi.Models;
 using LibraryApi.Services;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
 
 namespace LibraryApi.Endpoints;
 
 public static class LoanEndpoints
 {
-    public static void MapLoanEndpoints(this IEndpointRouteBuilder app)
+    public static void MapLoanEndpoints(this WebApplication app)
     {
         var group = app.MapGroup("/api/loans").WithTags("Loans");
 
-        group.MapGet("/", async Task<Ok<PaginatedResponse<LoanResponse>>> (
-            LoanStatus? status, int? page, int? pageSize,
-            ILoanService service, CancellationToken ct) =>
+        group.MapGet("/", async (
+            [FromQuery] string? status,
+            [FromQuery] bool? overdue,
+            [FromQuery] DateTime? fromDate,
+            [FromQuery] DateTime? toDate,
+            [FromQuery] int page,
+            [FromQuery] int pageSize,
+            ILoanService service,
+            CancellationToken ct) =>
         {
-            var p = Math.Clamp(page ?? 1, 1, int.MaxValue);
-            var ps = Math.Clamp(pageSize ?? 20, 1, 100);
-            var result = await service.GetAllAsync(status, p, ps, ct);
-            return TypedResults.Ok(result);
+            if (page < 1) page = 1;
+            pageSize = Math.Clamp(pageSize == 0 ? 10 : pageSize, 1, 100);
+            return TypedResults.Ok(await service.GetLoansAsync(status, overdue, fromDate, toDate, page, pageSize, ct));
         })
         .WithName("GetLoans")
         .WithSummary("List loans")
-        .WithDescription("Returns a paginated list of loans, optionally filtered by status.")
+        .WithDescription("List loans with filter by status, overdue flag, date range, and pagination.")
         .Produces<PaginatedResponse<LoanResponse>>(StatusCodes.Status200OK);
 
-        group.MapGet("/overdue", async Task<Ok<IReadOnlyList<LoanResponse>>> (
-            ILoanService service, CancellationToken ct) =>
+        group.MapGet("/overdue", async (ILoanService service, CancellationToken ct) =>
         {
-            var result = await service.GetOverdueAsync(ct);
-            return TypedResults.Ok(result);
+            return TypedResults.Ok(await service.GetOverdueLoansAsync(ct));
         })
         .WithName("GetOverdueLoans")
-        .WithSummary("Get all overdue loans")
-        .WithDescription("Returns all currently overdue loans and updates their status.")
+        .WithSummary("Get overdue loans")
+        .WithDescription("Get all currently overdue loans. Also flags any newly overdue loans.")
         .Produces<IReadOnlyList<LoanResponse>>(StatusCodes.Status200OK);
 
-        group.MapGet("/{id:int}", async Task<Results<Ok<LoanDetailResponse>, NotFound>> (
+        group.MapGet("/{id:int}", async Task<Results<Ok<LoanResponse>, NotFound>> (
             int id, ILoanService service, CancellationToken ct) =>
         {
-            var result = await service.GetByIdAsync(id, ct);
-            return result is not null ? TypedResults.Ok(result) : TypedResults.NotFound();
+            var loan = await service.GetLoanByIdAsync(id, ct);
+            return loan is not null ? TypedResults.Ok(loan) : TypedResults.NotFound();
         })
         .WithName("GetLoanById")
-        .WithSummary("Get loan by ID")
-        .WithDescription("Returns loan details including associated fines.")
-        .Produces<LoanDetailResponse>(StatusCodes.Status200OK)
+        .WithSummary("Get loan details")
+        .WithDescription("Get details for a specific loan.")
+        .Produces<LoanResponse>(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status404NotFound);
 
-        group.MapPost("/", async Task<Created<LoanResponse>> (
+        group.MapPost("/", async Task<Results<Created<LoanResponse>, BadRequest<ProblemDetails>>> (
             CreateLoanRequest request, ILoanService service, CancellationToken ct) =>
         {
-            var result = await service.CheckoutAsync(request, ct);
-            return TypedResults.Created($"/api/loans/{result.Id}", result);
+            var (loan, error) = await service.CheckoutBookAsync(request, ct);
+            if (error is not null)
+                return TypedResults.BadRequest(new ProblemDetails
+                {
+                    Title = "Checkout denied",
+                    Detail = error,
+                    Status = StatusCodes.Status400BadRequest
+                });
+            return TypedResults.Created($"/api/loans/{loan!.Id}", loan);
         })
         .WithName("CheckoutBook")
-        .WithSummary("Checkout a book")
-        .WithDescription("Creates a new loan (checkout). Enforces borrowing limits, fine thresholds, and availability.")
+        .WithSummary("Check out a book")
+        .WithDescription("Create a loan — check out a book enforcing all checkout rules.")
         .Produces<LoanResponse>(StatusCodes.Status201Created)
-        .Produces(StatusCodes.Status400BadRequest)
-        .Produces(StatusCodes.Status404NotFound)
-        .Produces(StatusCodes.Status409Conflict);
+        .Produces(StatusCodes.Status400BadRequest);
 
-        group.MapPost("/{id:int}/return", async Task<Ok<LoanResponse>> (
+        group.MapPost("/{id:int}/return", async Task<Results<Ok<LoanResponse>, NotFound, BadRequest<ProblemDetails>>> (
             int id, ILoanService service, CancellationToken ct) =>
         {
-            var result = await service.ReturnAsync(id, ct);
-            return TypedResults.Ok(result);
+            var (loan, error, notFound) = await service.ReturnBookAsync(id, ct);
+            if (notFound) return TypedResults.NotFound();
+            if (error is not null)
+                return TypedResults.BadRequest(new ProblemDetails
+                {
+                    Title = "Return failed",
+                    Detail = error,
+                    Status = StatusCodes.Status400BadRequest
+                });
+            return TypedResults.Ok(loan!);
         })
         .WithName("ReturnBook")
         .WithSummary("Return a book")
-        .WithDescription("Processes a book return. Auto-generates fines for overdue returns and promotes pending reservations.")
+        .WithDescription("Return a book — enforce all return processing rules including fine generation.")
         .Produces<LoanResponse>(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status404NotFound)
-        .Produces(StatusCodes.Status409Conflict);
+        .Produces(StatusCodes.Status400BadRequest);
 
-        group.MapPost("/{id:int}/renew", async Task<Ok<LoanResponse>> (
+        group.MapPost("/{id:int}/renew", async Task<Results<Ok<LoanResponse>, NotFound, BadRequest<ProblemDetails>>> (
             int id, ILoanService service, CancellationToken ct) =>
         {
-            var result = await service.RenewAsync(id, ct);
-            return TypedResults.Ok(result);
+            var (loan, error, notFound) = await service.RenewLoanAsync(id, ct);
+            if (notFound) return TypedResults.NotFound();
+            if (error is not null)
+                return TypedResults.BadRequest(new ProblemDetails
+                {
+                    Title = "Renewal denied",
+                    Detail = error,
+                    Status = StatusCodes.Status400BadRequest
+                });
+            return TypedResults.Ok(loan!);
         })
         .WithName("RenewLoan")
         .WithSummary("Renew a loan")
-        .WithDescription("Renews a loan (max 2 renewals). Cannot renew if overdue, pending reservations exist, or fine threshold exceeded.")
+        .WithDescription("Renew a loan — enforce all renewal rules.")
         .Produces<LoanResponse>(StatusCodes.Status200OK)
-        .Produces(StatusCodes.Status400BadRequest)
         .Produces(StatusCodes.Status404NotFound)
-        .Produces(StatusCodes.Status409Conflict);
+        .Produces(StatusCodes.Status400BadRequest);
     }
 }

@@ -27,7 +27,6 @@ namespace VetClinicApi.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("CancellationReason")
-                        .HasMaxLength(500)
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("CreatedAt")
@@ -72,123 +71,126 @@ namespace VetClinicApi.Migrations
                         new
                         {
                             Id = 1,
-                            AppointmentDate = new DateTime(2025, 1, 10, 10, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
+                            AppointmentDate = new DateTime(2025, 1, 10, 9, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
                             DurationMinutes = 30,
-                            Notes = "All good",
+                            Notes = "All vitals normal",
                             PetId = 1,
-                            Reason = "Annual checkup",
+                            Reason = "Annual wellness checkup",
                             Status = "Completed",
-                            UpdatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
+                            UpdatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
                             VeterinarianId = 1
                         },
                         new
                         {
                             Id = 2,
-                            AppointmentDate = new DateTime(2025, 1, 10, 11, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
+                            AppointmentDate = new DateTime(2025, 1, 10, 10, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
                             DurationMinutes = 30,
+                            Notes = "Administered FVRCP booster",
                             PetId = 2,
                             Reason = "Vaccination update",
                             Status = "Completed",
-                            UpdatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
+                            UpdatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
                             VeterinarianId = 1
                         },
                         new
                         {
                             Id = 3,
-                            AppointmentDate = new DateTime(2025, 1, 12, 9, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
+                            AppointmentDate = new DateTime(2025, 1, 12, 14, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
                             DurationMinutes = 60,
+                            Notes = "X-rays taken, minor sprain diagnosed",
                             PetId = 3,
                             Reason = "Limping on right front leg",
                             Status = "Completed",
-                            UpdatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
+                            UpdatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
                             VeterinarianId = 2
                         },
                         new
                         {
                             Id = 4,
-                            AppointmentDate = new DateTime(2025, 1, 13, 14, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
-                            DurationMinutes = 30,
+                            AppointmentDate = new DateTime(2025, 1, 13, 11, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            DurationMinutes = 45,
+                            Notes = "Teeth cleaned, no extractions needed",
                             PetId = 4,
-                            Reason = "Skin irritation",
+                            Reason = "Dental cleaning",
                             Status = "Completed",
-                            UpdatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
-                            VeterinarianId = 1
+                            UpdatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            VeterinarianId = 3
                         },
                         new
                         {
                             Id = 5,
-                            AppointmentDate = new DateTime(2025, 1, 14, 10, 0, 0, 0, DateTimeKind.Utc),
-                            CancellationReason = "Owner rescheduled",
-                            CreatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
+                            AppointmentDate = new DateTime(2025, 1, 14, 9, 30, 0, 0, DateTimeKind.Utc),
+                            CancellationReason = "Owner rescheduled due to work conflict",
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
                             DurationMinutes = 30,
                             PetId = 5,
-                            Reason = "Dental cleaning",
+                            Reason = "Routine checkup",
                             Status = "Cancelled",
-                            UpdatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
-                            VeterinarianId = 2
+                            UpdatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            VeterinarianId = 1
                         },
                         new
                         {
                             Id = 6,
-                            AppointmentDate = new DateTime(2025, 2, 1, 9, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
+                            AppointmentDate = new DateTime(2025, 7, 20, 9, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
                             DurationMinutes = 30,
                             PetId = 1,
-                            Reason = "Follow-up visit",
+                            Reason = "Follow-up wellness check",
                             Status = "Scheduled",
-                            UpdatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
+                            UpdatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
                             VeterinarianId = 1
                         },
                         new
                         {
                             Id = 7,
-                            AppointmentDate = new DateTime(2025, 2, 1, 11, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
-                            DurationMinutes = 45,
-                            PetId = 6,
-                            Reason = "Wing clipping and checkup",
-                            Status = "Scheduled",
-                            UpdatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
-                            VeterinarianId = 3
-                        },
-                        new
-                        {
-                            Id = 8,
-                            AppointmentDate = new DateTime(2025, 2, 2, 10, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
-                            DurationMinutes = 30,
-                            PetId = 7,
-                            Reason = "Nail trimming",
-                            Status = "Scheduled",
-                            UpdatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
-                            VeterinarianId = 3
-                        },
-                        new
-                        {
-                            Id = 9,
-                            AppointmentDate = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
+                            AppointmentDate = new DateTime(2025, 7, 20, 11, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
                             DurationMinutes = 30,
                             PetId = 3,
-                            Reason = "Post-surgery follow-up",
-                            Status = "CheckedIn",
-                            UpdatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
+                            Reason = "Post-sprain follow-up",
+                            Status = "Scheduled",
+                            UpdatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
                             VeterinarianId = 2
                         },
                         new
                         {
-                            Id = 10,
-                            AppointmentDate = new DateTime(2025, 1, 8, 15, 0, 0, 0, DateTimeKind.Utc),
-                            CreatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
+                            Id = 8,
+                            AppointmentDate = new DateTime(2025, 7, 21, 9, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
                             DurationMinutes = 30,
                             PetId = 5,
-                            Reason = "Routine vaccination",
-                            Status = "NoShow",
-                            UpdatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
+                            Reason = "Rescheduled routine checkup",
+                            Status = "Scheduled",
+                            UpdatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            VeterinarianId = 1
+                        },
+                        new
+                        {
+                            Id = 9,
+                            AppointmentDate = new DateTime(2025, 7, 22, 9, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            DurationMinutes = 45,
+                            PetId = 6,
+                            Reason = "Wing feather assessment",
+                            Status = "Scheduled",
+                            UpdatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            VeterinarianId = 3
+                        },
+                        new
+                        {
+                            Id = 10,
+                            AppointmentDate = new DateTime(2025, 7, 23, 9, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            DurationMinutes = 30,
+                            PetId = 7,
+                            Reason = "Nail trim and general checkup",
+                            Status = "Scheduled",
+                            UpdatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
                             VeterinarianId = 1
                         });
                 });
@@ -244,48 +246,47 @@ namespace VetClinicApi.Migrations
                         {
                             Id = 1,
                             AppointmentId = 1,
-                            CreatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
                             Diagnosis = "Healthy - no issues found",
-                            FollowUpDate = new DateOnly(2026, 1, 10),
-                            Notes = "Weight is ideal. Teeth in good condition.",
+                            FollowUpDate = new DateOnly(2025, 7, 10),
+                            Notes = "Weight is ideal. Coat in excellent condition.",
                             PetId = 1,
-                            Treatment = "No treatment needed. Continue current diet and exercise.",
+                            Treatment = "No treatment required. Recommended continued current diet and exercise.",
                             VeterinarianId = 1
                         },
                         new
                         {
                             Id = 2,
                             AppointmentId = 2,
-                            CreatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
                             Diagnosis = "Due for FVRCP booster",
-                            Notes = "Cat was calm during procedure.",
+                            Notes = "No adverse reactions observed.",
                             PetId = 2,
-                            Treatment = "Administered FVRCP vaccine booster.",
+                            Treatment = "Administered FVRCP vaccine booster. Monitored for 15 minutes post-injection.",
                             VeterinarianId = 1
                         },
                         new
                         {
                             Id = 3,
                             AppointmentId = 3,
-                            CreatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
-                            Diagnosis = "Mild sprain in right front leg",
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            Diagnosis = "Grade 1 sprain of right carpus",
                             FollowUpDate = new DateOnly(2025, 1, 26),
-                            Notes = "X-ray showed no fracture.",
+                            Notes = "X-ray showed no fractures. Soft tissue swelling present.",
                             PetId = 3,
-                            Treatment = "Rest for 2 weeks. Anti-inflammatory medication prescribed.",
+                            Treatment = "Prescribed anti-inflammatory medication and rest for 2 weeks. Apply cold compress twice daily.",
                             VeterinarianId = 2
                         },
                         new
                         {
                             Id = 4,
                             AppointmentId = 4,
-                            CreatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
-                            Diagnosis = "Allergic dermatitis",
-                            FollowUpDate = new DateOnly(2025, 2, 13),
-                            Notes = "Likely food allergy. Trial elimination diet.",
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            Diagnosis = "Mild tartar buildup, otherwise healthy gums",
+                            Notes = "Recommended dental treats and regular brushing.",
                             PetId = 4,
-                            Treatment = "Topical corticosteroid cream. Dietary adjustment recommended.",
-                            VeterinarianId = 1
+                            Treatment = "Professional dental cleaning performed under light sedation. All teeth intact.",
+                            VeterinarianId = 3
                         });
                 });
 
@@ -343,29 +344,29 @@ namespace VetClinicApi.Migrations
                         new
                         {
                             Id = 1,
-                            Address = "123 Oak Street",
+                            Address = "123 Maple Street",
                             City = "Springfield",
-                            CreatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
                             Email = "sarah.johnson@email.com",
                             FirstName = "Sarah",
                             LastName = "Johnson",
                             Phone = "555-0101",
                             State = "IL",
-                            UpdatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
+                            UpdatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
                             ZipCode = "62701"
                         },
                         new
                         {
                             Id = 2,
-                            Address = "456 Maple Ave",
+                            Address = "456 Oak Avenue",
                             City = "Portland",
-                            CreatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
                             Email = "michael.chen@email.com",
                             FirstName = "Michael",
                             LastName = "Chen",
                             Phone = "555-0102",
                             State = "OR",
-                            UpdatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
+                            UpdatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
                             ZipCode = "97201"
                         },
                         new
@@ -373,42 +374,42 @@ namespace VetClinicApi.Migrations
                             Id = 3,
                             Address = "789 Pine Road",
                             City = "Austin",
-                            CreatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
                             Email = "emily.rodriguez@email.com",
                             FirstName = "Emily",
                             LastName = "Rodriguez",
                             Phone = "555-0103",
                             State = "TX",
-                            UpdatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
+                            UpdatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
                             ZipCode = "73301"
                         },
                         new
                         {
                             Id = 4,
-                            Address = "321 Elm Blvd",
-                            City = "Seattle",
-                            CreatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
-                            Email = "david.kim@email.com",
-                            FirstName = "David",
-                            LastName = "Kim",
+                            Address = "321 Elm Lane",
+                            City = "Denver",
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "james.thompson@email.com",
+                            FirstName = "James",
+                            LastName = "Thompson",
                             Phone = "555-0104",
-                            State = "WA",
-                            UpdatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
-                            ZipCode = "98101"
+                            State = "CO",
+                            UpdatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            ZipCode = "80201"
                         },
                         new
                         {
                             Id = 5,
-                            Address = "654 Cedar Lane",
-                            City = "Denver",
-                            CreatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
-                            Email = "jessica.taylor@email.com",
-                            FirstName = "Jessica",
-                            LastName = "Taylor",
+                            Address = "654 Birch Court",
+                            City = "Seattle",
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "lisa.patel@email.com",
+                            FirstName = "Lisa",
+                            LastName = "Patel",
                             Phone = "555-0105",
-                            State = "CO",
-                            UpdatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
-                            ZipCode = "80201"
+                            State = "WA",
+                            UpdatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            ZipCode = "98101"
                         });
                 });
 
@@ -473,88 +474,88 @@ namespace VetClinicApi.Migrations
                             Id = 1,
                             Breed = "Golden Retriever",
                             Color = "Golden",
-                            CreatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
                             DateOfBirth = new DateOnly(2020, 3, 15),
                             IsActive = true,
                             MicrochipNumber = "MC-001-2020",
                             Name = "Buddy",
                             OwnerId = 1,
                             Species = "Dog",
-                            UpdatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
+                            UpdatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
                             Weight = 32.5m
                         },
                         new
                         {
                             Id = 2,
-                            Breed = "Siamese",
-                            Color = "Cream",
-                            CreatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
+                            Breed = "Maine Coon",
+                            Color = "Tabby",
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
                             DateOfBirth = new DateOnly(2019, 7, 22),
                             IsActive = true,
                             MicrochipNumber = "MC-002-2019",
                             Name = "Whiskers",
                             OwnerId = 1,
                             Species = "Cat",
-                            UpdatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
-                            Weight = 4.8m
+                            UpdatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            Weight = 6.8m
                         },
                         new
                         {
                             Id = 3,
                             Breed = "German Shepherd",
                             Color = "Black and Tan",
-                            CreatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
                             DateOfBirth = new DateOnly(2021, 1, 10),
                             IsActive = true,
                             MicrochipNumber = "MC-003-2021",
                             Name = "Max",
                             OwnerId = 2,
                             Species = "Dog",
-                            UpdatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
-                            Weight = 38.0m
+                            UpdatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            Weight = 38.2m
                         },
                         new
                         {
                             Id = 4,
-                            Breed = "Maine Coon",
-                            Color = "Tabby",
-                            CreatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
-                            DateOfBirth = new DateOnly(2022, 5, 8),
+                            Breed = "Siamese",
+                            Color = "Seal Point",
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            DateOfBirth = new DateOnly(2022, 5, 3),
                             IsActive = true,
                             MicrochipNumber = "MC-004-2022",
                             Name = "Luna",
                             OwnerId = 3,
                             Species = "Cat",
-                            UpdatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
-                            Weight = 6.2m
+                            UpdatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            Weight = 4.1m
                         },
                         new
                         {
                             Id = 5,
                             Breed = "Beagle",
                             Color = "Tricolor",
-                            CreatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
-                            DateOfBirth = new DateOnly(2020, 11, 30),
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            DateOfBirth = new DateOnly(2020, 11, 28),
                             IsActive = true,
                             MicrochipNumber = "MC-005-2020",
                             Name = "Charlie",
                             OwnerId = 3,
                             Species = "Dog",
-                            UpdatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
-                            Weight = 12.5m
+                            UpdatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            Weight = 12.3m
                         },
                         new
                         {
                             Id = 6,
                             Breed = "Cockatiel",
-                            Color = "Yellow",
-                            CreatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
-                            DateOfBirth = new DateOnly(2023, 2, 14),
+                            Color = "Grey and Yellow",
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            DateOfBirth = new DateOnly(2021, 8, 14),
                             IsActive = true,
-                            Name = "Tweety",
+                            Name = "Kiwi",
                             OwnerId = 4,
                             Species = "Bird",
-                            UpdatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
+                            UpdatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
                             Weight = 0.09m
                         },
                         new
@@ -562,30 +563,30 @@ namespace VetClinicApi.Migrations
                             Id = 7,
                             Breed = "Holland Lop",
                             Color = "White",
-                            CreatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
-                            DateOfBirth = new DateOnly(2023, 6, 20),
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            DateOfBirth = new DateOnly(2023, 2, 1),
                             IsActive = true,
                             MicrochipNumber = "MC-007-2023",
-                            Name = "Thumper",
+                            Name = "Daisy",
                             OwnerId = 5,
                             Species = "Rabbit",
-                            UpdatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
+                            UpdatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
                             Weight = 1.8m
                         },
                         new
                         {
                             Id = 8,
-                            Breed = "Bombay",
-                            Color = "Black",
-                            CreatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
-                            DateOfBirth = new DateOnly(2018, 9, 3),
+                            Breed = "Bulldog",
+                            Color = "Brindle",
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            DateOfBirth = new DateOnly(2018, 6, 20),
                             IsActive = false,
                             MicrochipNumber = "MC-008-2018",
-                            Name = "Shadow",
+                            Name = "Rocky",
                             OwnerId = 4,
-                            Species = "Cat",
-                            UpdatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
-                            Weight = 5.1m
+                            Species = "Dog",
+                            UpdatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            Weight = 25.0m
                         });
                 });
 
@@ -634,11 +635,11 @@ namespace VetClinicApi.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
                             Dosage = "25mg twice daily",
                             DurationDays = 14,
                             EndDate = new DateOnly(2025, 1, 26),
-                            Instructions = "Give with food. Monitor for stomach upset.",
+                            Instructions = "Give with food. Monitor for vomiting or diarrhea.",
                             MedicalRecordId = 3,
                             MedicationName = "Carprofen",
                             StartDate = new DateOnly(2025, 1, 12)
@@ -646,49 +647,49 @@ namespace VetClinicApi.Migrations
                         new
                         {
                             Id = 2,
-                            CreatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
-                            Dosage = "Apply thin layer twice daily",
-                            DurationDays = 21,
-                            EndDate = new DateOnly(2025, 2, 3),
-                            Instructions = "Apply to affected areas. Prevent licking with cone if needed.",
-                            MedicalRecordId = 4,
-                            MedicationName = "Hydrocortisone Cream",
-                            StartDate = new DateOnly(2025, 1, 13)
-                        },
-                        new
-                        {
-                            Id = 3,
-                            CreatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
-                            Dosage = "50mg as needed",
-                            DurationDays = 7,
-                            EndDate = new DateOnly(2025, 1, 19),
-                            Instructions = "Only if showing signs of significant pain.",
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            Dosage = "100mg once daily at bedtime",
+                            DurationDays = 10,
+                            EndDate = new DateOnly(2025, 1, 22),
+                            Instructions = "For pain management. May cause drowsiness.",
                             MedicalRecordId = 3,
-                            MedicationName = "Tramadol",
+                            MedicationName = "Gabapentin",
                             StartDate = new DateOnly(2025, 1, 12)
                         },
                         new
                         {
+                            Id = 3,
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            Dosage = "1 chewable monthly",
+                            DurationDays = 365,
+                            EndDate = new DateOnly(2026, 1, 10),
+                            Instructions = "Monthly heartworm prevention. Give on the same day each month.",
+                            MedicalRecordId = 1,
+                            MedicationName = "Heartgard Plus",
+                            StartDate = new DateOnly(2025, 1, 10)
+                        },
+                        new
+                        {
                             Id = 4,
-                            CreatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
-                            Dosage = "1 capsule daily",
-                            DurationDays = 90,
-                            EndDate = new DateOnly(2025, 4, 13),
-                            Instructions = "Mix with food. Supports skin health.",
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            Dosage = "75mg twice daily",
+                            DurationDays = 7,
+                            EndDate = new DateOnly(2025, 1, 20),
+                            Instructions = "Antibiotic prophylaxis post dental cleaning. Complete full course.",
                             MedicalRecordId = 4,
-                            MedicationName = "Omega-3 Fish Oil",
+                            MedicationName = "Clindamycin",
                             StartDate = new DateOnly(2025, 1, 13)
                         },
                         new
                         {
                             Id = 5,
-                            CreatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
-                            Dosage = "1 tablet monthly",
-                            DurationDays = 365,
-                            EndDate = new DateOnly(2026, 1, 10),
-                            Instructions = "Give on the same day each month with a meal.",
-                            MedicalRecordId = 1,
-                            MedicationName = "Heartworm Prevention",
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            Dosage = "250mg once daily",
+                            DurationDays = 30,
+                            EndDate = new DateOnly(2025, 2, 9),
+                            Instructions = "Immune support supplement. Mix with wet food.",
+                            MedicalRecordId = 2,
+                            MedicationName = "L-Lysine",
                             StartDate = new DateOnly(2025, 1, 10)
                         });
                 });
@@ -739,8 +740,8 @@ namespace VetClinicApi.Migrations
                         {
                             Id = 1,
                             AdministeredByVetId = 1,
-                            BatchNumber = "RAB-2024-1001",
-                            CreatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
+                            BatchNumber = "RAB-2024-A1",
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
                             DateAdministered = new DateOnly(2024, 3, 15),
                             ExpirationDate = new DateOnly(2027, 3, 15),
                             Notes = "3-year rabies vaccine",
@@ -751,8 +752,8 @@ namespace VetClinicApi.Migrations
                         {
                             Id = 2,
                             AdministeredByVetId = 1,
-                            BatchNumber = "DHPP-2024-2001",
-                            CreatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
+                            BatchNumber = "DHPP-2024-B2",
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
                             DateAdministered = new DateOnly(2024, 3, 15),
                             ExpirationDate = new DateOnly(2025, 3, 15),
                             Notes = "Annual booster",
@@ -763,8 +764,8 @@ namespace VetClinicApi.Migrations
                         {
                             Id = 3,
                             AdministeredByVetId = 1,
-                            BatchNumber = "FVRCP-2025-3001",
-                            CreatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
+                            BatchNumber = "FVR-2025-C3",
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
                             DateAdministered = new DateOnly(2025, 1, 10),
                             ExpirationDate = new DateOnly(2026, 1, 10),
                             PetId = 2,
@@ -774,37 +775,36 @@ namespace VetClinicApi.Migrations
                         {
                             Id = 4,
                             AdministeredByVetId = 2,
-                            BatchNumber = "RAB-2023-4001",
-                            CreatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
-                            DateAdministered = new DateOnly(2023, 6, 1),
-                            ExpirationDate = new DateOnly(2024, 6, 1),
-                            Notes = "1-year rabies vaccine - EXPIRED",
+                            BatchNumber = "RAB-2024-D4",
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            DateAdministered = new DateOnly(2024, 1, 10),
+                            ExpirationDate = new DateOnly(2025, 1, 10),
+                            Notes = "Due for renewal",
                             PetId = 3,
                             VaccineName = "Rabies"
                         },
                         new
                         {
                             Id = 5,
-                            AdministeredByVetId = 2,
-                            BatchNumber = "DHPP-2024-5001",
-                            CreatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
-                            DateAdministered = new DateOnly(2024, 6, 15),
-                            ExpirationDate = new DateOnly(2025, 2, 15),
-                            Notes = "Expiring soon",
+                            AdministeredByVetId = 1,
+                            BatchNumber = "BOR-2024-E5",
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            DateAdministered = new DateOnly(2024, 11, 28),
+                            ExpirationDate = new DateOnly(2025, 11, 28),
                             PetId = 5,
-                            VaccineName = "DHPP"
+                            VaccineName = "Bordetella"
                         },
                         new
                         {
                             Id = 6,
                             AdministeredByVetId = 3,
-                            BatchNumber = "RHDV-2024-6001",
-                            CreatedAt = new DateTime(2025, 1, 15, 9, 0, 0, 0, DateTimeKind.Utc),
-                            DateAdministered = new DateOnly(2024, 8, 20),
-                            ExpirationDate = new DateOnly(2025, 8, 20),
-                            Notes = "Rabbit hemorrhagic disease vaccine",
-                            PetId = 7,
-                            VaccineName = "RHDV2"
+                            BatchNumber = "RAB-2023-F6",
+                            CreatedAt = new DateTime(2025, 1, 15, 10, 0, 0, 0, DateTimeKind.Utc),
+                            DateAdministered = new DateOnly(2023, 5, 3),
+                            ExpirationDate = new DateOnly(2024, 5, 3),
+                            Notes = "Expired - needs renewal",
+                            PetId = 4,
+                            VaccineName = "Rabies"
                         });
                 });
 
@@ -861,23 +861,23 @@ namespace VetClinicApi.Migrations
                         new
                         {
                             Id = 1,
-                            Email = "amanda.foster@happypaws.com",
+                            Email = "amanda.wilson@happypaws.com",
                             FirstName = "Dr. Amanda",
                             HireDate = new DateOnly(2015, 6, 1),
                             IsAvailable = true,
-                            LastName = "Foster",
+                            LastName = "Wilson",
                             LicenseNumber = "VET-2015-001",
                             Phone = "555-0201",
-                            Specialization = "Small Animals"
+                            Specialization = "General Practice"
                         },
                         new
                         {
                             Id = 2,
-                            Email = "robert.martinez@happypaws.com",
+                            Email = "robert.kim@happypaws.com",
                             FirstName = "Dr. Robert",
                             HireDate = new DateOnly(2018, 3, 15),
                             IsAvailable = true,
-                            LastName = "Martinez",
+                            LastName = "Kim",
                             LicenseNumber = "VET-2018-002",
                             Phone = "555-0202",
                             Specialization = "Surgery"
@@ -885,14 +885,14 @@ namespace VetClinicApi.Migrations
                         new
                         {
                             Id = 3,
-                            Email = "lisa.park@happypaws.com",
-                            FirstName = "Dr. Lisa",
+                            Email = "maria.garcia@happypaws.com",
+                            FirstName = "Dr. Maria",
                             HireDate = new DateOnly(2020, 9, 1),
-                            IsAvailable = false,
-                            LastName = "Park",
+                            IsAvailable = true,
+                            LastName = "Garcia",
                             LicenseNumber = "VET-2020-003",
                             Phone = "555-0203",
-                            Specialization = "Exotic Animals"
+                            Specialization = "Dentistry"
                         });
                 });
 
@@ -920,7 +920,7 @@ namespace VetClinicApi.Migrations
                     b.HasOne("VetClinicApi.Models.Appointment", "Appointment")
                         .WithOne("MedicalRecord")
                         .HasForeignKey("VetClinicApi.Models.MedicalRecord", "AppointmentId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("VetClinicApi.Models.Pet", "Pet")
@@ -958,7 +958,7 @@ namespace VetClinicApi.Migrations
                     b.HasOne("VetClinicApi.Models.MedicalRecord", "MedicalRecord")
                         .WithMany("Prescriptions")
                         .HasForeignKey("MedicalRecordId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("MedicalRecord");

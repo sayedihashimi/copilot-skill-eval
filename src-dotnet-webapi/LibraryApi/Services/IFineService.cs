@@ -1,12 +1,11 @@
 using LibraryApi.DTOs;
-using LibraryApi.Models;
 
 namespace LibraryApi.Services;
 
 public interface IFineService
 {
-    Task<PaginatedResponse<FineResponse>> GetAllAsync(FineStatus? status, int page, int pageSize, CancellationToken ct);
-    Task<FineResponse?> GetByIdAsync(int id, CancellationToken ct);
-    Task<FineResponse> PayAsync(int id, CancellationToken ct);
-    Task<FineResponse> WaiveAsync(int id, CancellationToken ct);
+    Task<PaginatedResponse<FineResponse>> GetFinesAsync(string? status, int page, int pageSize, CancellationToken ct);
+    Task<FineResponse?> GetFineByIdAsync(int id, CancellationToken ct);
+    Task<(FineResponse? Fine, string? Error, bool NotFound)> PayFineAsync(int id, CancellationToken ct);
+    Task<(FineResponse? Fine, string? Error, bool NotFound)> WaiveFineAsync(int id, CancellationToken ct);
 }

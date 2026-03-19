@@ -4,6 +4,6 @@ namespace VetClinicApi.Services;
 
 public interface IVaccinationService
 {
-    Task<VaccinationResponse?> GetByIdAsync(int id, CancellationToken cancellationToken);
-    Task<(VaccinationResponse? Result, string? Error)> CreateAsync(CreateVaccinationRequest request, CancellationToken cancellationToken);
+    Task<VaccinationResponse?> GetByIdAsync(int id, CancellationToken ct = default);
+    Task<VaccinationResponse> CreateAsync(CreateVaccinationRequest request, CancellationToken ct = default);
 }

@@ -23,17 +23,13 @@ builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-        options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
     });
 
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-// Global error handling middleware
-app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
-
-// Database migration and seeding
+// Apply migrations and seed
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<VetClinicDbContext>();
@@ -41,17 +37,18 @@ using (var scope = app.Services.CreateScope())
     DataSeeder.Seed(db);
 }
 
+// Middleware
+app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/openapi/v1.json", "Vet Clinic API v1");
+    });
 }
 
-app.UseSwaggerUI(options =>
-{
-    options.SwaggerEndpoint("/openapi/v1.json", "VetClinicApi v1");
-    options.RoutePrefix = "swagger";
-});
-
+app.UseAuthorization();
 app.MapControllers();
-
 app.Run();

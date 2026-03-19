@@ -16,7 +16,7 @@ public class OwnersController : ControllerBase
     }
 
     [HttpGet]
-    [ProducesResponseType(typeof(PaginatedResponse<OwnerSummaryDto>), 200)]
+    [ProducesResponseType(typeof(PagedResult<OwnerSummaryDto>), 200)]
     public async Task<IActionResult> GetAll([FromQuery] string? search, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         var result = await _service.GetAllAsync(search, page, pageSize);
@@ -46,6 +46,7 @@ public class OwnersController : ControllerBase
     [ProducesResponseType(typeof(OwnerResponseDto), 200)]
     [ProducesResponseType(400)]
     [ProducesResponseType(404)]
+    [ProducesResponseType(409)]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateOwnerDto dto)
     {
         var result = await _service.UpdateAsync(id, dto);
@@ -63,7 +64,7 @@ public class OwnersController : ControllerBase
     }
 
     [HttpGet("{id}/pets")]
-    [ProducesResponseType(typeof(List<PetResponseDto>), 200)]
+    [ProducesResponseType(typeof(List<PetSummaryDto>), 200)]
     [ProducesResponseType(404)]
     public async Task<IActionResult> GetPets(int id)
     {
@@ -72,7 +73,7 @@ public class OwnersController : ControllerBase
     }
 
     [HttpGet("{id}/appointments")]
-    [ProducesResponseType(typeof(PaginatedResponse<AppointmentResponseDto>), 200)]
+    [ProducesResponseType(typeof(PagedResult<AppointmentSummaryDto>), 200)]
     [ProducesResponseType(404)]
     public async Task<IActionResult> GetAppointments(int id, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {

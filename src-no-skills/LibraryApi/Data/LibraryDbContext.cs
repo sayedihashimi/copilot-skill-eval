@@ -25,79 +25,48 @@ public class LibraryDbContext : DbContext
         modelBuilder.Entity<BookAuthor>()
             .HasKey(ba => new { ba.BookId, ba.AuthorId });
         modelBuilder.Entity<BookAuthor>()
-            .HasOne(ba => ba.Book)
-            .WithMany(b => b.BookAuthors)
-            .HasForeignKey(ba => ba.BookId);
+            .HasOne(ba => ba.Book).WithMany(b => b.BookAuthors).HasForeignKey(ba => ba.BookId);
         modelBuilder.Entity<BookAuthor>()
-            .HasOne(ba => ba.Author)
-            .WithMany(a => a.BookAuthors)
-            .HasForeignKey(ba => ba.AuthorId);
+            .HasOne(ba => ba.Author).WithMany(a => a.BookAuthors).HasForeignKey(ba => ba.AuthorId);
 
         // BookCategory many-to-many
         modelBuilder.Entity<BookCategory>()
             .HasKey(bc => new { bc.BookId, bc.CategoryId });
         modelBuilder.Entity<BookCategory>()
-            .HasOne(bc => bc.Book)
-            .WithMany(b => b.BookCategories)
-            .HasForeignKey(bc => bc.BookId);
+            .HasOne(bc => bc.Book).WithMany(b => b.BookCategories).HasForeignKey(bc => bc.BookId);
         modelBuilder.Entity<BookCategory>()
-            .HasOne(bc => bc.Category)
-            .WithMany(c => c.BookCategories)
-            .HasForeignKey(bc => bc.CategoryId);
+            .HasOne(bc => bc.Category).WithMany(c => c.BookCategories).HasForeignKey(bc => bc.CategoryId);
 
         // Unique constraints
-        modelBuilder.Entity<Book>()
-            .HasIndex(b => b.ISBN)
-            .IsUnique();
-        modelBuilder.Entity<Category>()
-            .HasIndex(c => c.Name)
-            .IsUnique();
-        modelBuilder.Entity<Patron>()
-            .HasIndex(p => p.Email)
-            .IsUnique();
+        modelBuilder.Entity<Book>().HasIndex(b => b.ISBN).IsUnique();
+        modelBuilder.Entity<Category>().HasIndex(c => c.Name).IsUnique();
+        modelBuilder.Entity<Patron>().HasIndex(p => p.Email).IsUnique();
+
+        // Fine decimal precision
+        modelBuilder.Entity<Fine>().Property(f => f.Amount).HasColumnType("decimal(10,2)");
 
         // Loan relationships
         modelBuilder.Entity<Loan>()
-            .HasOne(l => l.Book)
-            .WithMany(b => b.Loans)
-            .HasForeignKey(l => l.BookId);
+            .HasOne(l => l.Book).WithMany(b => b.Loans).HasForeignKey(l => l.BookId);
         modelBuilder.Entity<Loan>()
-            .HasOne(l => l.Patron)
-            .WithMany(p => p.Loans)
-            .HasForeignKey(l => l.PatronId);
+            .HasOne(l => l.Patron).WithMany(p => p.Loans).HasForeignKey(l => l.PatronId);
 
         // Reservation relationships
         modelBuilder.Entity<Reservation>()
-            .HasOne(r => r.Book)
-            .WithMany(b => b.Reservations)
-            .HasForeignKey(r => r.BookId);
+            .HasOne(r => r.Book).WithMany(b => b.Reservations).HasForeignKey(r => r.BookId);
         modelBuilder.Entity<Reservation>()
-            .HasOne(r => r.Patron)
-            .WithMany(p => p.Reservations)
-            .HasForeignKey(r => r.PatronId);
+            .HasOne(r => r.Patron).WithMany(p => p.Reservations).HasForeignKey(r => r.PatronId);
 
         // Fine relationships
         modelBuilder.Entity<Fine>()
-            .HasOne(f => f.Patron)
-            .WithMany(p => p.Fines)
-            .HasForeignKey(f => f.PatronId);
+            .HasOne(f => f.Patron).WithMany(p => p.Fines).HasForeignKey(f => f.PatronId);
         modelBuilder.Entity<Fine>()
-            .HasOne(f => f.Loan)
-            .WithMany(l => l.Fines)
-            .HasForeignKey(f => f.LoanId);
+            .HasOne(f => f.Loan).WithMany(l => l.Fines).HasForeignKey(f => f.LoanId);
 
-        // Store enums as strings
-        modelBuilder.Entity<Patron>()
-            .Property(p => p.MembershipType)
-            .HasConversion<string>();
-        modelBuilder.Entity<Loan>()
-            .Property(l => l.Status)
-            .HasConversion<string>();
-        modelBuilder.Entity<Reservation>()
-            .Property(r => r.Status)
-            .HasConversion<string>();
-        modelBuilder.Entity<Fine>()
-            .Property(f => f.Status)
-            .HasConversion<string>();
+        // Store enums as strings for readability
+        modelBuilder.Entity<Patron>().Property(p => p.MembershipType).HasConversion<string>();
+        modelBuilder.Entity<Loan>().Property(l => l.Status).HasConversion<string>();
+        modelBuilder.Entity<Reservation>().Property(r => r.Status).HasConversion<string>();
+        modelBuilder.Entity<Fine>().Property(f => f.Status).HasConversion<string>();
     }
 }

@@ -11,17 +11,17 @@ public sealed class ClassSchedule
     public int CurrentEnrollment { get; set; }
     public int WaitlistCount { get; set; }
     public required string Room { get; set; }
-    public ClassStatus Status { get; set; } = ClassStatus.Scheduled;
+    public ClassScheduleStatus Status { get; set; } = ClassScheduleStatus.Scheduled;
     public string? CancellationReason { get; set; }
-    public DateTime CreatedAt { get; set; }
-    public DateTime UpdatedAt { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     public ClassType ClassType { get; set; } = null!;
     public Instructor Instructor { get; set; } = null!;
     public ICollection<Booking> Bookings { get; set; } = new List<Booking>();
 }
 
-public enum ClassStatus
+public enum ClassScheduleStatus
 {
     Scheduled,
     InProgress,

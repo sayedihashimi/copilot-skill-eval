@@ -19,7 +19,6 @@ public class CreatePetDto
     public decimal? Weight { get; set; }
 
     public string? Color { get; set; }
-
     public string? MicrochipNumber { get; set; }
 
     [Required]
@@ -43,7 +42,6 @@ public class UpdatePetDto
     public decimal? Weight { get; set; }
 
     public string? Color { get; set; }
-
     public string? MicrochipNumber { get; set; }
 
     [Required]

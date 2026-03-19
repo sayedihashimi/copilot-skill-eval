@@ -21,7 +21,6 @@ public class CreateVeterinarianDto
     [Required]
     public string LicenseNumber { get; set; } = string.Empty;
 
-    [Required]
     public DateOnly HireDate { get; set; }
 }
 
@@ -58,12 +57,4 @@ public class VeterinarianResponseDto
     public string LicenseNumber { get; set; } = string.Empty;
     public bool IsAvailable { get; set; }
     public DateOnly HireDate { get; set; }
-}
-
-public class VeterinarianSummaryDto
-{
-    public int Id { get; set; }
-    public string FirstName { get; set; } = string.Empty;
-    public string LastName { get; set; } = string.Empty;
-    public string? Specialization { get; set; }
 }

@@ -4,9 +4,9 @@ namespace LibraryApi.Services;
 
 public interface ICategoryService
 {
-    Task<IReadOnlyList<CategoryResponse>> GetAllAsync(CancellationToken ct);
-    Task<CategoryDetailResponse?> GetByIdAsync(int id, CancellationToken ct);
-    Task<CategoryResponse> CreateAsync(CreateCategoryRequest request, CancellationToken ct);
-    Task<CategoryResponse?> UpdateAsync(int id, UpdateCategoryRequest request, CancellationToken ct);
-    Task DeleteAsync(int id, CancellationToken ct);
+    Task<PaginatedResponse<CategoryResponse>> GetCategoriesAsync(int page, int pageSize, CancellationToken ct);
+    Task<CategoryDetailResponse?> GetCategoryByIdAsync(int id, CancellationToken ct);
+    Task<CategoryResponse> CreateCategoryAsync(CreateCategoryRequest request, CancellationToken ct);
+    Task<CategoryResponse?> UpdateCategoryAsync(int id, UpdateCategoryRequest request, CancellationToken ct);
+    Task<(bool Found, bool HasBooks)> DeleteCategoryAsync(int id, CancellationToken ct);
 }

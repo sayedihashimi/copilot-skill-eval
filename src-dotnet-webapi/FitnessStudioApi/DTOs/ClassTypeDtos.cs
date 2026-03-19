@@ -1,9 +1,20 @@
 using System.ComponentModel.DataAnnotations;
-using FitnessStudioApi.Models;
 
 namespace FitnessStudioApi.DTOs;
 
-// --- Requests ---
+public sealed record ClassTypeResponse(
+    int Id,
+    string Name,
+    string? Description,
+    int DefaultDurationMinutes,
+    int DefaultCapacity,
+    bool IsPremium,
+    int? CaloriesPerSession,
+    string DifficultyLevel,
+    bool IsActive,
+    DateTime CreatedAt,
+    DateTime UpdatedAt
+);
 
 public sealed record CreateClassTypeRequest
 {
@@ -13,18 +24,21 @@ public sealed record CreateClassTypeRequest
     [MaxLength(500)]
     public string? Description { get; init; }
 
-    [Range(30, 120)]
+    [Required, Range(30, 120)]
     public required int DefaultDurationMinutes { get; init; }
 
-    [Range(1, 50)]
+    [Required, Range(1, 50)]
     public required int DefaultCapacity { get; init; }
 
-    public required bool IsPremium { get; init; }
+    public bool IsPremium { get; init; }
 
     [Range(0, 2000)]
     public int? CaloriesPerSession { get; init; }
 
-    public required DifficultyLevel DifficultyLevel { get; init; }
+    [Required]
+    public required string DifficultyLevel { get; init; }
+
+    public bool IsActive { get; init; } = true;
 }
 
 public sealed record UpdateClassTypeRequest
@@ -35,33 +49,19 @@ public sealed record UpdateClassTypeRequest
     [MaxLength(500)]
     public string? Description { get; init; }
 
-    [Range(30, 120)]
+    [Required, Range(30, 120)]
     public required int DefaultDurationMinutes { get; init; }
 
-    [Range(1, 50)]
+    [Required, Range(1, 50)]
     public required int DefaultCapacity { get; init; }
 
-    public required bool IsPremium { get; init; }
+    public bool IsPremium { get; init; }
 
     [Range(0, 2000)]
     public int? CaloriesPerSession { get; init; }
 
-    public required DifficultyLevel DifficultyLevel { get; init; }
+    [Required]
+    public required string DifficultyLevel { get; init; }
 
-    public required bool IsActive { get; init; }
+    public bool IsActive { get; init; } = true;
 }
-
-// --- Response ---
-
-public sealed record ClassTypeResponse(
-    int Id,
-    string Name,
-    string? Description,
-    int DefaultDurationMinutes,
-    int DefaultCapacity,
-    bool IsPremium,
-    int? CaloriesPerSession,
-    DifficultyLevel DifficultyLevel,
-    bool IsActive,
-    DateTime CreatedAt,
-    DateTime UpdatedAt);

@@ -9,15 +9,14 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Database
 builder.Services.AddDbContext<FitnessDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")
-        ?? "Data Source=FitnessStudio.db"));
-
-// OpenAPI
-builder.Services.AddOpenApi();
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // JSON enum serialization as strings
 builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+
+// OpenAPI
+builder.Services.AddOpenApi();
 
 // Error handling
 builder.Services.AddExceptionHandler<ApiExceptionHandler>();
@@ -34,23 +33,14 @@ builder.Services.AddScoped<IBookingService, BookingService>();
 
 var app = builder.Build();
 
-// Apply migrations on startup
-using (var scope = app.Services.CreateScope())
-{
-    var dbContext = scope.ServiceProvider.GetRequiredService<FitnessDbContext>();
-    dbContext.Database.Migrate();
-}
-
-// Middleware
+// Exception handler middleware
 app.UseExceptionHandler();
-app.UseStatusCodePages();
 
+// OpenAPI
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
-
-app.UseHttpsRedirection();
 
 // Map endpoints
 app.MapMembershipPlanEndpoints();

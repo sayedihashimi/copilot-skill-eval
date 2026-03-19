@@ -2,15 +2,6 @@ using System.ComponentModel.DataAnnotations;
 
 namespace VetClinicApi.DTOs;
 
-public sealed record CreateVaccinationRequest(
-    [Required] int PetId,
-    [Required, MaxLength(200)] string VaccineName,
-    [Required] DateOnly DateAdministered,
-    [Required] DateOnly ExpirationDate,
-    string? BatchNumber,
-    [Required] int AdministeredByVetId,
-    [MaxLength(500)] string? Notes);
-
 public sealed record VaccinationResponse(
     int Id,
     int PetId,
@@ -20,8 +11,31 @@ public sealed record VaccinationResponse(
     DateOnly ExpirationDate,
     string? BatchNumber,
     int AdministeredByVetId,
-    string AdministeredByVetName,
+    string VeterinarianName,
     string? Notes,
     bool IsExpired,
     bool IsDueSoon,
     DateTime CreatedAt);
+
+public sealed record CreateVaccinationRequest
+{
+    [Required]
+    public int PetId { get; init; }
+
+    [Required, MaxLength(200)]
+    public string VaccineName { get; init; } = string.Empty;
+
+    [Required]
+    public DateOnly DateAdministered { get; init; }
+
+    [Required]
+    public DateOnly ExpirationDate { get; init; }
+
+    public string? BatchNumber { get; init; }
+
+    [Required]
+    public int AdministeredByVetId { get; init; }
+
+    [MaxLength(500)]
+    public string? Notes { get; init; }
+}

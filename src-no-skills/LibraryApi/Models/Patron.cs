@@ -12,7 +12,7 @@ public class Patron
     [Required, MaxLength(100)]
     public string LastName { get; set; } = string.Empty;
 
-    [Required, MaxLength(200), EmailAddress]
+    [Required, MaxLength(200)]
     public string Email { get; set; } = string.Empty;
 
     [MaxLength(20)]
