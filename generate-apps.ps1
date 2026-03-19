@@ -35,24 +35,95 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+# ---------------------------------------------------------------------------
+# Helpers – temporarily register / unregister skill directories in config.json
+# ---------------------------------------------------------------------------
+function Get-CopilotConfigPath {
+    $configDir = if ($env:COPILOT_HOME) { $env:COPILOT_HOME } else { Join-Path $HOME '.copilot' }
+    Join-Path $configDir 'config.json'
+}
+
+function Add-SkillDirectory {
+    <#
+    .SYNOPSIS
+        Adds one or more absolute paths to skill_directories in the Copilot config.
+    .DESCRIPTION
+        Reads ~/.copilot/config.json, appends any paths not already present to the
+        skill_directories array, and writes the file back. Returns the list of paths
+        that were actually added (for later removal).
+    #>
+    param([string[]]$Paths)
+
+    $configPath = Get-CopilotConfigPath
+    $config = Get-Content $configPath -Raw | ConvertFrom-Json
+
+    if (-not (Get-Member -InputObject $config -Name 'skill_directories' -MemberType NoteProperty)) {
+        $config | Add-Member -NotePropertyName 'skill_directories' -NotePropertyValue @()
+    }
+
+    $added = @()
+    foreach ($p in $Paths) {
+        $abs = (Resolve-Path $p).Path
+        if ($config.skill_directories -notcontains $abs) {
+            $config.skill_directories = @($config.skill_directories) + $abs
+            $added += $abs
+        }
+    }
+
+    if ($added.Count -gt 0) {
+        $config | ConvertTo-Json -Depth 10 | Set-Content $configPath -Encoding utf8NoBOM
+        Write-Host "  Registered skill dir(s): $($added -join ', ')" -ForegroundColor DarkGray
+    }
+    return $added
+}
+
+function Remove-SkillDirectory {
+    <#
+    .SYNOPSIS
+        Removes previously-added paths from skill_directories in the Copilot config.
+    #>
+    param([string[]]$Paths)
+
+    if (-not $Paths -or $Paths.Count -eq 0) { return }
+
+    $configPath = Get-CopilotConfigPath
+    $config = Get-Content $configPath -Raw | ConvertFrom-Json
+
+    if (-not (Get-Member -InputObject $config -Name 'skill_directories' -MemberType NoteProperty)) {
+        return
+    }
+
+    $config.skill_directories = @($config.skill_directories | Where-Object { $_ -notin $Paths })
+    $config | ConvertTo-Json -Depth 10 | Set-Content $configPath -Encoding utf8NoBOM
+    Write-Host "  Unregistered skill dir(s): $($Paths -join ', ')" -ForegroundColor DarkGray
+}
+
+# ---------------------------------------------------------------------------
+# Run definitions
+# ---------------------------------------------------------------------------
 Push-Location $Path
 try {
-    # Define all available copilot invocations keyed by app name
     $allRuns = [ordered]@{
         'no-skills' = @{
-            Label  = 'No skills'
-            Folder = 'src-no-skills'
-            Prompt = 'Follow the instructions in the file @.github\prompts\create-all-apps.md. Instead of putting the files in `src` put them in `src-no-skills`. Do NOT use any skills during this process.'
+            Label       = 'No skills'
+            Folder      = 'src-no-skills'
+            Prompt      = 'Follow the instructions in the file @.github\prompts\create-all-apps.md. Instead of putting the files in `src` put them in `src-no-skills`. Do NOT use any skills during this process.'
+            CopilotArgs = @()
+            SkillDirs   = @()
         }
         'dotnet-webapi' = @{
-            Label  = 'dotnet-webapi skill'
-            Folder = 'src-dotnet-webapi'
-            Prompt = 'Follow the instructions in the file @.github\prompts\create-all-apps.md. Instead of putting the files in `src` put them in `src-dotnet-webapi`. Use the `dotnet-webapi` but do NOT use any other skills.'
+            Label       = 'dotnet-webapi skill'
+            Folder      = 'src-dotnet-webapi'
+            Prompt      = 'Follow the instructions in the file @.github\prompts\create-all-apps.md. Instead of putting the files in `src` put them in `src-dotnet-webapi`. Use the `dotnet-webapi` but do NOT use any other skills.'
+            CopilotArgs = @()
+            SkillDirs   = @('contrib\skills\dotnet-webapi')
         }
         'dotnet-artisan' = @{
-            Label  = 'dotnet-artisan skill'
-            Folder = 'src-dotnet-artisan'
-            Prompt = 'Follow the instructions in the file @.github\prompts\create-all-apps.md. Instead of putting the files in `src` put them in `src-dotnet-artisan`. Use the `dotnet-artisan` skills but do NOT use the `dotnet-webapi` skill.'
+            Label       = 'dotnet-artisan skill'
+            Folder      = 'src-dotnet-artisan'
+            Prompt      = 'Follow the instructions in the file @.github\prompts\create-all-apps.md. Instead of putting the files in `src` put them in `src-dotnet-artisan`. Use the `dotnet-artisan` skills but do NOT use the `dotnet-webapi` skill.'
+            CopilotArgs = @('--plugin-dir', 'contrib\plugins\dotnet-artisan')
+            SkillDirs   = @()
         }
     }
 
@@ -80,10 +151,26 @@ try {
         Write-Host "Starting: $($run.Label)" -ForegroundColor Cyan
         Write-Host "========================================" -ForegroundColor Cyan
 
-        copilot -p $run.Prompt --yolo
+        # Register skill directories for this run (if any)
+        $addedSkills = @()
+        if ($run.SkillDirs.Count -gt 0) {
+            $addedSkills = Add-SkillDirectory -Paths $run.SkillDirs
+        }
 
-        if ($LASTEXITCODE -ne 0) {
-            Write-Error "Copilot failed for '$($run.Label)' with exit code $LASTEXITCODE"
+        try {
+            # Build argument list: -p <prompt> --yolo [extra args]
+            $copilotArgs = @('-p', $run.Prompt, '--yolo') + $run.CopilotArgs
+            copilot @copilotArgs
+
+            if ($LASTEXITCODE -ne 0) {
+                Write-Error "Copilot failed for '$($run.Label)' with exit code $LASTEXITCODE"
+            }
+        }
+        finally {
+            # Always unregister skill directories, even on failure
+            if ($addedSkills.Count -gt 0) {
+                Remove-SkillDirectory -Paths $addedSkills
+            }
         }
 
         Write-Host "Completed: $($run.Label)" -ForegroundColor Green
