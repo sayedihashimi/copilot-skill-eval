@@ -6,20 +6,12 @@ description: >
   pipeline, interpret results, and iterate on skill quality.
   Triggers on: evaluate my skill, test my skill, skill evaluation, compare skills,
   how good is my skill, benchmark skill, skill quality.
-capabilities:
-  - Guide users through evaluation setup (eval.yaml, scenario prompts)
-  - Help author scenario prompts for any tech stack
-  - Run the full evaluation pipeline (generate, verify, analyze)
-  - Interpret analysis results and surface key findings
-  - Suggest specific improvements to skill definitions
-  - Re-run individual pipeline stages for iteration
-  - Explain how the evaluation framework works
 tools:
-  - Read
-  - Edit
-  - Grep
-  - Glob
-  - Bash
+  - read
+  - edit
+  - grep
+  - glob
+  - bash
 ---
 
 # skill-eval
@@ -73,9 +65,9 @@ Always read these files at the start of a conversation to understand the evaluat
    - "I'll generate {N} apps × {M} configurations = {N×M} total projects. This will take a while. Proceed?"
 4. Run the pipeline using the CLI:
    ```bash
-   skill-eval generate    # Generate code with each skill configuration
-   skill-eval verify      # Build and run each generated project
-   skill-eval analyze     # Produce the comparative analysis report
+   python -m skill_eval generate    # Generate code with each skill configuration
+   python -m skill_eval verify      # Build and run each generated project
+   python -m skill_eval analyze     # Produce the comparative analysis report
    ```
 5. If any step fails, report the error clearly and ask if the user wants to:
    - Retry the failed step
@@ -107,9 +99,9 @@ Always read these files at the start of a conversation to understand the evaluat
    - Reference the analysis findings as evidence.
 3. After the user edits their skill, offer to re-run:
    ```bash
-   skill-eval generate --configurations <their-skill-name>
-   skill-eval verify
-   skill-eval analyze
+   python -m skill_eval generate --configurations <their-skill-name>
+   python -m skill_eval verify
+   python -m skill_eval analyze
    ```
 4. Compare the new results with the previous analysis.
 5. Repeat until the user is satisfied.

@@ -171,8 +171,10 @@ Dimensions are the quality criteria used to compare generated code. Each dimensi
 ```
 copilot-skill-eval/
 ├── eval.yaml                        # Your evaluation configuration
-├── .github/copilot/agents/
-│   └── skill-eval.md                # Copilot agent (primary UX)
+├── .github/
+│   ├── agents/
+│   │   └── skill-eval.agent.md      # Copilot agent (primary UX)
+│   └── prompts/
 ├── prompts/scenarios/               # Your app specification prompts
 ├── skills/                          # Skills to evaluate (you bring these)
 ├── plugins/                         # Plugins to evaluate (optional)
