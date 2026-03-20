@@ -9,9 +9,9 @@ description: >
 tools:
   - read
   - edit
-  - grep
-  - glob
-  - bash
+  - search
+  - execute
+  - agent
 ---
 
 # skill-eval
