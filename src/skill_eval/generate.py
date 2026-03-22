@@ -98,6 +98,27 @@ def _create_staging_dir(
     return staging, links
 
 
+def _rmtree(path: Path) -> None:
+    """Remove a directory tree, handling locked files on Windows.
+
+    Falls back to ``rd /s /q`` on Windows when ``shutil.rmtree`` fails
+    (e.g. because dotnet build/run left DLLs locked).
+    """
+    try:
+        shutil.rmtree(path)
+    except PermissionError:
+        if platform.system() == "Windows":
+            subprocess.run(
+                ["cmd", "/c", "rd", "/s", "/q", str(path)],
+                check=False,
+                capture_output=True,
+            )
+            if path.exists():
+                raise
+        else:
+            raise
+
+
 def _cleanup_staging_dir(staging: Path, links: list[Path]) -> None:
     """Remove the staging directory, safely removing junctions/symlinks first.
 
@@ -186,7 +207,7 @@ def run_generate(
         # Clean previous output for this configuration
         if config_output.exists():
             click.echo(f"  Removing previous output: {config_output}")
-            shutil.rmtree(config_output)
+            _rmtree(config_output)
         config_output.mkdir(parents=True, exist_ok=True)
 
         # Render the generation prompt
