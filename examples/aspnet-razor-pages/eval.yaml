@@ -24,6 +24,16 @@ configurations:
     skills:
       - skills/dotnet-webapi
     plugins: []
+  - name: dotnet-artisan
+    label: "dotnet-artisan plugin chain"
+    skills: []
+    plugins:
+      - plugins/dotnet-artisan
+  - name: managedcode-dotnet-skills
+    label: "Community managed-code skills"
+    skills:
+      - skills/managedcode-dotnet-skills
+    plugins: []
 
 verification:
   build:
