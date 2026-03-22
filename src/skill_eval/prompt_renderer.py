@@ -44,11 +44,15 @@ def render_generate_prompt(
     project_root: Path,
 ) -> str:
     """Render the generation prompt for a specific configuration."""
+    cfg = next(c for c in config.configurations if c.name == configuration_name)
+    has_skills = bool(cfg.skills or cfg.plugins)
+
     env = _get_env(project_root)
     template = env.get_template("create-all-apps.md.j2")
     return template.render(
         scenarios=config.scenarios,
         output_directory=f"{config.output.directory}/{configuration_name}",
+        has_skills=has_skills,
     )
 
 
