@@ -1,28 +1,27 @@
 # Build & Run Verification Report
 
-**Evaluation:** ASP.NET Core Razor Pages Skill Evaluation (Round 2 — with Razor-specific dimensions)
-**Date:** 2026-03-22
+**Evaluation:** ASP.NET Core Razor Pages Skill Evaluation
+**Date:** 2026-03-22 06:53 UTC
 **Configurations:** 4
 **Scenarios:** 3
 **Total projects:** 12
-**Dimensions:** 24 (8 new Razor-specific + 16 sharpened)
 
 ## Results
 
 | Configuration | Scenario | Build | Run | Notes |
 |---|---|---|---|---|
-| no-skills | SparkEvents | ✅ Pass | ✅ Pass | 0 errors, 0 warnings |
-| no-skills | KeystoneProperties | ✅ Pass | ✅ Pass | 0 errors, 0 warnings |
-| no-skills | HorizonHR | ✅ Pass | ✅ Pass | 0 errors, 0 warnings |
-| dotnet-webapi | SparkEvents | ✅ Pass | ✅ Pass | 0 errors, 0 warnings |
-| dotnet-webapi | KeystoneProperties | ✅ Pass | ✅ Pass | 0 errors, 0 warnings |
-| dotnet-webapi | HorizonHR | ✅ Pass | ✅ Pass | 0 errors, 0 warnings |
-| dotnet-artisan | SparkEvents | ✅ Pass | ✅ Pass | 0 errors, 0 warnings |
-| dotnet-artisan | KeystoneProperties | ✅ Pass | ✅ Pass | 0 errors, 0 warnings |
-| dotnet-artisan | HorizonHR | ✅ Pass | ✅ Pass | 0 errors, 0 warnings |
-| managedcode-dotnet-skills | SparkEvents | ✅ Pass | ✅ Pass | 0 errors, 0 warnings |
-| managedcode-dotnet-skills | KeystoneProperties | ✅ Pass | ✅ Pass | 0 errors, 0 warnings |
-| managedcode-dotnet-skills | HorizonHR | ✅ Pass | ✅ Pass | 0 errors, 0 warnings |
+| no-skills | SparkEvents | ✅ Pass | ✅ Pass |  |
+| no-skills | KeystoneProperties | ✅ Pass | ✅ Pass |  |
+| no-skills | HorizonHR | ✅ Pass | ✅ Pass |  |
+| dotnet-webapi | SparkEvents | ✅ Pass | ✅ Pass |  |
+| dotnet-webapi | KeystoneProperties | ✅ Pass | ✅ Pass |  |
+| dotnet-webapi | HorizonHR | ✅ Pass | ✅ Pass |  |
+| dotnet-artisan | SparkEvents | ✅ Pass | ✅ Pass |  |
+| dotnet-artisan | KeystoneProperties | ✅ Pass | ✅ Pass |  |
+| dotnet-artisan | HorizonHR | ✅ Pass | ✅ Pass |  |
+| managedcode-dotnet-skills | SparkEvents | ✅ Pass | ✅ Pass |  |
+| managedcode-dotnet-skills | KeystoneProperties | ✅ Pass | ✅ Pass |  |
+| managedcode-dotnet-skills | HorizonHR | ✅ Pass | ✅ Pass |  |
 
 ## Skill Configurations
 
