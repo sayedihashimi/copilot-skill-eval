@@ -296,6 +296,24 @@ Use the EF Core seeding mechanism or a data seeder service. Ensure the seed data
 - Use consistent pagination on all list pages
 - Accept `pageNumber` and `pageSize` query parameters with sensible defaults (page 1, 10 items per page)
 - Render Bootstrap pagination controls at the bottom of tables
+- Extract pagination into a reusable partial view or View Component so it is not duplicated across list pages
+
+### Semantic HTML & Accessibility
+- Use semantic HTML elements throughout: `<nav>` for navigation, `<main>` for primary content area, `<section>` for grouped content, `<table>` with `<thead>`/`<tbody>`, `<button>` for actions (not `<a>` styled as a button)
+- Associate all `<label>` elements with their inputs using `asp-for`
+- Add `role="alert"` on TempData flash message alerts for screen reader announcement
+- Add `aria-label` on the pagination `<nav>` element and the main site navigation
+- Show "No items found" messages when lists/tables are empty rather than rendering an empty table
+- Use `aria-current="page"` on the active navigation item
+
+### Input Models & Form Design
+- Use dedicated input model classes (nested `InputModel` class or separate DTO) for form binding via `[BindProperty]` — do not bind directly to entity classes
+- Use named handler methods (`OnPostApproveAsync`, `OnPostCancelAsync`) when a page has multiple form actions instead of a single `OnPost` with branching logic
+- Use `asp-page-handler` tag helper to route to named handlers
+
+### Reusable UI Components
+- Create at least one reusable partial view or View Component for UI patterns that repeat across pages (e.g., a status badge component that takes a status value and renders the correct Bootstrap badge color, or a reusable pagination control)
+- Avoid duplicating the same HTML patterns across multiple pages
 
 ## Project Location
 

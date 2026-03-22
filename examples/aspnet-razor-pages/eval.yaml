@@ -48,40 +48,113 @@ dimensions:
     description: "How page models are structured — thin vs fat, separation of concerns"
     what_to_look_for: |
       Check page model classes (*.cshtml.cs). Are they thin (delegating to services)
-      or fat (containing business logic directly)? Look for injected services vs
-      inline DbContext queries. Check for clear OnGet/OnPost handler separation.
-    why_it_matters: "Thin page models with injected services are more testable and maintainable"
+      or fat (containing business logic and DbContext queries directly)? Look for
+      injected services vs inline DbContext. Check for clear OnGet/OnPost handler
+      separation. Check if page models inherit only from PageModel.
+    why_it_matters: "Thin page models with injected services are more testable, maintainable, and follow single responsibility"
 
   - name: "Form Handling & Validation"
-    description: "BindProperty usage, anti-forgery, validation display, PRG pattern"
+    description: "BindProperty usage, anti-forgery, validation display, PRG pattern, named handlers"
     what_to_look_for: |
-      Check for [BindProperty] attributes, asp-validation-for and asp-validation-summary
-      tag helpers, AntiForgeryToken in forms. Verify Post-Redirect-Get pattern is used
-      (OnPost should return RedirectToPage, not Page()).
-    why_it_matters: "Proper form handling prevents duplicate submissions, CSRF attacks, and provides good UX"
+      Check for [BindProperty] attributes with nested InputModel classes vs binding directly
+      to entity properties. Look for [ValidateAntiForgeryToken] on POST handlers.
+      Check for asp-validation-for, asp-validation-summary (ModelOnly vs All), and
+      _ValidationScriptsPartial inclusion. Verify PRG pattern (OnPost returns RedirectToPage,
+      not Page()). Check for named handler methods (OnPostSaveAsync, OnPostDeleteAsync)
+      vs single OnPost with switch/if logic.
+    why_it_matters: "Proper form handling prevents over-posting, CSRF attacks, duplicate submissions, and provides good UX"
+
+  - name: "Input Model Separation"
+    description: "Dedicated input models vs binding directly to entities"
+    what_to_look_for: |
+      Check if page models use nested InputModel or separate DTO classes for form binding
+      vs [BindProperty] directly on entity properties. Look for [BindProperty] public Event Event
+      vs [BindProperty] public InputModel Input with a dedicated class. Check if entities are
+      ever exposed directly to views or if view models / DTOs mediate.
+    why_it_matters: "Input model separation prevents over-posting attacks, keeps entities clean, and allows view-specific validation"
+
+  - name: "Named Handler Methods"
+    description: "Multiple named handlers vs single catch-all OnPost"
+    what_to_look_for: |
+      On pages with multiple actions (e.g., save + delete, approve + reject), check for
+      named handlers like OnPostApproveAsync, OnPostRejectAsync with asp-page-handler
+      tag helper vs a single OnPost with hidden fields or switch statements.
+    why_it_matters: "Named handlers produce cleaner routing, more testable page models, and better intent clarity"
+
+  - name: "Semantic HTML"
+    description: "Use of semantic HTML elements vs generic div/span soup"
+    what_to_look_for: |
+      Check .cshtml files for semantic elements: <nav> for navigation, <main> for primary
+      content, <section> for grouped content, <article> for self-contained content,
+      <header>/<footer> for page structure, <button> for actions (not <a> styled as button),
+      <table> with <thead>/<tbody>, <label> associated with inputs via asp-for.
+      Count <div>-only structures vs semantic alternatives.
+    why_it_matters: "Semantic HTML improves accessibility, SEO, and document structure readability"
+
+  - name: "Accessibility & ARIA"
+    description: "ARIA attributes, screen reader support, keyboard navigability"
+    what_to_look_for: |
+      Check for role="alert" on flash message alerts, aria-label on navigation elements
+      and pagination, aria-describedby linking inputs to validation messages,
+      aria-current="page" on active nav items, aria-hidden on decorative icons,
+      alt text on images, sr-only/visually-hidden classes for screen-reader-only text.
+      Check that buttons have accessible names.
+    why_it_matters: "WCAG compliance, screen reader support, legal accessibility requirements"
+
+  - name: "View Components & Reusable UI"
+    description: "ViewComponent classes, reusable partial views, or custom tag helpers for shared UI"
+    what_to_look_for: |
+      Look for ViewComponent classes (inheriting from ViewComponent) used for reusable
+      widgets like status badges, dashboard cards, or pagination. Check for <vc:*> tag
+      helper invocations. Look for meaningful partial views (<partial name="..." />)
+      for repeated UI patterns vs duplicated markup across pages. Count how many times
+      similar HTML blocks are copy-pasted vs extracted.
+    why_it_matters: "Component composition reduces duplication, improves testability, and follows DRY"
+
+  - name: "Null & Empty State Handling"
+    description: "Graceful handling of null data, empty collections, and loading states"
+    what_to_look_for: |
+      Check for @if (Model.Items?.Count > 0) or @if (Model.Items.Any()) guards around
+      collection rendering. Look for "No items found" or empty state messages when
+      collections are empty. Check for null checks before accessing navigation properties.
+      Look for conditional rendering with 'is not null' pattern.
+    why_it_matters: "Prevents NullReferenceExceptions at runtime and provides polished UX"
+
+  - name: "CSS Organization"
+    description: "Inline styles vs organized CSS files vs scoped CSS"
+    what_to_look_for: |
+      Search .cshtml files for inline style="" attributes. Check if custom CSS goes in
+      site.css or page-specific CSS files. Look for CSS class usage vs inline styles
+      for positioning, colors, sizing. Check for wwwroot/css organization.
+    why_it_matters: "Organized CSS improves maintainability and avoids specificity conflicts"
 
   - name: "Tag Helper Usage"
     description: "Modern tag helpers vs raw HTML helpers vs plain HTML"
     what_to_look_for: |
-      Check .cshtml files for asp-for, asp-items, asp-page, asp-route-* tag helpers
-      vs @Html.TextBoxFor(), @Html.ActionLink(), or hand-written HTML attributes.
-    why_it_matters: "Tag helpers produce cleaner, more readable Razor markup and integrate with model binding"
+      Check .cshtml files for asp-for, asp-items with SelectList, asp-page, asp-route-*,
+      asp-append-version on script/link tags. Look for asp-validation-summary="ModelOnly".
+      Check for @Html.TextBoxFor() or @Html.ActionLink() legacy patterns.
+      Verify _ViewImports.cshtml has @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers.
+    why_it_matters: "Tag helpers produce cleaner Razor markup, integrate with model binding, and are the modern standard"
 
   - name: "Layout & Partial Views"
     description: "Use of _Layout, partial views, view components, and sections"
     what_to_look_for: |
-      Check for _Layout.cshtml, _ViewStart.cshtml, _ViewImports.cshtml.
-      Look for partial views (<partial name="..." />) for reusable UI fragments.
-      Check for @section declarations for page-specific scripts or styles.
+      Check for _Layout.cshtml, _ViewStart.cshtml, _ViewImports.cshtml. Look for
+      _ValidationScriptsPartial inclusion in form pages. Check for @section Scripts
+      for page-specific JS. Look for reusable partial views for repeated patterns
+      (pagination controls, status badges, filter forms) vs duplicated markup.
     why_it_matters: "Proper layout hierarchy reduces duplication and improves maintainability"
 
   - name: "Bootstrap Integration"
-    description: "Quality of Bootstrap CSS class usage in generated markup"
+    description: "Quality and depth of Bootstrap CSS class usage"
     what_to_look_for: |
-      Check for proper Bootstrap 5 grid (container, row, col-*), form classes
-      (form-control, form-label, form-select), table classes (table, table-striped),
-      button classes (btn, btn-primary), badge usage, alert usage.
-    why_it_matters: "Correct Bootstrap usage produces professional, responsive UI without custom CSS"
+      Check for responsive grid (container, row, col-md-*), proper form classes
+      (form-control, form-label, form-select, form-check), table classes
+      (table, table-striped, table-hover), button variants (btn-primary, btn-danger,
+      btn-outline-*), badge usage for status, alert with proper dismiss button
+      (data-bs-dismiss="alert"), Bootstrap Icons usage, card components for dashboards.
+    why_it_matters: "Comprehensive Bootstrap usage produces professional, responsive, accessible UI"
 
   - name: "Sealed Types"
     description: "Whether classes and records are declared sealed"
@@ -101,14 +174,15 @@ dimensions:
     description: "Interface + implementation vs concrete-only registration"
     what_to_look_for: |
       Check DI registration: AddScoped<IService, Service>() vs AddScoped<Service>().
-      Look for interface files and their organization.
+      Look for interface files — separate files per interface or grouped.
     why_it_matters: "Interface-based registration enables testability and follows dependency inversion"
 
   - name: "CancellationToken Propagation"
     description: "Whether cancellation tokens are forwarded through all layers"
     what_to_look_for: |
       Check page model handlers for CancellationToken parameters.
-      Trace the token through service methods to EF Core calls.
+      Trace the token through service methods to EF Core calls (ToListAsync, SaveChangesAsync).
+      Count methods with vs without CancellationToken.
     why_it_matters: "Critical for production — prevents wasted server resources on cancelled requests"
 
   - name: "AsNoTracking Usage"
@@ -116,43 +190,49 @@ dimensions:
     what_to_look_for: |
       Search for .AsNoTracking() in service files.
       Check if read-only queries (OnGet handlers) consistently use it.
+      Count total read queries vs those using AsNoTracking.
     why_it_matters: "Major performance impact — tracking doubles memory usage and slows queries"
 
   - name: "TempData & Flash Messages"
     description: "How success/error messages are communicated after form submissions"
     what_to_look_for: |
       Check for TempData["Success"], TempData["Error"] patterns in page models.
-      Look for Bootstrap alert rendering in _Layout or individual pages.
-      Check for consistent message display across all forms.
+      Look for Bootstrap alert rendering in _Layout or individual pages with
+      role="alert" for accessibility. Check for consistent message display.
+      Look for type-safe null checks (TempData["Success"] is string message).
     why_it_matters: "Consistent flash messaging provides clear user feedback and improves UX"
 
   - name: "Data Seeder Design"
     description: "Static methods vs injectable services vs HasData()"
     what_to_look_for: |
       Check how seed data is created: HasData() in OnModelCreating, static seeder methods
-      called from Program.cs, or injectable seeder services.
+      called from Program.cs, or injectable seeder services. Check for async seeding,
+      idempotency guards (AnyAsync check), and logging during seeding.
     why_it_matters: "HasData() integrates with migrations; runtime seeders offer more flexibility"
 
   - name: "Exception Handling Strategy"
-    description: "Custom exceptions vs built-in types vs result patterns"
+    description: "Custom exceptions, IExceptionHandler, or result patterns"
     what_to_look_for: |
-      Look for custom exception classes. Check how business rule violations
-      are communicated from services to page models.
-    why_it_matters: "Well-designed exception hierarchies make error handling consistent"
+      Look for custom exception classes. Check for IExceptionHandler middleware vs
+      default error page. Check how business rule violations are communicated from
+      services to page models. Look for StatusCodePagesWithReExecute configuration.
+    why_it_matters: "Well-designed exception handling makes errors consistent and debuggable"
 
   - name: "File Organization"
     description: "Page grouping, service placement, model organization"
     what_to_look_for: |
-      Check folder structure: are pages organized by feature area (Pages/Events/,
-      Pages/Attendees/) or flat? Where are services, models, and DTOs placed?
+      Check folder structure: Pages organized by feature area (Pages/Events/,
+      Pages/Attendees/) or flat? Services in dedicated Services/ folder?
+      Models with separate Enums/ subfolder? Middleware in its own folder?
     why_it_matters: "Feature-based organization improves discoverability in Razor Pages apps"
 
   - name: "Pagination"
     description: "Pagination implementation and UI rendering"
     what_to_look_for: |
-      Check how pagination is implemented in services and rendered in pages.
-      Look for reusable pagination partial views or tag helpers.
-      Check for Bootstrap pagination CSS classes.
+      Check for reusable PaginatedList<T> or PagedResult<T> classes.
+      Look for reusable pagination partial views or custom tag helpers vs
+      duplicated pagination HTML on every list page. Check for Bootstrap
+      pagination CSS classes and aria-label on pagination nav.
     why_it_matters: "Reusable pagination components reduce duplication across list pages"
 
   - name: "Collection Initialization"
@@ -161,6 +241,15 @@ dimensions:
       Search for collection initialization patterns: modern [] (C# 12) vs
       new List<T>() or new List<T> { ... }.
     why_it_matters: "Modern collection expressions are more concise and signal C# version awareness"
+
+  - name: "Custom Tag Helpers"
+    description: "Custom TagHelper classes for repeated UI patterns"
+    what_to_look_for: |
+      Look for classes inheriting from TagHelper in a TagHelpers/ folder.
+      Check for custom tag helpers for status badges, pagination, or other
+      repeated patterns. Check _ViewImports.cshtml for @addTagHelper registrations
+      beyond the built-in Microsoft tag helpers.
+    why_it_matters: "Custom tag helpers are the Razor-idiomatic way to create reusable, encapsulated UI components"
 
 output:
   directory: output
