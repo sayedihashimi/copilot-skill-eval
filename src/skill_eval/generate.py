@@ -176,6 +176,10 @@ def run_generate(
 ) -> None:
     """Generate code for each configuration defined in the config.
 
+    Each scenario is generated in its own Copilot invocation so that
+    large skills/plugins don't exhaust the context window before later
+    scenarios can be built.
+
     Args:
         config: The parsed evaluation configuration.
         project_root: Root directory of the evaluation project.
@@ -194,6 +198,7 @@ def run_generate(
         configs_to_run = [c for c in config.configurations if c.name in configurations]
 
     output_base = project_root / config.output.directory
+    total_scenarios = len(config.scenarios)
 
     for cfg in configs_to_run:
         config_output = output_base / cfg.name
@@ -202,6 +207,7 @@ def run_generate(
         click.echo(f"\n{'=' * 60}")
         click.echo(f"Generating: {label}")
         click.echo(f"Output:     {config_output}")
+        click.echo(f"Scenarios:  {total_scenarios} (one Copilot invocation each)")
         click.echo(f"{'=' * 60}")
 
         # Clean previous output for this configuration
@@ -210,10 +216,7 @@ def run_generate(
             _rmtree(config_output)
         config_output.mkdir(parents=True, exist_ok=True)
 
-        # Render the generation prompt
-        prompt = render_generate_prompt(config, cfg.name, project_root)
-
-        # Create an isolated staging directory and run Copilot, always cleaning up
+        # Create staging dir once per config and register skills
         staging_dir, staging_links = _create_staging_dir(project_root, cfg)
         added_skills: list[Path] = []
         try:
@@ -226,9 +229,21 @@ def run_generate(
                         f"{', '.join(str(p) for p in added_skills)}"
                     )
 
-            _run_copilot(
-                prompt, cfg, cwd=staging_dir, project_root=project_root,
-            )
+            # Generate each scenario in its own Copilot invocation
+            for i, scenario in enumerate(config.scenarios, 1):
+                scenario_output = config_output / scenario.name
+                scenario_output.mkdir(parents=True, exist_ok=True)
+
+                click.echo(f"\n  [{i}/{total_scenarios}] {scenario.name}")
+                click.echo(f"    {scenario.description}")
+
+                prompt = render_generate_prompt(
+                    config, cfg.name, project_root, scenario=scenario,
+                )
+                _run_copilot(
+                    prompt, cfg, cwd=staging_dir, project_root=project_root,
+                )
+                click.echo(f"    ✅ {scenario.name} done")
 
         finally:
             if added_skills:
