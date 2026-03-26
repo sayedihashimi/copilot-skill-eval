@@ -1,0 +1,361 @@
+@baseUrl = http://localhost:5076
+
+### ==================== Membership Plans ====================
+
+### List all active membership plans
+GET {{baseUrl}}/api/membership-plans?isActive=true
+
+### Get a specific membership plan (Basic)
+GET {{baseUrl}}/api/membership-plans/1
+
+### Create a new membership plan
+POST {{baseUrl}}/api/membership-plans
+Content-Type: application/json
+
+{
+  "name": "Student",
+  "description": "Discounted plan for students with valid ID",
+  "durationMonths": 3,
+  "price": 19.99,
+  "maxClassBookingsPerWeek": 2,
+  "allowsPremiumClasses": false
+}
+
+### Update a membership plan
+PUT {{baseUrl}}/api/membership-plans/1
+Content-Type: application/json
+
+{
+  "name": "Basic",
+  "description": "Updated: Access to standard classes with limited weekly bookings.",
+  "durationMonths": 1,
+  "price": 34.99,
+  "maxClassBookingsPerWeek": 3,
+  "allowsPremiumClasses": false
+}
+
+### Deactivate a membership plan
+DELETE {{baseUrl}}/api/membership-plans/1
+
+### ==================== Members ====================
+
+### List all active members
+GET {{baseUrl}}/api/members?isActive=true&page=1&pageSize=5
+
+### Search members by name
+GET {{baseUrl}}/api/members?search=alice&page=1&pageSize=10
+
+### Search members by email
+GET {{baseUrl}}/api/members?search=marcus.chen
+
+### Get member details (Alice - has Basic membership)
+GET {{baseUrl}}/api/members/1
+
+### Get member details (Marcus - has Premium membership)
+GET {{baseUrl}}/api/members/2
+
+### Register a new member
+POST {{baseUrl}}/api/members
+Content-Type: application/json
+
+{
+  "firstName": "Olivia",
+  "lastName": "Martinez",
+  "email": "olivia.martinez@email.com",
+  "phone": "555-0120",
+  "dateOfBirth": "1997-06-15",
+  "emergencyContactName": "Maria Martinez",
+  "emergencyContactPhone": "555-0121"
+}
+
+### Update member profile
+PUT {{baseUrl}}/api/members/1
+Content-Type: application/json
+
+{
+  "firstName": "Alice",
+  "lastName": "Johnson",
+  "email": "alice.johnson@email.com",
+  "phone": "555-9999",
+  "emergencyContactName": "Bob Johnson",
+  "emergencyContactPhone": "555-0102"
+}
+
+### Deactivate a member (Ryan - no active bookings)
+DELETE {{baseUrl}}/api/members/8
+
+### Get member's bookings (Alice)
+GET {{baseUrl}}/api/members/1/bookings?page=1&pageSize=10
+
+### Get member's bookings filtered by status
+GET {{baseUrl}}/api/members/1/bookings?status=Confirmed&page=1&pageSize=10
+
+### Get member's upcoming bookings (Alice)
+GET {{baseUrl}}/api/members/1/bookings/upcoming
+
+### Get membership history (Emma - has expired + active)
+GET {{baseUrl}}/api/members/7/memberships
+
+### ==================== Memberships ====================
+
+### Create a membership for Ryan (currently has expired membership)
+POST {{baseUrl}}/api/memberships
+Content-Type: application/json
+
+{
+  "memberId": 8,
+  "membershipPlanId": 1,
+  "startDate": "2026-03-25",
+  "paymentStatus": "Paid"
+}
+
+### Get membership details
+GET {{baseUrl}}/api/memberships/1
+
+### Cancel a membership
+POST {{baseUrl}}/api/memberships/1/cancel
+
+### Freeze a membership (14 days)
+POST {{baseUrl}}/api/memberships/2/freeze
+Content-Type: application/json
+
+{
+  "freezeDurationDays": 14
+}
+
+### Unfreeze a membership
+POST {{baseUrl}}/api/memberships/2/unfreeze
+
+### Renew an expired membership (Ryan's expired membership)
+POST {{baseUrl}}/api/memberships/9/renew
+
+### ==================== Instructors ====================
+
+### List all instructors
+GET {{baseUrl}}/api/instructors
+
+### Filter instructors by specialization
+GET {{baseUrl}}/api/instructors?specialization=Yoga
+
+### Filter instructors by active status
+GET {{baseUrl}}/api/instructors?isActive=true
+
+### Get instructor details
+GET {{baseUrl}}/api/instructors/1
+
+### Create a new instructor
+POST {{baseUrl}}/api/instructors
+Content-Type: application/json
+
+{
+  "firstName": "Zoe",
+  "lastName": "Carter",
+  "email": "zoe.carter@zenithfitness.com",
+  "phone": "555-0210",
+  "bio": "Dynamic group fitness instructor with certifications in Zumba and dance fitness.",
+  "specializations": "Zumba, Dance, HIIT",
+  "hireDate": "2026-03-01"
+}
+
+### Update an instructor
+PUT {{baseUrl}}/api/instructors/1
+Content-Type: application/json
+
+{
+  "firstName": "Maya",
+  "lastName": "Singh",
+  "email": "maya.singh@zenithfitness.com",
+  "phone": "555-0201",
+  "bio": "Certified yoga and meditation instructor with 12+ years of experience. Specializes in Vinyasa, Restorative, and Prenatal yoga.",
+  "specializations": "Yoga, Meditation, Pilates, Prenatal Yoga"
+}
+
+### Get instructor's schedule
+GET {{baseUrl}}/api/instructors/1/schedule
+
+### Get instructor's schedule with date range
+GET {{baseUrl}}/api/instructors/1/schedule?fromDate=2026-03-26&toDate=2026-04-01
+
+### ==================== Class Types ====================
+
+### List all class types
+GET {{baseUrl}}/api/class-types
+
+### Filter class types by difficulty
+GET {{baseUrl}}/api/class-types?difficulty=Advanced
+
+### Filter premium class types
+GET {{baseUrl}}/api/class-types?isPremium=true
+
+### Get class type details
+GET {{baseUrl}}/api/class-types/1
+
+### Create a new class type
+POST {{baseUrl}}/api/class-types
+Content-Type: application/json
+
+{
+  "name": "Zumba",
+  "description": "Fun, dance-based fitness class set to Latin and world music rhythms.",
+  "defaultDurationMinutes": 60,
+  "defaultCapacity": 25,
+  "isPremium": false,
+  "caloriesPerSession": 400,
+  "difficultyLevel": "AllLevels"
+}
+
+### Update a class type
+PUT {{baseUrl}}/api/class-types/1
+Content-Type: application/json
+
+{
+  "name": "Yoga",
+  "description": "Updated: A mindful practice combining breath work, flexibility, and strength.",
+  "defaultDurationMinutes": 60,
+  "defaultCapacity": 25,
+  "isPremium": false,
+  "caloriesPerSession": 275,
+  "difficultyLevel": "AllLevels"
+}
+
+### ==================== Class Schedules ====================
+
+### List all scheduled classes
+GET {{baseUrl}}/api/classes?page=1&pageSize=10
+
+### Filter classes by date range
+GET {{baseUrl}}/api/classes?fromDate=2026-03-26&toDate=2026-03-28&page=1&pageSize=10
+
+### Filter classes by class type (Yoga = 1)
+GET {{baseUrl}}/api/classes?classTypeId=1
+
+### Filter classes by instructor
+GET {{baseUrl}}/api/classes?instructorId=1
+
+### Filter classes with availability
+GET {{baseUrl}}/api/classes?hasAvailability=true
+
+### Get class details
+GET {{baseUrl}}/api/classes/1
+
+### Get available classes (next 7 days)
+GET {{baseUrl}}/api/classes/available
+
+### Schedule a new class
+POST {{baseUrl}}/api/classes
+Content-Type: application/json
+
+{
+  "classTypeId": 1,
+  "instructorId": 1,
+  "startTime": "2026-03-30T14:00:00",
+  "durationMinutes": 60,
+  "capacity": 20,
+  "room": "Studio A"
+}
+
+### Update class details
+PUT {{baseUrl}}/api/classes/1
+Content-Type: application/json
+
+{
+  "capacity": 25,
+  "room": "Studio C"
+}
+
+### Cancel a class (cascades to all bookings)
+PATCH {{baseUrl}}/api/classes/1/cancel
+Content-Type: application/json
+
+{
+  "reason": "Instructor called in sick"
+}
+
+### Get class roster
+GET {{baseUrl}}/api/classes/1/roster
+
+### Get class waitlist (full Spin class ID=9)
+GET {{baseUrl}}/api/classes/9/waitlist
+
+### ==================== Bookings ====================
+
+### Book a class (member 5 = Priya, Elite plan, class 8 = HIIT)
+POST {{baseUrl}}/api/bookings
+Content-Type: application/json
+
+{
+  "classScheduleId": 8,
+  "memberId": 5
+}
+
+### Get booking details
+GET {{baseUrl}}/api/bookings/1
+
+### Cancel a booking
+POST {{baseUrl}}/api/bookings/1/cancel
+Content-Type: application/json
+
+{
+  "reason": "Cannot make it"
+}
+
+### Check in for a class
+POST {{baseUrl}}/api/bookings/1/check-in
+
+### Mark as no-show
+POST {{baseUrl}}/api/bookings/1/no-show
+
+### ==================== Business Rule Tests ====================
+
+### TEST: Book a premium class (Boxing) as a Basic member (Alice, ID=1) - Should fail
+POST {{baseUrl}}/api/bookings
+Content-Type: application/json
+
+{
+  "classScheduleId": 3,
+  "memberId": 1
+}
+
+### TEST: Book when member has no active membership (Ryan, ID=8) - Should fail
+POST {{baseUrl}}/api/bookings
+Content-Type: application/json
+
+{
+  "classScheduleId": 1,
+  "memberId": 8
+}
+
+### TEST: Freeze membership with invalid duration (5 days, minimum is 7) - Should fail
+POST {{baseUrl}}/api/memberships/3/freeze
+Content-Type: application/json
+
+{
+  "freezeDurationDays": 5
+}
+
+### TEST: Register member under 16 - Should fail validation
+POST {{baseUrl}}/api/members
+Content-Type: application/json
+
+{
+  "firstName": "Young",
+  "lastName": "Person",
+  "email": "young@email.com",
+  "phone": "555-0000",
+  "dateOfBirth": "2015-01-01",
+  "emergencyContactName": "Parent",
+  "emergencyContactPhone": "555-0001"
+}
+
+### TEST: Create duplicate membership plan name - Should fail
+POST {{baseUrl}}/api/membership-plans
+Content-Type: application/json
+
+{
+  "name": "Basic",
+  "description": "Another basic plan",
+  "durationMonths": 1,
+  "price": 25.00,
+  "maxClassBookingsPerWeek": 3,
+  "allowsPremiumClasses": false
+}

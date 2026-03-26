@@ -1,0 +1,313 @@
+@baseUrl = http://localhost:5069
+
+### ===========================
+### Authors
+### ===========================
+
+### List all authors
+GET {{baseUrl}}/api/authors?page=1&pageSize=10
+
+### Search authors by name
+GET {{baseUrl}}/api/authors?search=austen&page=1&pageSize=10
+
+### Get author details (Jane Austen)
+GET {{baseUrl}}/api/authors/1
+
+### Create a new author
+POST {{baseUrl}}/api/authors
+Content-Type: application/json
+
+{
+  "firstName": "Toni",
+  "lastName": "Morrison",
+  "biography": "American novelist and Nobel Prize laureate, known for Beloved.",
+  "birthDate": "1931-02-18",
+  "country": "United States"
+}
+
+### Update an author
+PUT {{baseUrl}}/api/authors/1
+Content-Type: application/json
+
+{
+  "firstName": "Jane",
+  "lastName": "Austen",
+  "biography": "English novelist known for her six major novels, including Pride and Prejudice and Sense and Sensibility.",
+  "birthDate": "1775-12-16",
+  "country": "United Kingdom"
+}
+
+### Delete an author (will fail if author has books)
+DELETE {{baseUrl}}/api/authors/1
+
+### ===========================
+### Categories
+### ===========================
+
+### List all categories
+GET {{baseUrl}}/api/categories
+
+### Get category details (Fiction)
+GET {{baseUrl}}/api/categories/1
+
+### Create a new category
+POST {{baseUrl}}/api/categories
+Content-Type: application/json
+
+{
+  "name": "Fantasy",
+  "description": "Fiction involving magical or supernatural elements"
+}
+
+### Update a category
+PUT {{baseUrl}}/api/categories/1
+Content-Type: application/json
+
+{
+  "name": "Fiction",
+  "description": "Literary works created from the imagination"
+}
+
+### Delete a category (will fail if category has books)
+DELETE {{baseUrl}}/api/categories/1
+
+### ===========================
+### Books
+### ===========================
+
+### List all books
+GET {{baseUrl}}/api/books?page=1&pageSize=10
+
+### Search books by title
+GET {{baseUrl}}/api/books?search=foundation&page=1&pageSize=10
+
+### Search books by author name
+GET {{baseUrl}}/api/books?search=christie&page=1&pageSize=10
+
+### Filter available books only
+GET {{baseUrl}}/api/books?available=true&page=1&pageSize=10
+
+### Sort books by title descending
+GET {{baseUrl}}/api/books?sortBy=title&sortDir=desc&page=1&pageSize=10
+
+### Sort books by publication year
+GET {{baseUrl}}/api/books?sortBy=year&sortDir=asc&page=1&pageSize=10
+
+### Get book details (Pride and Prejudice)
+GET {{baseUrl}}/api/books/1
+
+### Create a new book
+POST {{baseUrl}}/api/books
+Content-Type: application/json
+
+{
+  "title": "Emma",
+  "isbn": "978-0141439587",
+  "publisher": "Penguin Classics",
+  "publicationYear": 1815,
+  "description": "A comic novel about youthful hubris and romantic misunderstandings.",
+  "pageCount": 474,
+  "language": "English",
+  "totalCopies": 2,
+  "authorIds": [1],
+  "categoryIds": [1]
+}
+
+### Update a book
+PUT {{baseUrl}}/api/books/1
+Content-Type: application/json
+
+{
+  "title": "Pride and Prejudice",
+  "isbn": "978-0141439518",
+  "publisher": "Penguin Classics",
+  "publicationYear": 1813,
+  "description": "A masterpiece of wit and social observation by Jane Austen.",
+  "pageCount": 432,
+  "language": "English",
+  "totalCopies": 4,
+  "authorIds": [1],
+  "categoryIds": [1]
+}
+
+### Delete a book (will fail if it has active loans)
+DELETE {{baseUrl}}/api/books/1
+
+### Get loan history for a book
+GET {{baseUrl}}/api/books/1/loans?page=1&pageSize=10
+
+### Get active reservations queue for a book
+GET {{baseUrl}}/api/books/7/reservations
+
+### ===========================
+### Patrons
+### ===========================
+
+### List all patrons
+GET {{baseUrl}}/api/patrons?page=1&pageSize=10
+
+### Search patrons by name
+GET {{baseUrl}}/api/patrons?search=alice&page=1&pageSize=10
+
+### Filter patrons by membership type
+GET {{baseUrl}}/api/patrons?membershipType=Premium&page=1&pageSize=10
+
+### Get patron details (Alice Johnson - Premium member)
+GET {{baseUrl}}/api/patrons/1
+
+### Get patron details (Bob Smith - Standard member with fines)
+GET {{baseUrl}}/api/patrons/2
+
+### Create a new patron
+POST {{baseUrl}}/api/patrons
+Content-Type: application/json
+
+{
+  "firstName": "Helen",
+  "lastName": "Park",
+  "email": "helen.park@email.com",
+  "phone": "555-0108",
+  "address": "222 Spruce Court",
+  "membershipType": "Standard"
+}
+
+### Update a patron
+PUT {{baseUrl}}/api/patrons/1
+Content-Type: application/json
+
+{
+  "firstName": "Alice",
+  "lastName": "Johnson",
+  "email": "alice.johnson@email.com",
+  "phone": "555-0101",
+  "address": "123 Oak Street, Apt 2",
+  "membershipType": "Premium"
+}
+
+### Deactivate a patron (fails if patron has active loans)
+DELETE {{baseUrl}}/api/patrons/4
+
+### Get patron's loans (all)
+GET {{baseUrl}}/api/patrons/1/loans?page=1&pageSize=10
+
+### Get patron's active loans
+GET {{baseUrl}}/api/patrons/1/loans?status=active&page=1&pageSize=10
+
+### Get patron's reservations
+GET {{baseUrl}}/api/patrons/2/reservations?page=1&pageSize=10
+
+### Get patron's fines (all)
+GET {{baseUrl}}/api/patrons/2/fines?page=1&pageSize=10
+
+### Get patron's unpaid fines
+GET {{baseUrl}}/api/patrons/2/fines?status=unpaid&page=1&pageSize=10
+
+### ===========================
+### Loans
+### ===========================
+
+### List all loans
+GET {{baseUrl}}/api/loans?page=1&pageSize=10
+
+### List active loans
+GET {{baseUrl}}/api/loans?status=active&page=1&pageSize=10
+
+### List overdue loans
+GET {{baseUrl}}/api/loans/overdue?page=1&pageSize=10
+
+### Get loan details
+GET {{baseUrl}}/api/loans/1
+
+### Check out a book (valid checkout - Patron 4 borrows book 2)
+POST {{baseUrl}}/api/loans
+Content-Type: application/json
+
+{
+  "bookId": 2,
+  "patronId": 4
+}
+
+### Return a book (return loan 1)
+POST {{baseUrl}}/api/loans/1/return
+
+### Renew a loan (renew loan 2)
+POST {{baseUrl}}/api/loans/2/renew
+
+### ===========================
+### Business Rule Tests - Loans
+### ===========================
+
+### FAIL: Check out for inactive patron (Frank Taylor, ID 6)
+POST {{baseUrl}}/api/loans
+Content-Type: application/json
+
+{
+  "bookId": 2,
+  "patronId": 6
+}
+
+### FAIL: Renew an overdue loan (loan 7 is overdue)
+POST {{baseUrl}}/api/loans/7/renew
+
+### FAIL: Renew loan when there are pending reservations (loan 2 - book 4 has reservation by patron 3)
+POST {{baseUrl}}/api/loans/2/renew
+
+### ===========================
+### Reservations
+### ===========================
+
+### List all reservations
+GET {{baseUrl}}/api/reservations?page=1&pageSize=10
+
+### List pending reservations
+GET {{baseUrl}}/api/reservations?status=pending&page=1&pageSize=10
+
+### Get reservation details
+GET {{baseUrl}}/api/reservations/1
+
+### Create a reservation (Patron 4 reserves book 11)
+POST {{baseUrl}}/api/reservations
+Content-Type: application/json
+
+{
+  "bookId": 11,
+  "patronId": 4
+}
+
+### Cancel a reservation
+POST {{baseUrl}}/api/reservations/1/cancel
+
+### Fulfill a ready reservation (reservation 2 is Ready)
+POST {{baseUrl}}/api/reservations/2/fulfill
+
+### ===========================
+### Business Rule Tests - Reservations
+### ===========================
+
+### FAIL: Reserve a book the patron already has on active loan (Patron 1 has book 1)
+POST {{baseUrl}}/api/reservations
+Content-Type: application/json
+
+{
+  "bookId": 1,
+  "patronId": 1
+}
+
+### ===========================
+### Fines
+### ===========================
+
+### List all fines
+GET {{baseUrl}}/api/fines?page=1&pageSize=10
+
+### List unpaid fines
+GET {{baseUrl}}/api/fines?status=unpaid&page=1&pageSize=10
+
+### Get fine details
+GET {{baseUrl}}/api/fines/1
+
+### Pay a fine
+POST {{baseUrl}}/api/fines/1/pay
+
+### Waive a fine
+POST {{baseUrl}}/api/fines/3/waive

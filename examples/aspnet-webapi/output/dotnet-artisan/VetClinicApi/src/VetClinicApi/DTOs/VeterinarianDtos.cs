@@ -1,0 +1,32 @@
+using System.ComponentModel.DataAnnotations;
+
+namespace VetClinicApi.DTOs;
+
+public sealed record CreateVeterinarianDto(
+    [Required, MaxLength(100)] string FirstName,
+    [Required, MaxLength(100)] string LastName,
+    [Required, EmailAddress] string Email,
+    [Required] string Phone,
+    string? Specialization,
+    [Required] string LicenseNumber,
+    [Required] DateOnly HireDate);
+
+public sealed record UpdateVeterinarianDto(
+    [Required, MaxLength(100)] string FirstName,
+    [Required, MaxLength(100)] string LastName,
+    [Required, EmailAddress] string Email,
+    [Required] string Phone,
+    string? Specialization,
+    [Required] string LicenseNumber,
+    bool IsAvailable);
+
+public sealed record VeterinarianDto(
+    int Id,
+    string FirstName,
+    string LastName,
+    string Email,
+    string Phone,
+    string? Specialization,
+    string LicenseNumber,
+    bool IsAvailable,
+    DateOnly HireDate);

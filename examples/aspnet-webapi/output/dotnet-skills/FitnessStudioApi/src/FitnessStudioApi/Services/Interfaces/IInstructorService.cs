@@ -1,0 +1,14 @@
+using FitnessStudioApi.DTOs;
+using FitnessStudioApi.DTOs.Instructor;
+using FitnessStudioApi.DTOs.ClassSchedule;
+
+namespace FitnessStudioApi.Services.Interfaces;
+
+public interface IInstructorService
+{
+    Task<List<InstructorDto>> GetAllAsync(string? specialization, bool? isActive);
+    Task<InstructorDto> GetByIdAsync(int id);
+    Task<InstructorDto> CreateAsync(CreateInstructorDto dto);
+    Task<InstructorDto> UpdateAsync(int id, UpdateInstructorDto dto);
+    Task<List<ClassScheduleDto>> GetScheduleAsync(int instructorId, DateTime? fromDate, DateTime? toDate);
+}
