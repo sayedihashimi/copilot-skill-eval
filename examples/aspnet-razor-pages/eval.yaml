@@ -309,6 +309,71 @@ dimensions:
       from OnModelCreating.
     why_it_matters: "Explicit relationship configuration prevents surprise cascade behaviors and makes the data model self-documenting"
 
+  - name: "Naming Conventions"
+    description: "Adherence to .NET naming guidelines for types, members, and parameters"
+    what_to_look_for: |
+      Check that public types and members use PascalCasing and parameters use camelCasing.
+      Verify methods use verb or verb-phrase names (GetBookings, CancelReservation) and
+      properties use noun or adjective names (Status, IsActive). Look for abbreviations or
+      Hungarian notation (strName, iCount). Check that async methods end with the Async suffix.
+      Verify interfaces use the I prefix (IBookingService). Check that enums, exceptions,
+      and attributes follow standard suffixing conventions.
+    why_it_matters: "Consistent naming following .NET conventions makes APIs self-documenting and matches developer expectations across the ecosystem"
+
+  - name: "Enum Design"
+    description: "Proper use of enums for domain concepts following .NET type design guidelines"
+    what_to_look_for: |
+      Check that domain status and type fields use enums instead of magic strings or integers
+      (e.g., BookingStatus.Confirmed vs status == "confirmed"). Verify simple enums use
+      singular names (MembershipType, not MembershipTypes). Check that flag enums use plural
+      names and [Flags] attribute with powers-of-two values. Look for a zero default value
+      (None) on flag enums. Verify enum value names have no prefixes (Active, not StatusActive).
+      Check that enums are stored correctly in EF Core with .HasConversion<string>() when needed.
+    why_it_matters: "Well-designed enums enforce type safety, eliminate magic values, and follow .NET Framework Design Guidelines for type design"
+
+  - name: "Guard Clauses & Argument Validation"
+    description: "Validation of arguments at public API boundaries using modern guard patterns"
+    what_to_look_for: |
+      Check constructors and public service methods for argument validation using
+      ArgumentNullException.ThrowIfNull(), ArgumentException.ThrowIfNullOrEmpty(),
+      or ArgumentOutOfRangeException.ThrowIfNegative(). Look for fail-fast patterns that
+      validate inputs before performing work. Check whether null checks use modern throw
+      helpers vs manual if-null-throw patterns. Note if guard clauses are consistently
+      applied on DI-injected constructor parameters.
+    why_it_matters: "Guard clauses catch invalid inputs early, produce clear error messages, and follow .NET exception design guidelines for fail-fast behavior"
+
+  - name: "Async/Await Best Practices"
+    description: "Correct async/await patterns following .NET conventions"
+    what_to_look_for: |
+      Check that all async methods have the Async suffix (GetBookingsAsync, not GetBookings).
+      Look for async void methods (should be async Task except for event handlers).
+      Check for unnecessary async/await on simple pass-through methods where the Task could
+      be returned directly. Look for sync-over-async anti-patterns (Task.Result, .Wait(),
+      .GetAwaiter().GetResult()). Verify that async entry points (page handlers) use
+      await consistently through the call chain.
+    why_it_matters: "Proper async patterns prevent deadlocks, thread pool starvation, and follow .NET naming guidelines for async method identification"
+
+  - name: "Access Modifier Explicitness"
+    description: "Explicit access modifiers on types and members, file-scoped namespaces"
+    what_to_look_for: |
+      Check that all classes, records, interfaces, and enums have explicit access modifiers
+      (public, internal) rather than relying on the default (internal). Verify that members
+      have explicit access modifiers. Look for file-scoped namespace declarations (namespace X;)
+      instead of block-scoped (namespace X { }). Check whether internal types that should be
+      public (or vice versa) are correctly scoped. Note use of the 'file' access modifier
+      (C# 11) for helper types that should be file-local.
+    why_it_matters: "Explicit access modifiers communicate design intent clearly and prevent accidental API surface exposure, per .NET type design guidelines"
+
+  - name: "Dispose & Resource Management"
+    description: "Proper resource cleanup with IDisposable/IAsyncDisposable and using declarations"
+    what_to_look_for: |
+      Check for modern using declarations (using var stream = ...; without braces) vs
+      traditional using blocks. Look for IAsyncDisposable implementation on types that hold
+      async resources. Verify DbContext instances are not manually disposed when managed by DI.
+      Check that HttpClient instances use IHttpClientFactory instead of direct instantiation.
+      Look for file/stream operations that properly dispose resources.
+    why_it_matters: "Correct resource management prevents memory leaks and connection exhaustion, following the .NET dispose pattern guidelines"
+
 output:
   directory: output
   reports_directory: reports
