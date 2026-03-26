@@ -1,0 +1,124 @@
+@page "{id:int}"
+@model HorizonHR.Pages.Reviews.DetailsModel
+@{
+    ViewData["Title"] = "Review Details";
+}
+
+<h1 class="mb-4">Review Details</h1>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Review Information</h5>
+    </div>
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-3">Employee</dt>
+            <dd class="col-sm-9">
+                <a asp-page="/Employees/Details" asp-route-id="@Model.Review.EmployeeId">@Model.Review.Employee.FullName</a>
+            </dd>
+
+            <dt class="col-sm-3">Reviewer</dt>
+            <dd class="col-sm-9">@Model.Review.Reviewer.FullName</dd>
+
+            <dt class="col-sm-3">Review Period</dt>
+            <dd class="col-sm-9">
+                @Model.Review.ReviewPeriodStart.ToString("MMM d, yyyy") &ndash; @Model.Review.ReviewPeriodEnd.ToString("MMM d, yyyy")
+            </dd>
+
+            <dt class="col-sm-3">Status</dt>
+            <dd class="col-sm-9">
+                <partial name="_StatusBadge" model="@Model.Review.Status.ToString()" />
+            </dd>
+
+            <dt class="col-sm-3">Overall Rating</dt>
+            <dd class="col-sm-9">
+                @if (Model.Review.OverallRating.HasValue)
+                {
+                    <partial name="_StatusBadge" model="@Model.Review.OverallRating.Value.ToString()" />
+                }
+                else
+                {
+                    <span class="text-muted">Not yet rated</span>
+                }
+            </dd>
+
+            @if (Model.Review.CompletedDate.HasValue)
+            {
+                <dt class="col-sm-3">Completed Date</dt>
+                <dd class="col-sm-9">@Model.Review.CompletedDate.Value.ToString("MMM d, yyyy")</dd>
+            }
+        </dl>
+    </div>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.Review.SelfAssessment))
+{
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Self-Assessment</h5>
+        </div>
+        <div class="card-body">
+            <p class="mb-0" style="white-space: pre-wrap;">@Model.Review.SelfAssessment</p>
+        </div>
+    </div>
+}
+
+@if (!string.IsNullOrWhiteSpace(Model.Review.ManagerAssessment))
+{
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Manager Assessment</h5>
+        </div>
+        <div class="card-body">
+            <p class="mb-0" style="white-space: pre-wrap;">@Model.Review.ManagerAssessment</p>
+        </div>
+    </div>
+}
+
+@if (!string.IsNullOrWhiteSpace(Model.Review.StrengthsNoted))
+{
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Strengths</h5>
+        </div>
+        <div class="card-body">
+            <p class="mb-0" style="white-space: pre-wrap;">@Model.Review.StrengthsNoted</p>
+        </div>
+    </div>
+}
+
+@if (!string.IsNullOrWhiteSpace(Model.Review.AreasForImprovement))
+{
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Areas for Improvement</h5>
+        </div>
+        <div class="card-body">
+            <p class="mb-0" style="white-space: pre-wrap;">@Model.Review.AreasForImprovement</p>
+        </div>
+    </div>
+}
+
+@if (!string.IsNullOrWhiteSpace(Model.Review.Goals))
+{
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Goals</h5>
+        </div>
+        <div class="card-body">
+            <p class="mb-0" style="white-space: pre-wrap;">@Model.Review.Goals</p>
+        </div>
+    </div>
+}
+
+<div class="mt-3">
+    <a asp-page="Index" class="btn btn-outline-secondary">Back to Reviews</a>
+    @if (Model.Review.Status == HorizonHR.Models.ReviewStatus.SelfAssessmentPending)
+    {
+        <a asp-page="SelfAssessment" asp-route-id="@Model.Review.Id" class="btn btn-info">Submit Self-Assessment</a>
+    }
+    @if (Model.Review.Status == HorizonHR.Models.ReviewStatus.ManagerReviewPending)
+    {
+        <a asp-page="ManagerReview" asp-route-id="@Model.Review.Id" class="btn btn-warning">Complete Manager Review</a>
+    }
+</div>

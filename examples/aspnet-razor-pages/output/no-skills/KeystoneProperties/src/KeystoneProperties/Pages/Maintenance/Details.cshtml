@@ -1,0 +1,69 @@
+@page "{id:int}"
+@model KeystoneProperties.Pages.Maintenance.DetailsModel
+@{ ViewData["Title"] = "Maintenance Request Details"; }
+
+@if (Model.Request == null) { <div class="alert alert-danger">Request not found.</div> return; }
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>@Model.Request.Title</h1>
+    <div>
+        @if (Model.Request.Status != KeystoneProperties.Models.Enums.MaintenanceStatus.Completed &&
+             Model.Request.Status != KeystoneProperties.Models.Enums.MaintenanceStatus.Cancelled)
+        { <a asp-page="UpdateStatus" asp-route-id="@Model.Request.Id" class="btn btn-outline-warning">Update Status</a> }
+        <a asp-page="Index" class="btn btn-outline-secondary">Back to List</a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-3">
+            <div class="card-header"><strong>Request Information</strong></div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-5">Priority</dt><dd class="col-sm-7"><partial name="_StatusBadgePartial" view-data='@(new ViewDataDictionary(ViewData) { { "StatusText", Model.Request.Priority.ToString() }, { "StatusType", "MaintenancePriority" } })' /></dd>
+                    <dt class="col-sm-5">Status</dt><dd class="col-sm-7"><partial name="_StatusBadgePartial" view-data='@(new ViewDataDictionary(ViewData) { { "StatusText", Model.Request.Status.ToString() }, { "StatusType", "MaintenanceStatus" } })' /></dd>
+                    <dt class="col-sm-5">Category</dt><dd class="col-sm-7">@Model.Request.Category</dd>
+                    <dt class="col-sm-5">Submitted</dt><dd class="col-sm-7">@Model.Request.SubmittedDate.ToString("MMM dd, yyyy HH:mm")</dd>
+                    @if (Model.Request.AssignedTo != null)
+                    { <dt class="col-sm-5">Assigned To</dt><dd class="col-sm-7">@Model.Request.AssignedTo</dd> }
+                    @if (Model.Request.AssignedDate.HasValue)
+                    { <dt class="col-sm-5">Assigned Date</dt><dd class="col-sm-7">@Model.Request.AssignedDate.Value.ToString("MMM dd, yyyy")</dd> }
+                    @if (Model.Request.CompletedDate.HasValue)
+                    { <dt class="col-sm-5">Completed Date</dt><dd class="col-sm-7">@Model.Request.CompletedDate.Value.ToString("MMM dd, yyyy")</dd> }
+                </dl>
+            </div>
+        </div>
+        <div class="card mb-3">
+            <div class="card-header"><strong>Description</strong></div>
+            <div class="card-body"><p>@Model.Request.Description</p></div>
+        </div>
+        @if (!string.IsNullOrWhiteSpace(Model.Request.CompletionNotes))
+        {
+            <div class="card mb-3">
+                <div class="card-header"><strong>Completion Notes</strong></div>
+                <div class="card-body"><p>@Model.Request.CompletionNotes</p></div>
+            </div>
+        }
+    </div>
+    <div class="col-md-6">
+        <div class="card mb-3">
+            <div class="card-header"><strong>Location & Tenant</strong></div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-5">Property</dt><dd class="col-sm-7"><a asp-page="/Properties/Details" asp-route-id="@Model.Request.Unit.PropertyId">@Model.Request.Unit.Property.Name</a></dd>
+                    <dt class="col-sm-5">Unit</dt><dd class="col-sm-7"><a asp-page="/Units/Details" asp-route-id="@Model.Request.UnitId">@Model.Request.Unit.UnitNumber</a></dd>
+                    <dt class="col-sm-5">Tenant</dt><dd class="col-sm-7"><a asp-page="/Tenants/Details" asp-route-id="@Model.Request.TenantId">@Model.Request.Tenant.FullName</a></dd>
+                </dl>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header"><strong>Costs</strong></div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-5">Estimated</dt><dd class="col-sm-7">@(Model.Request.EstimatedCost?.ToString("C") ?? "—")</dd>
+                    <dt class="col-sm-5">Actual</dt><dd class="col-sm-7">@(Model.Request.ActualCost?.ToString("C") ?? "—")</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>

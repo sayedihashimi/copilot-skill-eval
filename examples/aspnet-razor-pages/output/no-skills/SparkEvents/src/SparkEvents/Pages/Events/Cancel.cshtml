@@ -1,0 +1,32 @@
+@page "{id:int}"
+@model SparkEvents.Pages.Events.CancelModel
+
+@{
+    ViewData["Title"] = "Cancel Event";
+}
+
+<section>
+    <h1>Cancel Event</h1>
+    <hr />
+
+    <div class="alert alert-danger">
+        <strong>Warning:</strong> Cancelling this event will also cancel all @Model.RegistrationCount active registrations.
+    </div>
+
+    <h3>@Model.Event!.Title</h3>
+    <p>@Model.Event.StartDate.ToString("MMMM dd, yyyy") at @Model.Event.Venue.Name</p>
+
+    <form method="post">
+        <div asp-validation-summary="All" class="text-danger"></div>
+        <input type="hidden" name="id" value="@Model.Event.Id" />
+
+        <div class="mb-3">
+            <label asp-for="CancellationReason" class="form-label">Cancellation Reason (required)</label>
+            <textarea asp-for="CancellationReason" class="form-control" rows="3" required></textarea>
+            <span asp-validation-for="CancellationReason" class="text-danger"></span>
+        </div>
+
+        <button type="submit" class="btn btn-danger">Confirm Cancellation</button>
+        <a asp-page="Details" asp-route-id="@Model.Event.Id" class="btn btn-secondary">Go Back</a>
+    </form>
+</section>

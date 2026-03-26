@@ -1,0 +1,84 @@
+@page
+@model KeystoneProperties.Pages.Leases.IndexModel
+@{ ViewData["Title"] = "Leases"; }
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Leases</h1>
+    <a asp-page="Create" class="btn btn-primary">Create Lease</a>
+</div>
+
+<form method="get" class="row g-3 mb-4">
+    <div class="col-md-3">
+        <select name="status" class="form-select">
+            <option value="">All Status</option>
+            @foreach (var s in Enum.GetValues<KeystoneProperties.Models.Enums.LeaseStatus>())
+            { <option value="@s" selected="@(Model.Status == s)">@s</option> }
+        </select>
+    </div>
+    <div class="col-md-3">
+        <select name="propertyId" class="form-select">
+            <option value="">All Properties</option>
+            @foreach (var p in Model.PropertyList)
+            { <option value="@p.Id" selected="@(Model.PropertyId == p.Id)">@p.Name</option> }
+        </select>
+    </div>
+    <div class="col-md-2">
+        <button type="submit" class="btn btn-outline-secondary w-100">Filter</button>
+    </div>
+</form>
+
+@if (Model.Leases.Items.Any())
+{
+    <table class="table table-striped table-hover">
+        <thead class="table-dark">
+            <tr><th>Tenant</th><th>Property</th><th>Unit</th><th>Start</th><th>End</th><th>Rent</th><th>Status</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+            @foreach (var l in Model.Leases.Items)
+            {
+                <tr>
+                    <td><a asp-page="/Tenants/Details" asp-route-id="@l.TenantId">@l.Tenant.FullName</a></td>
+                    <td>@l.Unit.Property.Name</td>
+                    <td>@l.Unit.UnitNumber</td>
+                    <td>@l.StartDate.ToString("MMM dd, yyyy")</td>
+                    <td>@l.EndDate.ToString("MMM dd, yyyy")</td>
+                    <td>@l.MonthlyRentAmount.ToString("C")</td>
+                    <td><partial name="_StatusBadgePartial" view-data='@(new ViewDataDictionary(ViewData) { { "StatusText", l.Status.ToString() }, { "StatusType", "LeaseStatus" } })' /></td>
+                    <td>
+                        <a asp-page="Details" asp-route-id="@l.Id" class="btn btn-sm btn-outline-primary">View</a>
+                        @if (l.Status == KeystoneProperties.Models.Enums.LeaseStatus.Active)
+                        {
+                            <a asp-page="Renew" asp-route-id="@l.Id" class="btn btn-sm btn-outline-success">Renew</a>
+                            <a asp-page="Terminate" asp-route-id="@l.Id" class="btn btn-sm btn-outline-danger">Terminate</a>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+}
+else
+{
+    <div class="alert alert-info">No leases found.</div>
+}
+
+@if (Model.Leases.TotalPages > 1)
+{
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            <li class="page-item @(Model.Leases.HasPreviousPage ? "" : "disabled")">
+                <a class="page-link" href="?pageNumber=@(Model.Leases.PageNumber - 1)&status=@Model.Status&propertyId=@Model.PropertyId">Previous</a>
+            </li>
+            @for (int i = 1; i <= Model.Leases.TotalPages; i++)
+            {
+                <li class="page-item @(i == Model.Leases.PageNumber ? "active" : "")">
+                    <a class="page-link" href="?pageNumber=@i&status=@Model.Status&propertyId=@Model.PropertyId">@i</a>
+                </li>
+            }
+            <li class="page-item @(Model.Leases.HasNextPage ? "" : "disabled")">
+                <a class="page-link" href="?pageNumber=@(Model.Leases.PageNumber + 1)&status=@Model.Status&propertyId=@Model.PropertyId">Next</a>
+            </li>
+        </ul>
+    </nav>
+}

@@ -1,0 +1,116 @@
+@page "{id:int}"
+@model KeystoneProperties.Pages.Leases.DetailsModel
+@{ ViewData["Title"] = "Lease Details"; }
+
+@if (Model.Lease == null) { <div class="alert alert-danger">Lease not found.</div> return; }
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Lease #@Model.Lease.Id</h1>
+    <div>
+        @if (Model.Lease.Status == KeystoneProperties.Models.Enums.LeaseStatus.Active)
+        {
+            <a asp-page="Edit" asp-route-id="@Model.Lease.Id" class="btn btn-outline-primary">Edit</a>
+            <a asp-page="Renew" asp-route-id="@Model.Lease.Id" class="btn btn-outline-success">Renew</a>
+            <a asp-page="Terminate" asp-route-id="@Model.Lease.Id" class="btn btn-outline-danger">Terminate</a>
+        }
+        <a asp-page="Index" class="btn btn-outline-secondary">Back to List</a>
+    </div>
+</div>
+
+<section class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><strong>Lease Information</strong></div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-5">Tenant</dt><dd class="col-sm-7"><a asp-page="/Tenants/Details" asp-route-id="@Model.Lease.TenantId">@Model.Lease.Tenant.FullName</a></dd>
+                    <dt class="col-sm-5">Property</dt><dd class="col-sm-7"><a asp-page="/Properties/Details" asp-route-id="@Model.Lease.Unit.PropertyId">@Model.Lease.Unit.Property.Name</a></dd>
+                    <dt class="col-sm-5">Unit</dt><dd class="col-sm-7"><a asp-page="/Units/Details" asp-route-id="@Model.Lease.UnitId">@Model.Lease.Unit.UnitNumber</a></dd>
+                    <dt class="col-sm-5">Start Date</dt><dd class="col-sm-7">@Model.Lease.StartDate.ToString("MMM dd, yyyy")</dd>
+                    <dt class="col-sm-5">End Date</dt><dd class="col-sm-7">@Model.Lease.EndDate.ToString("MMM dd, yyyy")</dd>
+                    <dt class="col-sm-5">Monthly Rent</dt><dd class="col-sm-7">@Model.Lease.MonthlyRentAmount.ToString("C")</dd>
+                    <dt class="col-sm-5">Deposit</dt><dd class="col-sm-7">@Model.Lease.DepositAmount.ToString("C")</dd>
+                    <dt class="col-sm-5">Deposit Status</dt><dd class="col-sm-7"><partial name="_StatusBadgePartial" view-data='@(new ViewDataDictionary(ViewData) { { "StatusText", Model.Lease.DepositStatus.ToString() }, { "StatusType", "DepositStatus" } })' /></dd>
+                    <dt class="col-sm-5">Status</dt><dd class="col-sm-7"><partial name="_StatusBadgePartial" view-data='@(new ViewDataDictionary(ViewData) { { "StatusText", Model.Lease.Status.ToString() }, { "StatusType", "LeaseStatus" } })' /></dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        @if (Model.Lease.Status == KeystoneProperties.Models.Enums.LeaseStatus.Terminated)
+        {
+            <div class="card border-danger mb-3">
+                <div class="card-header bg-danger text-white"><strong>Termination Details</strong></div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5">Termination Date</dt><dd class="col-sm-7">@Model.Lease.TerminationDate?.ToString("MMM dd, yyyy")</dd>
+                        <dt class="col-sm-5">Reason</dt><dd class="col-sm-7">@Model.Lease.TerminationReason</dd>
+                    </dl>
+                </div>
+            </div>
+        }
+
+        @if (Model.Lease.RenewalOfLease != null)
+        {
+            <div class="card border-info mb-3">
+                <div class="card-header bg-info text-white"><strong>Renewal Chain</strong></div>
+                <div class="card-body">
+                    <p>This lease is a renewal of <a asp-page="Details" asp-route-id="@Model.Lease.RenewalOfLeaseId">Lease #@Model.Lease.RenewalOfLeaseId</a>.</p>
+                </div>
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(Model.Lease.Notes))
+        {
+            <div class="card"><div class="card-header"><strong>Notes</strong></div><div class="card-body"><p>@Model.Lease.Notes</p></div></div>
+        }
+    </div>
+</section>
+
+<section class="mb-4">
+    <h3>Payment History</h3>
+    @if (Model.Lease.Payments.Any())
+    {
+        <table class="table table-striped">
+            <thead><tr><th>Date</th><th>Due Date</th><th>Type</th><th>Amount</th><th>Method</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var p in Model.Lease.Payments.OrderByDescending(p => p.PaymentDate))
+                {
+                    <tr>
+                        <td>@p.PaymentDate.ToString("MMM dd, yyyy")</td>
+                        <td>@p.DueDate.ToString("MMM dd, yyyy")</td>
+                        <td>@p.PaymentType</td>
+                        <td>@p.Amount.ToString("C")</td>
+                        <td>@p.PaymentMethod</td>
+                        <td><partial name="_StatusBadgePartial" view-data='@(new ViewDataDictionary(ViewData) { { "StatusText", p.Status.ToString() }, { "StatusType", "PaymentStatus" } })' /></td>
+                        <td><a asp-page="/Payments/Details" asp-route-id="@p.Id" class="btn btn-sm btn-outline-primary">View</a></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else { <p class="text-muted">No payments recorded.</p> }
+</section>
+
+<section>
+    <h3>Linked Inspections</h3>
+    @if (Model.Lease.Inspections.Any())
+    {
+        <table class="table table-striped">
+            <thead><tr><th>Type</th><th>Scheduled</th><th>Completed</th><th>Condition</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var i in Model.Lease.Inspections)
+                {
+                    <tr>
+                        <td>@i.InspectionType</td>
+                        <td>@i.ScheduledDate.ToString("MMM dd, yyyy")</td>
+                        <td>@(i.CompletedDate?.ToString("MMM dd, yyyy") ?? "Pending")</td>
+                        <td>@(i.OverallCondition?.ToString() ?? "—")</td>
+                        <td><a asp-page="/Inspections/Details" asp-route-id="@i.Id" class="btn btn-sm btn-outline-primary">View</a></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else { <p class="text-muted">No linked inspections.</p> }
+</section>

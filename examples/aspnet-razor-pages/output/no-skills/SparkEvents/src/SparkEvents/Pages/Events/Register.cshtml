@@ -1,0 +1,83 @@
+@page "{eventId:int}"
+@model SparkEvents.Pages.Events.RegisterModel
+
+@{
+    ViewData["Title"] = "Register for Event";
+}
+
+<section>
+    <h1>Register for @Model.Event!.Title</h1>
+    <p class="text-muted">@Model.Event.StartDate.ToString("MMMM dd, yyyy") at @Model.Event.Venue.Name</p>
+    <hr />
+
+    <form method="post">
+        <div asp-validation-summary="All" class="text-danger"></div>
+        <input type="hidden" name="eventId" value="@Model.Event.Id" />
+
+        <div class="row">
+            <div class="col-md-8">
+                <div class="mb-3">
+                    <label asp-for="Input.AttendeeId" class="form-label">Select Attendee</label>
+                    <select asp-for="Input.AttendeeId" asp-items="Model.AttendeeOptions" class="form-select">
+                        <option value="">Select an attendee</option>
+                    </select>
+                    <span asp-validation-for="Input.AttendeeId" class="text-danger"></span>
+                    <div class="form-text">
+                        <a asp-page="/Attendees/Create" class="text-decoration-none">+ Create new attendee</a>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Input.TicketTypeId" class="form-label">Ticket Type</label>
+                    <select asp-for="Input.TicketTypeId" asp-items="Model.TicketTypeOptions" class="form-select">
+                        <option value="">Select a ticket type</option>
+                    </select>
+                    <span asp-validation-for="Input.TicketTypeId" class="text-danger"></span>
+                </div>
+
+                <h5>Available Ticket Types</h5>
+                <div class="table-responsive mb-3">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Price</th>
+                                <th>Remaining</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var tt in Model.Event.TicketTypes.Where(t => t.IsActive))
+                            {
+                                var isEarlyBird = Model.Event.EarlyBirdDeadline.HasValue && tt.EarlyBirdPrice.HasValue && DateTime.UtcNow < Model.Event.EarlyBirdDeadline.Value;
+                                <tr>
+                                    <td>@tt.Name</td>
+                                    <td>
+                                        @if (isEarlyBird)
+                                        {
+                                            <span class="text-success">@tt.EarlyBirdPrice!.Value.ToString("C") (Early Bird)</span>
+                                            <br /><small class="text-muted"><s>@tt.Price.ToString("C")</s></small>
+                                        }
+                                        else
+                                        {
+                                            @tt.Price.ToString("C")
+                                        }
+                                    </td>
+                                    <td>@(tt.Quantity - tt.QuantitySold)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Input.SpecialRequests" class="form-label">Special Requests</label>
+                    <textarea asp-for="Input.SpecialRequests" class="form-control" rows="2"></textarea>
+                    <span asp-validation-for="Input.SpecialRequests" class="text-danger"></span>
+                </div>
+
+                <button type="submit" class="btn btn-success">Register</button>
+                <a asp-page="Details" asp-route-id="@Model.Event.Id" class="btn btn-secondary">Cancel</a>
+            </div>
+        </div>
+    </form>
+</section>

@@ -1,0 +1,43 @@
+@page "{id:int}"
+@model KeystoneProperties.Pages.Leases.RenewModel
+@{ ViewData["Title"] = "Renew Lease"; }
+
+<h1>Renew Lease #@Model.Id</h1>
+
+@if (Model.Lease != null)
+{
+    <div class="card mb-3"><div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-3">Tenant</dt><dd class="col-sm-9">@Model.Lease.Tenant.FullName</dd>
+            <dt class="col-sm-3">Unit</dt><dd class="col-sm-9">@Model.Lease.Unit.Property.Name — @Model.Lease.Unit.UnitNumber</dd>
+            <dt class="col-sm-3">Current End Date</dt><dd class="col-sm-9">@Model.Lease.EndDate.ToString("MMM dd, yyyy")</dd>
+            <dt class="col-sm-3">Current Rent</dt><dd class="col-sm-9">@Model.Lease.MonthlyRentAmount.ToString("C")</dd>
+        </dl>
+    </div></div>
+
+    <div class="row"><div class="col-md-8">
+        <form method="post">
+            <input type="hidden" asp-for="Id" />
+            <div asp-validation-summary="All" class="text-danger"></div>
+            <div class="mb-3">
+                <label class="form-label">New Start Date</label>
+                <input type="text" class="form-control" value="@Model.Lease.EndDate.AddDays(1).ToString("MMM dd, yyyy")" disabled />
+                <small class="text-muted">Automatically set to the day after current lease ends.</small>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.NewEndDate" class="form-label"></label>
+                <input asp-for="Input.NewEndDate" class="form-control" type="date" />
+                <span asp-validation-for="Input.NewEndDate" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.NewMonthlyRent" class="form-label"></label>
+                <input asp-for="Input.NewMonthlyRent" class="form-control" />
+                <span asp-validation-for="Input.NewMonthlyRent" class="text-danger"></span>
+            </div>
+            <button type="submit" class="btn btn-success">Renew Lease</button>
+            <a asp-page="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary">Cancel</a>
+        </form>
+    </div></div>
+}
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

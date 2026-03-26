@@ -1,0 +1,64 @@
+@page "/Employees/{id:int}/DirectReports"
+@model HorizonHR.Pages.Employees.DirectReportsModel
+@{
+    ViewData["Title"] = $"Direct Reports — {Model.Employee.FullName}";
+}
+
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-page="Index">Employees</a></li>
+        <li class="breadcrumb-item"><a asp-page="Details" asp-route-id="@Model.Employee.Id">@Model.Employee.FullName</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Direct Reports</li>
+    </ol>
+</nav>
+
+<h1>Direct Reports</h1>
+<p class="text-muted">
+    Employees reporting to <strong>@Model.Employee.FullName</strong> (@Model.Employee.JobTitle)
+</p>
+
+@if (Model.Reports.Any())
+{
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>Name</th>
+                    <th>Job Title</th>
+                    <th>Department</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var report in Model.Reports)
+                {
+                    <tr>
+                        <td>
+                            <a asp-page="Details" asp-route-id="@report.Id">@report.FullName</a>
+                        </td>
+                        <td>@report.JobTitle</td>
+                        <td>@report.Department?.Name</td>
+                        <td>
+                            <partial name="_StatusBadge" model="@report.Status.ToString()" />
+                        </td>
+                        <td>
+                            <a asp-page="Details" asp-route-id="@report.Id"
+                               class="btn btn-sm btn-outline-primary">Details</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <div class="text-center text-muted py-4">
+        <p>This employee has no direct reports.</p>
+    </div>
+}
+
+<a asp-page="Details" asp-route-id="@Model.Employee.Id" class="btn btn-outline-secondary">
+    Back to Profile
+</a>

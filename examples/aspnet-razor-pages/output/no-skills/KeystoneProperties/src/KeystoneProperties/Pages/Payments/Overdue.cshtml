@@ -1,0 +1,39 @@
+@page
+@model KeystoneProperties.Pages.Payments.OverdueModel
+@{ ViewData["Title"] = "Overdue Payments"; }
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Overdue Payments</h1>
+    <a asp-page="Index" class="btn btn-outline-secondary">Back to Payments</a>
+</div>
+
+@if (Model.OverduePayments.Any())
+{
+    <table class="table table-striped table-hover">
+        <thead class="table-dark">
+            <tr><th>Tenant</th><th>Property</th><th>Unit</th><th>Due Date</th><th>Days Overdue</th><th>Amount Due</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+            @foreach (var o in Model.OverduePayments)
+            {
+                <tr class="@(o.DaysOverdue > 30 ? "table-danger" : o.DaysOverdue > 14 ? "table-warning" : "")">
+                    <td><a asp-page="/Tenants/Details" asp-route-id="@o.Lease.TenantId">@o.Lease.Tenant.FullName</a></td>
+                    <td>@o.Lease.Unit.Property.Name</td>
+                    <td>@o.Lease.Unit.UnitNumber</td>
+                    <td>@o.DueDate.ToString("MMM dd, yyyy")</td>
+                    <td><span class="badge bg-danger">@o.DaysOverdue days</span></td>
+                    <td>@o.AmountDue.ToString("C")</td>
+                    <td>
+                        <a asp-page="Create" class="btn btn-sm btn-outline-primary">Record Payment</a>
+                        <a asp-page="/Leases/Details" asp-route-id="@o.Lease.Id" class="btn btn-sm btn-outline-secondary">View Lease</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <p class="text-muted">Total overdue: <strong>@Model.OverduePayments.Sum(o => o.AmountDue).ToString("C")</strong></p>
+}
+else
+{
+    <div class="alert alert-success">No overdue payments. All caught up! 🎉</div>
+}

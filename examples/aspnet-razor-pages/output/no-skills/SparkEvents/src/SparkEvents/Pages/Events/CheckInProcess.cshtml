@@ -1,0 +1,64 @@
+@page "{eventId:int}"
+@model SparkEvents.Pages.Events.CheckInProcessModel
+
+@{
+    ViewData["Title"] = "Process Check-In";
+}
+
+<section>
+    <h1>Process Check-In</h1>
+    <hr />
+
+    <div class="card mb-4">
+        <div class="card-header">Registration Details</div>
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-4">Confirmation Number</dt>
+                <dd class="col-sm-8">@Model.Registration!.ConfirmationNumber</dd>
+
+                <dt class="col-sm-4">Attendee</dt>
+                <dd class="col-sm-8">@Model.Registration.Attendee.FullName</dd>
+
+                <dt class="col-sm-4">Email</dt>
+                <dd class="col-sm-8">@Model.Registration.Attendee.Email</dd>
+
+                <dt class="col-sm-4">Ticket Type</dt>
+                <dd class="col-sm-8">@Model.Registration.TicketType.Name</dd>
+
+                <dt class="col-sm-4">Amount Paid</dt>
+                <dd class="col-sm-8">@Model.Registration.AmountPaid.ToString("C")</dd>
+
+                @if (!string.IsNullOrEmpty(Model.Registration.SpecialRequests))
+                {
+                    <dt class="col-sm-4">Special Requests</dt>
+                    <dd class="col-sm-8">@Model.Registration.SpecialRequests</dd>
+                }
+            </dl>
+        </div>
+    </div>
+
+    <form method="post">
+        <div asp-validation-summary="All" class="text-danger"></div>
+        <input type="hidden" name="eventId" value="@Model.EventId" />
+        <input type="hidden" asp-for="Input.RegistrationId" />
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label asp-for="Input.CheckedInBy" class="form-label">Staff Name</label>
+                    <input asp-for="Input.CheckedInBy" class="form-control" />
+                    <span asp-validation-for="Input.CheckedInBy" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Input.Notes" class="form-label">Notes (optional)</label>
+                    <textarea asp-for="Input.Notes" class="form-control" rows="2"></textarea>
+                    <span asp-validation-for="Input.Notes" class="text-danger"></span>
+                </div>
+
+                <button type="submit" class="btn btn-success">Confirm Check-In</button>
+                <a asp-page="CheckIn" asp-route-eventId="@Model.EventId" class="btn btn-secondary">Cancel</a>
+            </div>
+        </div>
+    </form>
+</section>

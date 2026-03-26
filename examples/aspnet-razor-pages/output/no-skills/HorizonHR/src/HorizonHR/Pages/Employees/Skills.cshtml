@@ -1,0 +1,93 @@
+@page "/Employees/{id:int}/Skills"
+@using HorizonHR.Models
+@model HorizonHR.Pages.Employees.SkillsModel
+@{
+    ViewData["Title"] = $"Manage Skills - {Model.Employee.FullName}";
+}
+
+<h1>Manage Skills</h1>
+<h2 class="h5 text-muted mb-4">@Model.Employee.FullName</h2>
+
+<section class="mb-5">
+    <h3 class="h5">Current Skills</h3>
+    @if (Model.EmployeeSkills.Any())
+    {
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Skill Name</th>
+                        <th>Category</th>
+                        <th>Proficiency</th>
+                        <th>Years of Experience</th>
+                        <th>Last Assessed</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var es in Model.EmployeeSkills)
+                    {
+                        <tr>
+                            <td>@es.Skill.Name</td>
+                            <td>@es.Skill.Category</td>
+                            <td>
+                                <partial name="_StatusBadge" model="@es.ProficiencyLevel.ToString()" />
+                            </td>
+                            <td>@(es.YearsOfExperience?.ToString() ?? "—")</td>
+                            <td>@(es.LastAssessedDate?.ToString("yyyy-MM-dd") ?? "—")</td>
+                            <td>
+                                <form method="post" asp-page-handler="Remove" asp-route-id="@Model.Employee.Id" asp-route-skillId="@es.SkillId" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Remove this skill?');">Remove</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info" role="alert">
+            No skills assigned yet.
+        </div>
+    }
+</section>
+
+@if (Model.AvailableSkills.Any())
+{
+    <section>
+        <h3 class="h5">Add Skill</h3>
+        <div class="row">
+            <div class="col-md-8">
+                <form method="post" asp-page-handler="Add" asp-route-id="@Model.Employee.Id" class="card">
+                    <div class="card-body">
+                        <div class="row g-3 align-items-end">
+                            <div class="col-md-4">
+                                <label asp-for="SkillId" class="form-label">Skill</label>
+                                <select asp-for="SkillId" asp-items="Model.AvailableSkills" class="form-select">
+                                    <option value="">-- Select a skill --</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label asp-for="ProficiencyLevel" class="form-label">Proficiency Level</label>
+                                <select asp-for="ProficiencyLevel" asp-items="Model.ProficiencyOptions" class="form-select"></select>
+                            </div>
+                            <div class="col-md-3">
+                                <label asp-for="YearsOfExperience" class="form-label">Years of Experience</label>
+                                <input asp-for="YearsOfExperience" class="form-control" type="number" min="0" max="50" />
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-primary w-100">Add</button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+}
+
+<div class="mt-4">
+    <a asp-page="/Employees/Index" class="btn btn-outline-secondary">Back to Employees</a>
+</div>

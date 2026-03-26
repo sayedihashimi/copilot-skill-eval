@@ -1,0 +1,25 @@
+@page "{id:int}"
+@model SparkEvents.Pages.Events.CompleteModel
+
+@{
+    ViewData["Title"] = "Complete Event";
+}
+
+<section>
+    <h1>Complete Event</h1>
+    <hr />
+
+    <div class="alert alert-info">
+        <strong>Mark this event as completed?</strong> This action cannot be undone.
+    </div>
+
+    <h3>@Model.Event!.Title</h3>
+    <p>@Model.Event.StartDate.ToString("MMMM dd, yyyy") — @Model.Event.EndDate.ToString("MMMM dd, yyyy")</p>
+    <p>Registrations: @Model.Event.CurrentRegistrations</p>
+
+    <form method="post">
+        <input type="hidden" name="id" value="@Model.Event.Id" />
+        <button type="submit" class="btn btn-primary">Mark as Completed</button>
+        <a asp-page="Details" asp-route-id="@Model.Event.Id" class="btn btn-secondary">Go Back</a>
+    </form>
+</section>

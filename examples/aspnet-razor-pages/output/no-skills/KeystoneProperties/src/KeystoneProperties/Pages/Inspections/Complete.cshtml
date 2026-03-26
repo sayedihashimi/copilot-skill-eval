@@ -1,0 +1,39 @@
+@page "{id:int}"
+@model KeystoneProperties.Pages.Inspections.CompleteModel
+@{ ViewData["Title"] = "Complete Inspection"; }
+
+@if (Model.Inspection == null) { <div class="alert alert-danger">Inspection not found.</div> return; }
+
+<h1>Complete Inspection</h1>
+
+<div class="card mb-3"><div class="card-body">
+    <dl class="row mb-0">
+        <dt class="col-sm-3">Type</dt><dd class="col-sm-9">@Model.Inspection.InspectionType</dd>
+        <dt class="col-sm-3">Unit</dt><dd class="col-sm-9">@Model.Inspection.Unit.Property.Name — @Model.Inspection.Unit.UnitNumber</dd>
+        <dt class="col-sm-3">Scheduled</dt><dd class="col-sm-9">@Model.Inspection.ScheduledDate.ToString("MMM dd, yyyy")</dd>
+        <dt class="col-sm-3">Inspector</dt><dd class="col-sm-9">@Model.Inspection.InspectorName</dd>
+    </dl>
+</div></div>
+
+<div class="row"><div class="col-md-8">
+    <form method="post">
+        <input type="hidden" asp-for="Id" />
+        <div asp-validation-summary="All" class="text-danger"></div>
+        <div class="mb-3">
+            <label asp-for="Input.OverallCondition" class="form-label"></label>
+            <select asp-for="Input.OverallCondition" asp-items="Html.GetEnumSelectList<KeystoneProperties.Models.Enums.OverallCondition>()" class="form-select"></select>
+        </div>
+        <div class="mb-3">
+            <label asp-for="Input.Notes" class="form-label"></label>
+            <textarea asp-for="Input.Notes" class="form-control" rows="5"></textarea>
+        </div>
+        <div class="mb-3 form-check">
+            <input asp-for="Input.FollowUpRequired" class="form-check-input" />
+            <label asp-for="Input.FollowUpRequired" class="form-check-label"></label>
+        </div>
+        <button type="submit" class="btn btn-success">Complete Inspection</button>
+        <a asp-page="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary">Cancel</a>
+    </form>
+</div></div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

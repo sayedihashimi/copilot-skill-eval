@@ -1,0 +1,74 @@
+@page
+@model HorizonHR.Pages.Leave.BalancesModel
+@{
+    ViewData["Title"] = "Leave Balances";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Leave Balances — @Model.CurrentYear</h1>
+    <a asp-page="Index" class="btn btn-outline-secondary">Back to Leave Requests</a>
+</div>
+
+<form method="get" class="card mb-4">
+    <div class="card-body">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label asp-for="DepartmentId" class="form-label">Department</label>
+                <select asp-for="DepartmentId" asp-items="Model.DepartmentOptions" class="form-select">
+                    <option value="">All Departments</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-secondary me-2">Filter</button>
+                <a asp-page="Balances" class="btn btn-outline-secondary">Clear</a>
+            </div>
+        </div>
+    </div>
+</form>
+
+@if (!Model.Balances.Any())
+{
+    <div class="alert alert-info">No leave balances found for the selected filters.</div>
+}
+else
+{
+    @foreach (var group in Model.GroupedBalances)
+    {
+        var employee = group.First().Employee;
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <a asp-page="Employee" asp-route-id="@employee.Id">@employee.FullName</a>
+                    <small class="text-muted ms-2">@employee.Department.Name</small>
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-striped mb-0">
+                        <thead>
+                            <tr>
+                                <th>Leave Type</th>
+                                <th>Total Days</th>
+                                <th>Used Days</th>
+                                <th>Carried Over</th>
+                                <th>Remaining</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var balance in group)
+                            {
+                                <tr>
+                                    <td>@balance.LeaveType.Name</td>
+                                    <td>@balance.TotalDays</td>
+                                    <td>@balance.UsedDays</td>
+                                    <td>@balance.CarriedOverDays</td>
+                                    <td class="fw-bold">@balance.RemainingDays</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+}

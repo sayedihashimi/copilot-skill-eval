@@ -1,0 +1,56 @@
+@page
+@model HorizonHR.Pages.Departments.IndexModel
+@{
+    ViewData["Title"] = "Departments";
+}
+
+<section>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Departments</h1>
+        <a asp-page="Create" class="btn btn-primary">New Department</a>
+    </div>
+
+    @if (!Model.FlattenedDepartments.Any())
+    {
+        <div class="alert alert-info">No departments found. Create one to get started.</div>
+    }
+    else
+    {
+        <div class="card">
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Name</th>
+                            <th>Code</th>
+                            <th>Manager</th>
+                            <th>Employees</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var (department, level) in Model.FlattenedDepartments)
+                        {
+                            var indent = level > 0 ? string.Concat(Enumerable.Repeat("\u00A0\u00A0\u00A0\u00A0", level)) : "";
+                            var prefix = level > 0 ? "└─ " : "";
+                            <tr>
+                                <td>@indent@prefix@department.Name</td>
+                                <td>@department.Code</td>
+                                <td>@(department.Manager?.FullName ?? "—")</td>
+                                <td><span class="badge bg-secondary">@department.Employees.Count</span></td>
+                                <td>
+                                    <partial name="_StatusBadge" model="@(department.IsActive ? "Active" : "Terminated")" />
+                                </td>
+                                <td>
+                                    <a asp-page="Details" asp-route-id="@department.Id" class="btn btn-sm btn-outline-primary">Details</a>
+                                    <a asp-page="Edit" asp-route-id="@department.Id" class="btn btn-sm btn-outline-secondary">Edit</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</section>

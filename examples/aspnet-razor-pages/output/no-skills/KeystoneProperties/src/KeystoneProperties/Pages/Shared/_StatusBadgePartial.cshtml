@@ -1,0 +1,71 @@
+@using KeystoneProperties.Models.Enums
+
+@{
+    var statusText = ViewData["StatusText"]?.ToString() ?? "";
+    var statusType = ViewData["StatusType"]?.ToString() ?? "";
+
+    string badgeClass = statusType switch
+    {
+        "UnitStatus" => statusText switch
+        {
+            "Available" => "bg-success",
+            "Occupied" => "bg-primary",
+            "Maintenance" => "bg-warning text-dark",
+            "OffMarket" => "bg-secondary",
+            _ => "bg-secondary"
+        },
+        "LeaseStatus" => statusText switch
+        {
+            "Active" => "bg-success",
+            "Pending" => "bg-info text-dark",
+            "Expired" => "bg-secondary",
+            "Renewed" => "bg-primary",
+            "Terminated" => "bg-danger",
+            _ => "bg-secondary"
+        },
+        "PaymentStatus" => statusText switch
+        {
+            "Completed" => "bg-success",
+            "Pending" => "bg-warning text-dark",
+            "Failed" => "bg-danger",
+            "Refunded" => "bg-info text-dark",
+            _ => "bg-secondary"
+        },
+        "MaintenanceStatus" => statusText switch
+        {
+            "Submitted" => "bg-info text-dark",
+            "Assigned" => "bg-primary",
+            "InProgress" => "bg-warning text-dark",
+            "Completed" => "bg-success",
+            "Cancelled" => "bg-secondary",
+            _ => "bg-secondary"
+        },
+        "MaintenancePriority" => statusText switch
+        {
+            "Low" => "bg-info text-dark",
+            "Medium" => "bg-warning text-dark",
+            "High" => "bg-danger",
+            "Emergency" => "bg-danger fw-bold",
+            _ => "bg-secondary"
+        },
+        "OverallCondition" => statusText switch
+        {
+            "Excellent" => "bg-success",
+            "Good" => "bg-primary",
+            "Fair" => "bg-warning text-dark",
+            "Poor" => "bg-danger",
+            _ => "bg-secondary"
+        },
+        "DepositStatus" => statusText switch
+        {
+            "Held" => "bg-primary",
+            "Returned" => "bg-success",
+            "PartiallyReturned" => "bg-warning text-dark",
+            "Forfeited" => "bg-danger",
+            _ => "bg-secondary"
+        },
+        _ => "bg-secondary"
+    };
+}
+
+<span class="badge @badgeClass">@statusText</span>

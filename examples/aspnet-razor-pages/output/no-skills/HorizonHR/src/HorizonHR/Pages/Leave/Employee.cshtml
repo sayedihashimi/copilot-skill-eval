@@ -1,0 +1,116 @@
+@page "{id:int}"
+@model HorizonHR.Pages.Leave.EmployeeModel
+@{
+    ViewData["Title"] = $"Leave Summary — {Model.Employee.FullName}";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1>@Model.Employee.FullName</h1>
+        <p class="text-muted mb-0">
+            @Model.Employee.JobTitle — @Model.Employee.Department.Name
+            <partial name="_StatusBadge" model="@Model.Employee.Status.ToString()" />
+        </p>
+    </div>
+    <div>
+        <a asp-page="Create" class="btn btn-primary">Submit Leave Request</a>
+        <a asp-page="Index" class="btn btn-outline-secondary">Back to List</a>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Leave Balances — @Model.CurrentYear</h5>
+    </div>
+    @if (!Model.Balances.Any())
+    {
+        <div class="card-body">
+            <p class="text-muted mb-0">No leave balances found for @Model.CurrentYear.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-striped mb-0">
+                <thead>
+                    <tr>
+                        <th>Leave Type</th>
+                        <th>Total Days</th>
+                        <th>Used Days</th>
+                        <th>Carried Over</th>
+                        <th>Remaining</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var balance in Model.Balances)
+                    {
+                        <tr>
+                            <td>@balance.LeaveType.Name</td>
+                            <td>@balance.TotalDays</td>
+                            <td>@balance.UsedDays</td>
+                            <td>@balance.CarriedOverDays</td>
+                            <td class="fw-bold">@balance.RemainingDays</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Request History</h5>
+    </div>
+    @if (!Model.Requests.Any())
+    {
+        <div class="card-body">
+            <p class="text-muted mb-0">No leave requests found for this employee.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-striped mb-0">
+                <thead>
+                    <tr>
+                        <th>Leave Type</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
+                        <th>Days</th>
+                        <th>Status</th>
+                        <th>Submitted</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var request in Model.Requests)
+                    {
+                        <tr>
+                            <td>@request.LeaveType.Name</td>
+                            <td>@request.StartDate.ToString("MMM dd, yyyy")</td>
+                            <td>@request.EndDate.ToString("MMM dd, yyyy")</td>
+                            <td>@request.TotalDays</td>
+                            <td>
+                                <partial name="_StatusBadge" model="@request.Status.ToString()" />
+                            </td>
+                            <td>@request.SubmittedDate.ToString("MMM dd, yyyy")</td>
+                            <td>
+                                <a asp-page="Details" asp-route-id="@request.Id" class="btn btn-sm btn-outline-primary">Details</a>
+                                @if (request.Status == LeaveRequestStatus.Submitted)
+                                {
+                                    <a asp-page="Review" asp-route-id="@request.Id" class="btn btn-sm btn-outline-warning">Review</a>
+                                    <a asp-page="Cancel" asp-route-id="@request.Id" class="btn btn-sm btn-outline-danger">Cancel</a>
+                                }
+                                @if (request.Status == LeaveRequestStatus.Approved)
+                                {
+                                    <a asp-page="Cancel" asp-route-id="@request.Id" class="btn btn-sm btn-outline-danger">Cancel</a>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

@@ -1,0 +1,114 @@
+@page "{id:int}"
+@model KeystoneProperties.Pages.Tenants.DetailsModel
+@{
+    ViewData["Title"] = Model.Tenant?.FullName ?? "Tenant Details";
+}
+
+@if (Model.Tenant == null) { <div class="alert alert-danger">Tenant not found.</div> return; }
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>@Model.Tenant.FullName</h1>
+    <div>
+        <a asp-page="Edit" asp-route-id="@Model.Tenant.Id" class="btn btn-outline-primary">Edit</a>
+        <a asp-page="Index" class="btn btn-outline-secondary">Back to List</a>
+    </div>
+</div>
+
+<section class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><strong>Tenant Information</strong></div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-5">Email</dt><dd class="col-sm-7">@Model.Tenant.Email</dd>
+                    <dt class="col-sm-5">Phone</dt><dd class="col-sm-7">@Model.Tenant.Phone</dd>
+                    <dt class="col-sm-5">Date of Birth</dt><dd class="col-sm-7">@Model.Tenant.DateOfBirth.ToString("MMM dd, yyyy")</dd>
+                    <dt class="col-sm-5">Status</dt><dd class="col-sm-7">@(Model.Tenant.IsActive ? "Active" : "Inactive")</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><strong>Emergency Contact</strong></div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Name</dt><dd class="col-sm-8">@Model.Tenant.EmergencyContactName</dd>
+                    <dt class="col-sm-4">Phone</dt><dd class="col-sm-8">@Model.Tenant.EmergencyContactPhone</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="mb-4">
+    <h3>Leases</h3>
+    @if (Model.Tenant.Leases.Any())
+    {
+        <table class="table table-striped">
+            <thead><tr><th>Property</th><th>Unit</th><th>Period</th><th>Rent</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var l in Model.Tenant.Leases.OrderByDescending(l => l.StartDate))
+                {
+                    <tr>
+                        <td>@l.Unit.Property.Name</td>
+                        <td>@l.Unit.UnitNumber</td>
+                        <td>@l.StartDate.ToString("MMM yyyy") — @l.EndDate.ToString("MMM yyyy")</td>
+                        <td>@l.MonthlyRentAmount.ToString("C")</td>
+                        <td><partial name="_StatusBadgePartial" view-data='@(new ViewDataDictionary(ViewData) { { "StatusText", l.Status.ToString() }, { "StatusType", "LeaseStatus" } })' /></td>
+                        <td><a asp-page="/Leases/Details" asp-route-id="@l.Id" class="btn btn-sm btn-outline-primary">View</a></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else { <p class="text-muted">No leases found.</p> }
+</section>
+
+<section class="mb-4">
+    <h3>Payment History</h3>
+    @{
+        var allPayments = Model.Tenant.Leases.SelectMany(l => l.Payments).OrderByDescending(p => p.PaymentDate).ToList();
+    }
+    @if (allPayments.Any())
+    {
+        <table class="table table-striped">
+            <thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Status</th></tr></thead>
+            <tbody>
+                @foreach (var p in allPayments.Take(20))
+                {
+                    <tr>
+                        <td>@p.PaymentDate.ToString("MMM dd, yyyy")</td>
+                        <td>@p.PaymentType</td>
+                        <td>@p.Amount.ToString("C")</td>
+                        <td><partial name="_StatusBadgePartial" view-data='@(new ViewDataDictionary(ViewData) { { "StatusText", p.Status.ToString() }, { "StatusType", "PaymentStatus" } })' /></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else { <p class="text-muted">No payment history.</p> }
+</section>
+
+<section>
+    <h3>Maintenance Requests</h3>
+    @if (Model.Tenant.MaintenanceRequests.Any())
+    {
+        <table class="table table-striped">
+            <thead><tr><th>Title</th><th>Unit</th><th>Priority</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var m in Model.Tenant.MaintenanceRequests.OrderByDescending(m => m.SubmittedDate))
+                {
+                    <tr>
+                        <td>@m.Title</td>
+                        <td>@m.Unit.UnitNumber</td>
+                        <td><partial name="_StatusBadgePartial" view-data='@(new ViewDataDictionary(ViewData) { { "StatusText", m.Priority.ToString() }, { "StatusType", "MaintenancePriority" } })' /></td>
+                        <td><partial name="_StatusBadgePartial" view-data='@(new ViewDataDictionary(ViewData) { { "StatusText", m.Status.ToString() }, { "StatusType", "MaintenanceStatus" } })' /></td>
+                        <td><a asp-page="/Maintenance/Details" asp-route-id="@m.Id" class="btn btn-sm btn-outline-primary">View</a></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else { <p class="text-muted">No maintenance requests.</p> }
+</section>

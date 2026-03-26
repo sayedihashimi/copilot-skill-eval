@@ -1,0 +1,91 @@
+@page
+@model SparkEvents.Pages.Events.IndexModel
+
+@{
+    ViewData["Title"] = "Events";
+}
+
+<section>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Events</h1>
+        <a asp-page="Create" class="btn btn-primary">Create Event</a>
+    </div>
+
+    <form method="get" class="row g-3 mb-4">
+        <div class="col-md-3">
+            <input asp-for="Search" class="form-control" placeholder="Search by title..." />
+        </div>
+        <div class="col-md-2">
+            <select asp-for="CategoryId" asp-items="Model.CategoryOptions" class="form-select">
+                <option value="">All Categories</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select asp-for="Status" class="form-select">
+                <option value="">All Statuses</option>
+                <option value="Draft">Draft</option>
+                <option value="Published">Published</option>
+                <option value="SoldOut">Sold Out</option>
+                <option value="Completed">Completed</option>
+                <option value="Cancelled">Cancelled</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <input asp-for="StartDate" class="form-control" type="date" placeholder="From date" />
+        </div>
+        <div class="col-md-2">
+            <input asp-for="EndDate" class="form-control" type="date" placeholder="To date" />
+        </div>
+        <div class="col-md-1">
+            <button type="submit" class="btn btn-outline-primary">Filter</button>
+        </div>
+    </form>
+
+    @if (Model.Events.Any())
+    {
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Category</th>
+                        <th>Venue</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Registrations</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var evt in Model.Events)
+                    {
+                        <tr>
+                            <td>
+                                @if (evt.IsFeatured)
+                                {
+                                    <span class="badge bg-warning text-dark me-1">⭐</span>
+                                }
+                                <a asp-page="Details" asp-route-id="@evt.Id">@evt.Title</a>
+                            </td>
+                            <td>@evt.EventCategory.Name</td>
+                            <td>@evt.Venue.Name</td>
+                            <td>@evt.StartDate.ToString("MMM dd, yyyy")</td>
+                            <td><partial name="Shared/_StatusBadge" model="@evt.Status.ToString()" /></td>
+                            <td>@evt.CurrentRegistrations / @evt.TotalCapacity</td>
+                            <td>
+                                <a asp-page="Details" asp-route-id="@evt.Id" class="btn btn-sm btn-outline-info">View</a>
+                                <a asp-page="Edit" asp-route-id="@evt.Id" class="btn btn-sm btn-outline-primary">Edit</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <partial name="Shared/_Pagination" model="Model.Pagination" />
+    }
+    else
+    {
+        <p class="text-muted">No events found matching the criteria.</p>
+    }
+</section>

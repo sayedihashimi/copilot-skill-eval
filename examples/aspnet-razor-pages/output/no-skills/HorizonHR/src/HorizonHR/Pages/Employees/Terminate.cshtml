@@ -1,0 +1,142 @@
+@page "{id:int}"
+@model HorizonHR.Pages.Employees.TerminateModel
+@{
+    ViewData["Title"] = "Terminate Employee";
+}
+
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-page="Index">Employees</a></li>
+        <li class="breadcrumb-item"><a asp-page="Details" asp-route-id="@Model.Employee.Id">@Model.Employee.FullName</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Terminate</li>
+    </ol>
+</nav>
+
+<h1 class="text-danger">Terminate Employee</h1>
+
+<div class="alert alert-warning" role="alert">
+    <strong>Warning:</strong> You are about to terminate <strong>@Model.Employee.FullName</strong>
+    (@Model.Employee.EmployeeNumber). This action will change their status to Terminated.
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Employee Information</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-5">Employee Number</dt>
+                    <dd class="col-sm-7">@Model.Employee.EmployeeNumber</dd>
+
+                    <dt class="col-sm-5">Name</dt>
+                    <dd class="col-sm-7">@Model.Employee.FullName</dd>
+
+                    <dt class="col-sm-5">Email</dt>
+                    <dd class="col-sm-7">@Model.Employee.Email</dd>
+
+                    <dt class="col-sm-5">Department</dt>
+                    <dd class="col-sm-7">@Model.Employee.Department?.Name</dd>
+
+                    <dt class="col-sm-5">Job Title</dt>
+                    <dd class="col-sm-7">@Model.Employee.JobTitle</dd>
+
+                    <dt class="col-sm-5">Current Status</dt>
+                    <dd class="col-sm-7">
+                        <partial name="_StatusBadge" model="@Model.Employee.Status.ToString()" />
+                    </dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        @if (Model.PendingLeaveRequests.Any() || Model.ManagedDepartments.Any() || Model.DirectReports.Any())
+        {
+            <div class="card border-warning mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">Cascading Effects</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.PendingLeaveRequests.Any())
+                    {
+                        <h6>Pending Leave Requests (@Model.PendingLeaveRequests.Count)</h6>
+                        <p class="text-muted small">These leave requests will be cancelled upon termination.</p>
+                        <table class="table table-sm mb-3">
+                            <thead>
+                                <tr>
+                                    <th>Dates</th>
+                                    <th>Status</th>
+                                    <th>Days</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var lr in Model.PendingLeaveRequests)
+                                {
+                                    <tr>
+                                        <td>@lr.StartDate.ToString("MMM d") – @lr.EndDate.ToString("MMM d, yyyy")</td>
+                                        <td>
+                                            <partial name="_StatusBadge" model="@lr.Status.ToString()" />
+                                        </td>
+                                        <td>@lr.TotalDays</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+
+                    @if (Model.ManagedDepartments.Any())
+                    {
+                        <h6>Managed Departments (@Model.ManagedDepartments.Count)</h6>
+                        <p class="text-muted small">This employee is manager of these departments. A new manager will need to be assigned.</p>
+                        <ul class="mb-3">
+                            @foreach (var dept in Model.ManagedDepartments)
+                            {
+                                <li>@dept.Name</li>
+                            }
+                        </ul>
+                    }
+
+                    @if (Model.DirectReports.Any())
+                    {
+                        <h6>Direct Reports (@Model.DirectReports.Count)</h6>
+                        <p class="text-muted small">These employees report to this person. They will need a new manager.</p>
+                        <ul class="mb-0">
+                            @foreach (var report in Model.DirectReports)
+                            {
+                                <li>
+                                    <a asp-page="Details" asp-route-id="@report.Id">@report.FullName</a>
+                                    — @report.JobTitle
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="row align-items-end">
+                <div class="col-md-4">
+                    <label asp-for="TerminationDate" class="form-label"></label>
+                    <input asp-for="TerminationDate" class="form-control" type="date" />
+                    <span asp-validation-for="TerminationDate" class="text-danger"></span>
+                </div>
+                <div class="col-md-8 d-flex gap-2">
+                    <button type="submit" class="btn btn-danger">Confirm Termination</button>
+                    <a asp-page="Details" asp-route-id="@Model.Employee.Id" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
