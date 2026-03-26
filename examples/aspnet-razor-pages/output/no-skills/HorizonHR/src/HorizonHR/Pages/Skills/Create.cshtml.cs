@@ -30,16 +30,11 @@ public class CreateModel : PageModel
         public string? Description { get; set; }
     }
 
-    public void OnGet()
-    {
-    }
+    public void OnGet() { }
 
     public async Task<IActionResult> OnPostAsync()
     {
-        if (!ModelState.IsValid)
-        {
-            return Page();
-        }
+        if (!ModelState.IsValid) return Page();
 
         var skill = new Skill
         {
@@ -49,8 +44,7 @@ public class CreateModel : PageModel
         };
 
         await _skillService.CreateAsync(skill);
-
-        TempData["SuccessMessage"] = $"Skill '{skill.Name}' was created successfully.";
+        TempData["Success"] = $"Skill '{skill.Name}' created.";
         return RedirectToPage("Index");
     }
 }

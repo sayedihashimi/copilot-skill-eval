@@ -1,8 +1,8 @@
 using System.ComponentModel.DataAnnotations;
+using KeystoneProperties.Models.Enums;
+using KeystoneProperties.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using KeystoneProperties.Models.Enums;
-using KeystoneProperties.Services.Interfaces;
 
 namespace KeystoneProperties.Pages.Properties;
 
@@ -10,7 +10,10 @@ public class EditModel : PageModel
 {
     private readonly IPropertyService _propertyService;
 
-    public EditModel(IPropertyService propertyService) => _propertyService = propertyService;
+    public EditModel(IPropertyService propertyService)
+    {
+        _propertyService = propertyService;
+    }
 
     [BindProperty(SupportsGet = true)]
     public int Id { get; set; }
@@ -23,31 +26,23 @@ public class EditModel : PageModel
         [Required, MaxLength(200)]
         [Display(Name = "Property Name")]
         public string Name { get; set; } = string.Empty;
-
         [Required, MaxLength(500)]
         public string Address { get; set; } = string.Empty;
-
         [Required, MaxLength(100)]
         public string City { get; set; } = string.Empty;
-
         [Required, MaxLength(2)]
         public string State { get; set; } = string.Empty;
-
         [Required, MaxLength(10)]
         [Display(Name = "Zip Code")]
         public string ZipCode { get; set; } = string.Empty;
-
         [Required]
         [Display(Name = "Property Type")]
         public PropertyType PropertyType { get; set; }
-
         [Display(Name = "Year Built")]
         public int? YearBuilt { get; set; }
-
         [Required, Range(1, int.MaxValue)]
         [Display(Name = "Total Units")]
         public int TotalUnits { get; set; }
-
         [MaxLength(2000)]
         public string? Description { get; set; }
     }

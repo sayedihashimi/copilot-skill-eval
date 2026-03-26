@@ -20,29 +20,23 @@ public class CreateModel : PageModel
 
     public class InputModel
     {
-        [Required]
-        [MaxLength(200)]
+        [Required, MaxLength(200)]
         public string Name { get; set; } = string.Empty;
 
-        [Required]
-        [MaxLength(500)]
+        [Required, MaxLength(500)]
         public string Address { get; set; } = string.Empty;
 
-        [Required]
-        [MaxLength(100)]
+        [Required, MaxLength(100)]
         public string City { get; set; } = string.Empty;
 
-        [Required]
-        [MaxLength(2)]
+        [Required, MaxLength(2)]
         public string State { get; set; } = string.Empty;
 
-        [Required]
-        [MaxLength(10)]
+        [Required, MaxLength(10)]
         [Display(Name = "Zip Code")]
         public string ZipCode { get; set; } = string.Empty;
 
-        [Required]
-        [Range(1, int.MaxValue, ErrorMessage = "Max capacity must be positive.")]
+        [Required, Range(1, int.MaxValue, ErrorMessage = "Max capacity must be positive")]
         [Display(Name = "Max Capacity")]
         public int MaxCapacity { get; set; }
 
@@ -76,7 +70,7 @@ public class CreateModel : PageModel
             Notes = Input.Notes
         };
 
-        await _venueService.CreateAsync(venue);
+        await _venueService.CreateVenueAsync(venue);
         TempData["SuccessMessage"] = "Venue created successfully.";
         return RedirectToPage("Index");
     }

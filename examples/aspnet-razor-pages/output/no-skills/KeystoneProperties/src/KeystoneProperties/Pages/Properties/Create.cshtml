@@ -1,16 +1,15 @@
 @page
 @model KeystoneProperties.Pages.Properties.CreateModel
 @{
-    ViewData["Title"] = "Create Property";
+    ViewData["Title"] = "Add Property";
 }
 
-<h1>Create Property</h1>
+<h1>Add Property</h1>
 
 <div class="row">
     <div class="col-md-8">
         <form method="post">
-            <div asp-validation-summary="All" class="text-danger"></div>
-
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <div class="mb-3">
                 <label asp-for="Input.Name" class="form-label"></label>
                 <input asp-for="Input.Name" class="form-control" />
@@ -41,7 +40,7 @@
             <div class="row">
                 <div class="col-md-4 mb-3">
                     <label asp-for="Input.PropertyType" class="form-label"></label>
-                    <select asp-for="Input.PropertyType" asp-items="Html.GetEnumSelectList<KeystoneProperties.Models.Enums.PropertyType>()" class="form-select"></select>
+                    <select asp-for="Input.PropertyType" asp-items="@Html.GetEnumSelectList<PropertyType>()" class="form-select"></select>
                     <span asp-validation-for="Input.PropertyType" class="text-danger"></span>
                 </div>
                 <div class="col-md-4 mb-3">
@@ -60,7 +59,6 @@
                 <textarea asp-for="Input.Description" class="form-control" rows="3"></textarea>
                 <span asp-validation-for="Input.Description" class="text-danger"></span>
             </div>
-
             <button type="submit" class="btn btn-primary">Create Property</button>
             <a asp-page="Index" class="btn btn-outline-secondary">Cancel</a>
         </form>

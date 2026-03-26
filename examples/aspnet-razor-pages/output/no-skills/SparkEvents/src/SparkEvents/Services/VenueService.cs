@@ -6,59 +6,58 @@ namespace SparkEvents.Services;
 
 public class VenueService : IVenueService
 {
-    private readonly SparkEventsDbContext _db;
+    private readonly SparkEventsDbContext _context;
 
-    public VenueService(SparkEventsDbContext db)
+    public VenueService(SparkEventsDbContext context)
     {
-        _db = db;
+        _context = context;
     }
 
-    public async Task<List<Venue>> GetAllAsync()
+    public async Task<List<Venue>> GetAllVenuesAsync()
     {
-        return await _db.Venues.OrderBy(v => v.Name).ToListAsync();
+        return await _context.Venues.OrderBy(v => v.Name).ToListAsync();
     }
 
-    public async Task<Venue?> GetByIdAsync(int id)
+    public async Task<Venue?> GetVenueByIdAsync(int id)
     {
-        return await _db.Venues.FindAsync(id);
+        return await _context.Venues.FindAsync(id);
     }
 
-    public async Task<Venue?> GetByIdWithEventsAsync(int id)
-    {
-        return await _db.Venues
-            .Include(v => v.Events.Where(e => e.StartDate >= DateTime.UtcNow).OrderBy(e => e.StartDate))
-                .ThenInclude(e => e.EventCategory)
-            .FirstOrDefaultAsync(v => v.Id == id);
-    }
-
-    public async Task CreateAsync(Venue venue)
+    public async Task<Venue> CreateVenueAsync(Venue venue)
     {
         venue.CreatedAt = DateTime.UtcNow;
-        _db.Venues.Add(venue);
-        await _db.SaveChangesAsync();
+        _context.Venues.Add(venue);
+        await _context.SaveChangesAsync();
+        return venue;
     }
 
-    public async Task UpdateAsync(Venue venue)
+    public async Task UpdateVenueAsync(Venue venue)
     {
-        _db.Venues.Update(venue);
-        await _db.SaveChangesAsync();
+        _context.Venues.Update(venue);
+        await _context.SaveChangesAsync();
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteVenueAsync(int id)
     {
-        if (await HasFutureEventsAsync(id))
-            return false;
-
-        var venue = await _db.Venues.FindAsync(id);
+        var venue = await _context.Venues.FindAsync(id);
         if (venue == null) return false;
-
-        _db.Venues.Remove(venue);
-        await _db.SaveChangesAsync();
+        if (await HasFutureEventsAsync(id)) return false;
+        _context.Venues.Remove(venue);
+        await _context.SaveChangesAsync();
         return true;
     }
 
     public async Task<bool> HasFutureEventsAsync(int id)
     {
-        return await _db.Events.AnyAsync(e => e.VenueId == id && e.StartDate >= DateTime.UtcNow);
+        return await _context.Events.AnyAsync(e => e.VenueId == id && e.StartDate > DateTime.UtcNow);
+    }
+
+    public async Task<List<Event>> GetUpcomingEventsForVenueAsync(int venueId)
+    {
+        return await _context.Events
+            .Include(e => e.EventCategory)
+            .Where(e => e.VenueId == venueId && e.StartDate > DateTime.UtcNow && e.Status != EventStatus.Cancelled)
+            .OrderBy(e => e.StartDate)
+            .ToListAsync();
     }
 }

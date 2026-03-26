@@ -1,9 +1,10 @@
 using System.ComponentModel.DataAnnotations;
+using HorizonHR.Models;
+using HorizonHR.Models.Enums;
+using HorizonHR.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using HorizonHR.Models;
-using HorizonHR.Services;
 
 namespace HorizonHR.Pages.Employees;
 
@@ -21,56 +22,53 @@ public class CreateModel : PageModel
     [BindProperty]
     public InputModel Input { get; set; } = new();
 
-    public SelectList DepartmentList { get; set; } = default!;
-    public SelectList ManagerList { get; set; } = default!;
+    public List<SelectListItem> DepartmentOptions { get; set; } = new();
+    public List<SelectListItem> ManagerOptions { get; set; } = new();
 
     public class InputModel
     {
-        [Required, MaxLength(100), Display(Name = "First Name")]
+        [Required, MaxLength(100)]
         public string FirstName { get; set; } = string.Empty;
 
-        [Required, MaxLength(100), Display(Name = "Last Name")]
+        [Required, MaxLength(100)]
         public string LastName { get; set; } = string.Empty;
 
-        [Required, MaxLength(200), EmailAddress]
+        [Required, EmailAddress, MaxLength(200)]
         public string Email { get; set; } = string.Empty;
 
-        [Phone, Display(Name = "Phone")]
         public string? Phone { get; set; }
 
-        [Required, Display(Name = "Date of Birth")]
+        [Required]
         public DateOnly DateOfBirth { get; set; }
 
-        [Required, Display(Name = "Hire Date")]
+        [Required]
         public DateOnly HireDate { get; set; } = DateOnly.FromDateTime(DateTime.Today);
 
-        [Required, Display(Name = "Department")]
+        [Required]
         public int DepartmentId { get; set; }
 
-        [Display(Name = "Manager")]
         public int? ManagerId { get; set; }
 
-        [Required, MaxLength(200), Display(Name = "Job Title")]
+        [Required, MaxLength(200)]
         public string JobTitle { get; set; } = string.Empty;
 
-        [Required, Display(Name = "Employment Type")]
+        [Required]
         public EmploymentType EmploymentType { get; set; }
 
-        [Required, Range(0.01, double.MaxValue, ErrorMessage = "Salary must be greater than zero.")]
+        [Required, Range(0.01, double.MaxValue, ErrorMessage = "Salary must be positive")]
         public decimal Salary { get; set; }
     }
 
-    public async Task<IActionResult> OnGetAsync()
+    public async Task OnGetAsync()
     {
-        await PopulateDropdowns();
-        return Page();
+        await LoadOptionsAsync();
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
         if (!ModelState.IsValid)
         {
-            await PopulateDropdowns();
+            await LoadOptionsAsync();
             return Page();
         }
 
@@ -89,18 +87,17 @@ public class CreateModel : PageModel
             Salary = Input.Salary
         };
 
-        var created = await _employeeService.CreateAsync(employee);
-
-        TempData["SuccessMessage"] = $"Employee {created.FullName} ({created.EmployeeNumber}) created successfully.";
-        return RedirectToPage("Details", new { id = created.Id });
+        await _employeeService.CreateAsync(employee);
+        TempData["Success"] = $"Employee {employee.FullName} ({employee.EmployeeNumber}) created successfully.";
+        return RedirectToPage("Details", new { id = employee.Id });
     }
 
-    private async Task PopulateDropdowns()
+    private async Task LoadOptionsAsync()
     {
-        var departments = await _departmentService.GetAllFlatAsync();
-        DepartmentList = new SelectList(departments, "Id", "Name");
+        var departments = await _departmentService.GetAllAsync();
+        DepartmentOptions = departments.Select(d => new SelectListItem(d.Name, d.Id.ToString())).ToList();
 
-        var managers = await _employeeService.GetAllActiveAsync();
-        ManagerList = new SelectList(managers, "Id", "FullName");
+        var employees = await _employeeService.GetAllActiveAsync();
+        ManagerOptions = employees.Select(e => new SelectListItem(e.FullName, e.Id.ToString())).ToList();
     }
 }

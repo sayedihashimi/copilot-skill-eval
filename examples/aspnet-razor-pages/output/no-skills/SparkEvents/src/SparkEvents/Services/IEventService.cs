@@ -2,34 +2,17 @@ using SparkEvents.Models;
 
 namespace SparkEvents.Services;
 
-public class EventFilterModel
-{
-    public string? Search { get; set; }
-    public int? CategoryId { get; set; }
-    public EventStatus? Status { get; set; }
-    public DateTime? StartDate { get; set; }
-    public DateTime? EndDate { get; set; }
-    public int Page { get; set; } = 1;
-    public int PageSize { get; set; } = 10;
-}
-
 public interface IEventService
 {
-    Task<(List<Event> Items, int TotalCount)> GetFilteredAsync(EventFilterModel filter);
-    Task<Event?> GetByIdAsync(int id);
-    Task<Event?> GetByIdWithDetailsAsync(int id);
-    Task CreateAsync(Event evt);
-    Task UpdateAsync(Event evt);
-    Task<string?> PublishAsync(int id);
-    Task<string?> CancelEventAsync(int id, string reason);
-    Task<string?> CompleteEventAsync(int id);
-    Task<List<TicketType>> GetTicketTypesAsync(int eventId);
-    Task<TicketType?> GetTicketTypeByIdAsync(int id);
-    Task CreateTicketTypeAsync(TicketType ticketType);
-    Task UpdateTicketTypeAsync(TicketType ticketType);
-    Task<List<Event>> GetUpcomingEventsAsync(int days);
+    Task<PaginatedList<Event>> GetEventsAsync(string? search, int? categoryId, EventStatus? status, DateTime? startDate, DateTime? endDate, int pageIndex = 1, int pageSize = 10);
+    Task<Event?> GetEventByIdAsync(int id);
+    Task<Event> CreateEventAsync(Event evt);
+    Task UpdateEventAsync(Event evt);
+    Task<bool> PublishEventAsync(int id);
+    Task<bool> CancelEventAsync(int id, string reason);
+    Task<bool> CompleteEventAsync(int id);
+    Task<List<Event>> GetUpcomingEventsAsync(int days = 7);
     Task<List<Event>> GetTodaysEventsAsync();
     Task<int> GetTotalEventsCountAsync();
     Task<int> GetEventsThisMonthCountAsync();
-    Task<int> GetTotalRegistrationsCountAsync();
 }

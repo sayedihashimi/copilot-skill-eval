@@ -19,8 +19,6 @@ public class EditModel : PageModel
 
     public class InputModel
     {
-        public int Id { get; set; }
-
         [Required, MaxLength(100)]
         public string Name { get; set; } = string.Empty;
 
@@ -34,14 +32,10 @@ public class EditModel : PageModel
     public async Task<IActionResult> OnGetAsync(int id)
     {
         var skill = await _skillService.GetByIdAsync(id);
-        if (skill == null)
-        {
-            return NotFound();
-        }
+        if (skill == null) return NotFound();
 
         Input = new InputModel
         {
-            Id = skill.Id,
             Name = skill.Name,
             Category = skill.Category,
             Description = skill.Description
@@ -50,26 +44,19 @@ public class EditModel : PageModel
         return Page();
     }
 
-    public async Task<IActionResult> OnPostAsync()
+    public async Task<IActionResult> OnPostAsync(int id)
     {
-        if (!ModelState.IsValid)
-        {
-            return Page();
-        }
+        if (!ModelState.IsValid) return Page();
 
-        var skill = await _skillService.GetByIdAsync(Input.Id);
-        if (skill == null)
-        {
-            return NotFound();
-        }
+        var skill = await _skillService.GetByIdAsync(id);
+        if (skill == null) return NotFound();
 
         skill.Name = Input.Name;
         skill.Category = Input.Category;
         skill.Description = Input.Description;
 
         await _skillService.UpdateAsync(skill);
-
-        TempData["SuccessMessage"] = $"Skill '{skill.Name}' was updated successfully.";
+        TempData["Success"] = "Skill updated.";
         return RedirectToPage("Index");
     }
 }

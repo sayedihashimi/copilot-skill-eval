@@ -1,35 +1,41 @@
-using Microsoft.EntityFrameworkCore;
 using KeystoneProperties.Data;
 using KeystoneProperties.Models;
 using KeystoneProperties.Models.Enums;
-using KeystoneProperties.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace KeystoneProperties.Services;
 
 public class TenantService : ITenantService
 {
-    private readonly AppDbContext _context;
+    private readonly ApplicationDbContext _context;
     private readonly ILogger<TenantService> _logger;
 
-    public TenantService(AppDbContext context, ILogger<TenantService> logger)
+    public TenantService(ApplicationDbContext context, ILogger<TenantService> logger)
     {
         _context = context;
         _logger = logger;
     }
 
-    public async Task<PaginatedList<Tenant>> GetTenantsAsync(string? search, bool? isActive, int pageNumber, int pageSize)
+    public async Task<(List<Tenant> Items, int TotalCount)> GetTenantsAsync(
+        string? search, bool? isActive, int page, int pageSize)
     {
         var query = _context.Tenants.AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(search))
-            query = query.Where(t => t.FirstName.Contains(search) || t.LastName.Contains(search) || t.Email.Contains(search));
-        if (isActive.HasValue)
-            query = query.Where(t => t.IsActive == isActive.Value);
+        {
+            var s = search.ToLower();
+            query = query.Where(t => t.FirstName.ToLower().Contains(s) ||
+                                     t.LastName.ToLower().Contains(s) ||
+                                     t.Email.ToLower().Contains(s));
+        }
+        if (isActive.HasValue) query = query.Where(t => t.IsActive == isActive.Value);
 
-        query = query.OrderBy(t => t.LastName).ThenBy(t => t.FirstName);
-        var count = await query.CountAsync();
-        var items = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
-        return new PaginatedList<Tenant>(items, count, pageNumber, pageSize);
+        var totalCount = await query.CountAsync();
+        var items = await query.OrderBy(t => t.LastName).ThenBy(t => t.FirstName)
+            .Skip((page - 1) * pageSize).Take(pageSize)
+            .ToListAsync();
+
+        return (items, totalCount);
     }
 
     public async Task<Tenant?> GetByIdAsync(int id) =>
@@ -48,7 +54,7 @@ public class TenantService : ITenantService
         tenant.UpdatedAt = DateTime.UtcNow;
         _context.Tenants.Add(tenant);
         await _context.SaveChangesAsync();
-        _logger.LogInformation("Tenant created: {TenantName} (ID: {TenantId})", tenant.FullName, tenant.Id);
+        _logger.LogInformation("Tenant created: {Name} (ID: {Id})", tenant.FullName, tenant.Id);
     }
 
     public async Task UpdateAsync(Tenant tenant)
@@ -60,19 +66,30 @@ public class TenantService : ITenantService
 
     public async Task<(bool Success, string? Error)> DeactivateAsync(int id)
     {
-        var tenant = await _context.Tenants.Include(t => t.Leases).FirstOrDefaultAsync(t => t.Id == id);
+        var tenant = await _context.Tenants.Include(t => t.Leases)
+            .FirstOrDefaultAsync(t => t.Id == id);
+
         if (tenant == null) return (false, "Tenant not found.");
 
         if (tenant.Leases.Any(l => l.Status == LeaseStatus.Active))
-            return (false, "Cannot deactivate tenant with active leases. Please terminate or expire active leases first.");
+            return (false, "Cannot deactivate tenant — they have active leases.");
 
         tenant.IsActive = false;
         tenant.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
-        _logger.LogInformation("Tenant deactivated: {TenantName} (ID: {TenantId})", tenant.FullName, tenant.Id);
+        _logger.LogInformation("Tenant deactivated: {Name} (ID: {Id})", tenant.FullName, tenant.Id);
         return (true, null);
     }
 
     public async Task<List<Tenant>> GetActiveTenantsAsync() =>
-        await _context.Tenants.Where(t => t.IsActive).OrderBy(t => t.LastName).ThenBy(t => t.FirstName).ToListAsync();
+        await _context.Tenants.Where(t => t.IsActive)
+            .OrderBy(t => t.LastName).ThenBy(t => t.FirstName)
+            .ToListAsync();
+
+    public async Task<bool> IsEmailUniqueAsync(string email, int? excludeId = null)
+    {
+        var query = _context.Tenants.Where(t => t.Email.ToLower() == email.ToLower());
+        if (excludeId.HasValue) query = query.Where(t => t.Id != excludeId.Value);
+        return !await query.AnyAsync();
+    }
 }

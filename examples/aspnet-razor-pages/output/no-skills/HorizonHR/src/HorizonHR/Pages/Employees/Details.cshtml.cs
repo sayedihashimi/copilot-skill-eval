@@ -1,7 +1,7 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using HorizonHR.Models;
 using HorizonHR.Services;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace HorizonHR.Pages.Employees;
 
@@ -14,17 +14,12 @@ public class DetailsModel : PageModel
         _employeeService = employeeService;
     }
 
-    public Employee Employee { get; set; } = default!;
+    public Employee? Employee { get; set; }
 
     public async Task<IActionResult> OnGetAsync(int id)
     {
-        var employee = await _employeeService.GetByIdAsync(id);
-        if (employee is null)
-        {
-            return NotFound();
-        }
-
-        Employee = employee;
+        Employee = await _employeeService.GetByIdAsync(id);
+        if (Employee == null) return NotFound();
         return Page();
     }
 }

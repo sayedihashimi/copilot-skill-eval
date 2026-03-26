@@ -6,73 +6,67 @@ namespace SparkEvents.Services;
 
 public class AttendeeService : IAttendeeService
 {
-    private readonly SparkEventsDbContext _db;
+    private readonly SparkEventsDbContext _context;
 
-    public AttendeeService(SparkEventsDbContext db)
+    public AttendeeService(SparkEventsDbContext context)
     {
-        _db = db;
+        _context = context;
     }
 
-    public async Task<(List<Attendee> Items, int TotalCount)> GetPagedAsync(string? search, int page, int pageSize)
+    public async Task<PaginatedList<Attendee>> GetAttendeesAsync(string? search, int pageIndex = 1, int pageSize = 10)
     {
-        var query = _db.Attendees.AsQueryable();
+        var query = _context.Attendees.AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(search))
         {
-            var s = search.ToLower();
             query = query.Where(a =>
-                a.FirstName.ToLower().Contains(s) ||
-                a.LastName.ToLower().Contains(s) ||
-                a.Email.ToLower().Contains(s));
+                a.FirstName.Contains(search) ||
+                a.LastName.Contains(search) ||
+                a.Email.Contains(search));
         }
 
-        var total = await query.CountAsync();
-        var items = await query
-            .OrderBy(a => a.LastName).ThenBy(a => a.FirstName)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync();
-
-        return (items, total);
+        query = query.OrderBy(a => a.LastName).ThenBy(a => a.FirstName);
+        return await PaginatedList<Attendee>.CreateAsync(query, pageIndex, pageSize);
     }
 
-    public async Task<List<Attendee>> GetAllAsync()
+    public async Task<Attendee?> GetAttendeeByIdAsync(int id)
     {
-        return await _db.Attendees.OrderBy(a => a.LastName).ThenBy(a => a.FirstName).ToListAsync();
+        return await _context.Attendees.FindAsync(id);
     }
 
-    public async Task<Attendee?> GetByIdAsync(int id)
+    public async Task<Attendee?> GetAttendeeByEmailAsync(string email)
     {
-        return await _db.Attendees.FindAsync(id);
+        return await _context.Attendees.FirstOrDefaultAsync(a => a.Email == email);
     }
 
-    public async Task<Attendee?> GetByIdWithRegistrationsAsync(int id)
-    {
-        return await _db.Attendees
-            .Include(a => a.Registrations)
-                .ThenInclude(r => r.Event)
-            .Include(a => a.Registrations)
-                .ThenInclude(r => r.TicketType)
-            .FirstOrDefaultAsync(a => a.Id == id);
-    }
-
-    public async Task<Attendee?> GetByEmailAsync(string email)
-    {
-        return await _db.Attendees.FirstOrDefaultAsync(a => a.Email.ToLower() == email.ToLower());
-    }
-
-    public async Task CreateAsync(Attendee attendee)
+    public async Task<Attendee> CreateAttendeeAsync(Attendee attendee)
     {
         attendee.CreatedAt = DateTime.UtcNow;
         attendee.UpdatedAt = DateTime.UtcNow;
-        _db.Attendees.Add(attendee);
-        await _db.SaveChangesAsync();
+        _context.Attendees.Add(attendee);
+        await _context.SaveChangesAsync();
+        return attendee;
     }
 
-    public async Task UpdateAsync(Attendee attendee)
+    public async Task UpdateAttendeeAsync(Attendee attendee)
     {
         attendee.UpdatedAt = DateTime.UtcNow;
-        _db.Attendees.Update(attendee);
-        await _db.SaveChangesAsync();
+        _context.Attendees.Update(attendee);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task<List<Attendee>> GetAllAttendeesAsync()
+    {
+        return await _context.Attendees.OrderBy(a => a.LastName).ThenBy(a => a.FirstName).ToListAsync();
+    }
+
+    public async Task<List<Registration>> GetAttendeeRegistrationsAsync(int attendeeId)
+    {
+        return await _context.Registrations
+            .Include(r => r.Event)
+            .Include(r => r.TicketType)
+            .Where(r => r.AttendeeId == attendeeId)
+            .OrderByDescending(r => r.RegistrationDate)
+            .ToListAsync();
     }
 }

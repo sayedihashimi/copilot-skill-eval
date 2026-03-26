@@ -1,76 +1,65 @@
-# KeystoneProperties — Generation Notes
+# Keystone Properties — Generation Notes
+
+## Summary
+
+A complete residential property management web application built with ASP.NET Core Razor Pages targeting .NET 10, using Entity Framework Core with SQLite.
 
 ## What Was Generated
 
-A full-featured **Residential Property Management** web application built with **ASP.NET Core Razor Pages** targeting **.NET 10**, using **Entity Framework Core with SQLite** and **Bootstrap 5** styling.
+### Models & Enums (7 entities, 12 enums)
+- **Property**, **Unit**, **Tenant**, **Lease**, **Payment**, **MaintenanceRequest**, **Inspection**
+- Enums: PropertyType, UnitStatus, LeaseStatus, DepositStatus, PaymentMethod, PaymentType, PaymentStatus, MaintenancePriority, MaintenanceStatus, MaintenanceCategory, InspectionType, OverallCondition
 
-## Project Structure
+### Data Layer
+- `ApplicationDbContext` with full EF Core configuration (unique constraints, foreign keys, decimal precision, auto-timestamps)
+- `DataSeeder` with realistic seed data: 3 properties, 17 units, 11 tenants, 15 leases (including renewal chain, terminated, pending), 27+ payments, 8 maintenance requests, 6 inspections
 
-```
-src/KeystoneProperties/
-├── Models/              # Entity classes (Property, Unit, Tenant, Lease, Payment, MaintenanceRequest, Inspection)
-│   └── Enums/           # 12 enum types (PropertyType, UnitStatus, LeaseStatus, etc.)
-├── Data/
-│   ├── AppDbContext.cs  # EF Core DbContext with relationships and timestamp tracking
-│   └── DataSeeder.cs    # Realistic seed data (3 properties, 15 units, 10 tenants, 13 leases, 20+ payments, 8 maintenance requests, 5 inspections)
-├── Services/
-│   ├── Interfaces/      # Service interfaces with PaginatedList<T>, DashboardStats, OverdueLeaseInfo
-│   ├── PropertyService, UnitService, TenantService, LeaseService
-│   ├── PaymentService, MaintenanceService, InspectionService
-│   └── DashboardService
-├── Pages/
-│   ├── Index (Dashboard)
-│   ├── Properties/      # List, Details, Create, Edit, Deactivate
-│   ├── Units/           # List, Details, Create, Edit
-│   ├── Tenants/         # List, Details, Create, Edit, Deactivate
-│   ├── Leases/          # List, Details, Create, Edit, Terminate, Renew
-│   ├── Payments/        # List, Details, Create, Overdue
-│   ├── Maintenance/     # List, Details, Create, UpdateStatus
-│   ├── Inspections/     # List, Details, Create, Complete
-│   └── Shared/          # _Layout, _StatusBadgePartial, _PaginationPartial
-└── Program.cs           # DI configuration, middleware, database seeding
-```
+### Services (8 service interfaces + implementations)
+- `IPropertyService` / `PropertyService` — CRUD, deactivation with active lease check
+- `IUnitService` / `UnitService` — CRUD, filtering, available units
+- `ITenantService` / `TenantService` — CRUD, deactivation with active lease check, email uniqueness
+- `ILeaseService` / `LeaseService` — CRUD, overlap validation, terminate, renew (with unit status sync)
+- `IPaymentService` / `PaymentService` — Record payments, late fee auto-calculation ($50 + $5/day, capped at $200), overdue detection
+- `IMaintenanceService` / `MaintenanceService` — Status workflow enforcement, emergency handling
+- `IInspectionService` / `InspectionService` — Schedule and complete inspections
+- `IDashboardService` / `DashboardService` — Aggregated dashboard metrics
 
-## Key Features Implemented
+### Pages (30+ Razor Pages across 8 feature areas)
+- **Dashboard** (`/`) — Overview with metrics cards and upcoming lease expirations
+- **Properties** — Index (search/filter), Details, Create, Edit, Deactivate
+- **Units** — Index (filter by property/status/bedrooms/rent), Details, Create, Edit
+- **Tenants** — Index (search/filter), Details, Create, Edit, Deactivate
+- **Leases** — Index (filter), Details, Create, Edit, Terminate, Renew
+- **Payments** — Index (filter/sort), Details, Create (with auto late fee), Overdue list
+- **Maintenance** — Index (filter), Details, Create, UpdateStatus
+- **Inspections** — Index (filter), Details, Create, Complete
 
-- **Dashboard** with occupancy rate, rent collected, overdue payments count, open maintenance requests, and upcoming lease expirations
-- **Property management** with CRUD, deactivation guard (no active leases), occupancy tracking
-- **Unit management** with filtering by property, status, bedrooms, rent range; unique (PropertyId, UnitNumber) constraint
-- **Tenant management** with age validation (18+), deactivation guard (no active leases), search by name/email
-- **Lease management** with overlap validation, status workflow (Pending→Active→Expired/Renewed/Terminated), renewal chains, deposit tracking
-- **Payment recording** with automatic late fee calculation ($50 + $5/day, capped at $200), overdue payment tracking
-- **Maintenance requests** with priority-based workflow, emergency handling (auto-assign, unit status change), status transitions
-- **Inspection scheduling** with completion workflow, condition assessment, follow-up tracking
+### Shared Components
+- `_Layout.cshtml` — Bootstrap 5 dark navbar with all navigation links, TempData alerts, footer
+- `_PaginationPartial.cshtml` — Reusable pagination control
+- `_StatusBadge.cshtml` — Reusable color-coded status badge partial (supports unit, lease, payment, maintenance, priority, condition, deposit types)
 
-## Business Rules Implemented
-
-1. No overlapping Active/Pending leases for the same unit
-2. Unit status syncs with lease lifecycle (Occupied/Available)
-3. Lease status workflow with proper transition guards
-4. Late fee auto-calculation (>5 days past due)
-5. Lease renewal creates new lease, marks original as Renewed
+### Business Rules Implemented
+1. No overlapping leases (validated on create/edit)
+2. Unit status sync (Occupied ↔ Available based on lease status)
+3. Lease status workflow (Pending → Active → Expired/Renewed/Terminated)
+4. Late fee calculation ($50 base + $5/day after 5-day grace, capped at $200)
+5. Lease renewal creates new lease with RenewalOfLeaseId link
 6. Maintenance request workflow with valid state transitions
-7. Emergency maintenance requires AssignedTo, changes unit to Maintenance status
+7. Emergency maintenance requires assignment and sets unit to Maintenance status
 8. Tenant deactivation blocked by active leases
 9. Deposit tracking with DepositReturn payment on termination
 10. Property deactivation blocked by active leases
 
-## Cross-Cutting Concerns
-
-- **Validation**: Data Annotations on all input models, inline validation with `asp-validation-for`
-- **Error Handling**: Global exception handler, TempData flash messages (success/error), PRG pattern
-- **Pagination**: Inline pagination on all list pages with Bootstrap controls
-- **Status Badges**: Reusable `_StatusBadgePartial` with color-coded Bootstrap badges
-- **Navigation**: Bootstrap 5 dark navbar with `aria-current` for active page
-- **Semantic HTML**: `<nav>`, `<main>`, `<section>`, `<table>` with `<thead>`/`<tbody>`, `role="alert"` on alerts
-- **Logging**: ILogger used for key operations (lease created, payment recorded, etc.)
-
-## Technology Stack
-
-- ASP.NET Core Razor Pages (.NET 10)
-- Entity Framework Core with SQLite
-- Bootstrap 5 (default theme)
-- jQuery Validation Unobtrusive (client-side validation)
+### Cross-Cutting Concerns
+- Data Annotations validation with inline error display
+- Post-Redirect-Get pattern on all forms
+- TempData flash messages (success/error)
+- InputModel pattern (dedicated DTOs for form binding)
+- ILogger integration for key operations
+- Global error handling via `/Error` page
+- Bootstrap 5 styling throughout
+- Semantic HTML with aria attributes
 
 ## How to Run
 
@@ -79,4 +68,4 @@ cd src/KeystoneProperties
 dotnet run
 ```
 
-The database is automatically created and seeded on first run.
+The database is auto-created and seeded on first run.

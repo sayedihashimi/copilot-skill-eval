@@ -14,12 +14,16 @@ public class DetailsModel : PageModel
         _venueService = venueService;
     }
 
-    public Venue? Venue { get; set; }
+    public Venue Venue { get; set; } = null!;
+    public List<Event> UpcomingEvents { get; set; } = new();
 
     public async Task<IActionResult> OnGetAsync(int id)
     {
-        Venue = await _venueService.GetByIdWithEventsAsync(id);
-        if (Venue == null) return NotFound();
+        var venue = await _venueService.GetVenueByIdAsync(id);
+        if (venue == null) return NotFound();
+
+        Venue = venue;
+        UpcomingEvents = await _venueService.GetUpcomingEventsForVenueAsync(id);
         return Page();
     }
 }

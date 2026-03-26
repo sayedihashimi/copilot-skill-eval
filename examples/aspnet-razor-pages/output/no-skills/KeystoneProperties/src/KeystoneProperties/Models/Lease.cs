@@ -30,7 +30,7 @@ public class Lease
     public decimal MonthlyRentAmount { get; set; }
 
     [Required]
-    [Range(0.01, double.MaxValue, ErrorMessage = "Deposit must be positive")]
+    [Range(0.01, double.MaxValue, ErrorMessage = "Deposit amount must be positive")]
     [Display(Name = "Deposit Amount")]
     [DataType(DataType.Currency)]
     public decimal DepositAmount { get; set; }
@@ -38,6 +38,7 @@ public class Lease
     [Display(Name = "Deposit Status")]
     public DepositStatus DepositStatus { get; set; } = DepositStatus.Held;
 
+    [Required]
     public LeaseStatus Status { get; set; } = LeaseStatus.Pending;
 
     [Display(Name = "Renewal Of")]
@@ -46,7 +47,6 @@ public class Lease
     [Display(Name = "Termination Date")]
     public DateOnly? TerminationDate { get; set; }
 
-    [MaxLength(2000)]
     [Display(Name = "Termination Reason")]
     public string? TerminationReason { get; set; }
 
@@ -56,7 +56,6 @@ public class Lease
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
-    // Navigation
     public Unit Unit { get; set; } = null!;
     public Tenant Tenant { get; set; } = null!;
     public Lease? RenewalOfLease { get; set; }

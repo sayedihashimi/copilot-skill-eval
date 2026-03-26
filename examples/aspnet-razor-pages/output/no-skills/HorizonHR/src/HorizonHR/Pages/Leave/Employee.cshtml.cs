@@ -1,7 +1,7 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using HorizonHR.Models;
 using HorizonHR.Services;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace HorizonHR.Pages.Leave;
 
@@ -16,24 +16,20 @@ public class EmployeeModel : PageModel
         _employeeService = employeeService;
     }
 
-    public Employee Employee { get; set; } = null!;
+    public int EmployeeId { get; set; }
+    public string EmployeeName { get; set; } = string.Empty;
     public List<LeaveBalance> Balances { get; set; } = new();
     public List<LeaveRequest> Requests { get; set; } = new();
-    public int CurrentYear { get; set; }
 
     public async Task<IActionResult> OnGetAsync(int id)
     {
         var employee = await _employeeService.GetByIdAsync(id);
-        if (employee == null)
-        {
-            return NotFound();
-        }
+        if (employee == null) return NotFound();
 
-        Employee = employee;
-        CurrentYear = DateTime.UtcNow.Year;
-        Balances = await _leaveService.GetEmployeeBalancesAsync(id, CurrentYear);
+        EmployeeId = id;
+        EmployeeName = employee.FullName;
+        Balances = await _leaveService.GetEmployeeBalancesAsync(id);
         Requests = await _leaveService.GetEmployeeRequestsAsync(id);
-
         return Page();
     }
 }

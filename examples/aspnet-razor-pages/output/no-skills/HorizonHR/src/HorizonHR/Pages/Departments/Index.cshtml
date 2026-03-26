@@ -5,52 +5,59 @@
 }
 
 <section>
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
         <h1>Departments</h1>
-        <a asp-page="Create" class="btn btn-primary">New Department</a>
+        <a asp-page="Create" class="btn btn-primary">Create Department</a>
     </div>
 
-    @if (!Model.FlattenedDepartments.Any())
+    @if (!Model.Departments.Any())
     {
-        <div class="alert alert-info">No departments found. Create one to get started.</div>
+        <p class="text-muted">No departments found.</p>
     }
     else
     {
-        <div class="card">
-            <div class="card-body p-0">
-                <table class="table table-hover mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Name</th>
-                            <th>Code</th>
-                            <th>Manager</th>
-                            <th>Employees</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var (department, level) in Model.FlattenedDepartments)
-                        {
-                            var indent = level > 0 ? string.Concat(Enumerable.Repeat("\u00A0\u00A0\u00A0\u00A0", level)) : "";
-                            var prefix = level > 0 ? "└─ " : "";
-                            <tr>
-                                <td>@indent@prefix@department.Name</td>
-                                <td>@department.Code</td>
-                                <td>@(department.Manager?.FullName ?? "—")</td>
-                                <td><span class="badge bg-secondary">@department.Employees.Count</span></td>
-                                <td>
-                                    <partial name="_StatusBadge" model="@(department.IsActive ? "Active" : "Terminated")" />
-                                </td>
-                                <td>
-                                    <a asp-page="Details" asp-route-id="@department.Id" class="btn btn-sm btn-outline-primary">Details</a>
-                                    <a asp-page="Edit" asp-route-id="@department.Id" class="btn btn-sm btn-outline-secondary">Edit</a>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+        @foreach (var dept in Model.Departments)
+        {
+            <div class="card mb-2">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-1">
+                                <a asp-page="Details" asp-route-id="@dept.Id">@dept.Name</a>
+                                <small class="text-muted">(@dept.Code)</small>
+                            </h5>
+                            @if (dept.Manager != null)
+                            {
+                                <small class="text-muted">Manager: @dept.Manager.FullName</small>
+                            }
+                            <span class="badge bg-info text-dark ms-2">@dept.Employees.Count employees</span>
+                        </div>
+                        <div>
+                            <a asp-page="Edit" asp-route-id="@dept.Id" class="btn btn-sm btn-outline-secondary">Edit</a>
+                        </div>
+                    </div>
+                    @if (dept.ChildDepartments.Any())
+                    {
+                        <div class="ms-4 mt-2">
+                            @foreach (var child in dept.ChildDepartments)
+                            {
+                                <div class="d-flex justify-content-between align-items-center py-1">
+                                    <div>
+                                        <a asp-page="Details" asp-route-id="@child.Id">@child.Name</a>
+                                        <small class="text-muted">(@child.Code)</small>
+                                        @if (child.Manager != null)
+                                        {
+                                            <small class="text-muted ms-2">Manager: @child.Manager.FullName</small>
+                                        }
+                                        <span class="badge bg-info text-dark ms-2">@child.Employees.Count employees</span>
+                                    </div>
+                                    <a asp-page="Edit" asp-route-id="@child.Id" class="btn btn-sm btn-outline-secondary">Edit</a>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
             </div>
-        </div>
+        }
     }
 </section>

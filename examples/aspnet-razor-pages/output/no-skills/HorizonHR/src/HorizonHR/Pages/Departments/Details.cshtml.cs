@@ -1,7 +1,7 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using HorizonHR.Models;
 using HorizonHR.Services;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace HorizonHR.Pages.Departments;
 
@@ -14,18 +14,12 @@ public class DetailsModel : PageModel
         _departmentService = departmentService;
     }
 
-    public Department Department { get; set; } = default!;
+    public Department? Department { get; set; }
 
     public async Task<IActionResult> OnGetAsync(int id)
     {
-        var department = await _departmentService.GetByIdAsync(id);
-
-        if (department == null)
-        {
-            return NotFound();
-        }
-
-        Department = department;
+        Department = await _departmentService.GetByIdAsync(id);
+        if (Department == null) return NotFound();
         return Page();
     }
 }

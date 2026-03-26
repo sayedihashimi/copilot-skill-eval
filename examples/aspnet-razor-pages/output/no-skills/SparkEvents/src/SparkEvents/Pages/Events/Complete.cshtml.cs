@@ -14,21 +14,22 @@ public class CompleteModel : PageModel
         _eventService = eventService;
     }
 
-    public Event? Event { get; set; }
+    public Event Event { get; set; } = null!;
 
     public async Task<IActionResult> OnGetAsync(int id)
     {
-        Event = await _eventService.GetByIdAsync(id);
-        if (Event == null) return NotFound();
+        var evt = await _eventService.GetEventByIdAsync(id);
+        if (evt == null) return NotFound();
+        Event = evt;
         return Page();
     }
 
     public async Task<IActionResult> OnPostAsync(int id)
     {
-        var error = await _eventService.CompleteEventAsync(id);
-        if (error != null)
+        var result = await _eventService.CompleteEventAsync(id);
+        if (!result)
         {
-            TempData["ErrorMessage"] = error;
+            TempData["ErrorMessage"] = "Cannot complete this event. Ensure it has ended and is Published or SoldOut.";
             return RedirectToPage("Details", new { id });
         }
 

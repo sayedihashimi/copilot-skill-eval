@@ -1,9 +1,9 @@
 using System.ComponentModel.DataAnnotations;
+using HorizonHR.Models;
+using HorizonHR.Models.Enums;
+using HorizonHR.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using HorizonHR.Models;
-using HorizonHR.Services;
 
 namespace HorizonHR.Pages.Reviews;
 
@@ -16,97 +16,59 @@ public class ManagerReviewModel : PageModel
         _reviewService = reviewService;
     }
 
-    public PerformanceReview Review { get; set; } = null!;
+    public PerformanceReview? Review { get; set; }
 
     [BindProperty]
     public InputModel Input { get; set; } = new();
 
-    public SelectList RatingOptions { get; set; } = null!;
-
     public class InputModel
     {
-        [Required(ErrorMessage = "Manager assessment is required.")]
-        [MaxLength(5000, ErrorMessage = "Manager assessment cannot exceed 5000 characters.")]
-        [Display(Name = "Manager Assessment")]
+        [Required, MaxLength(5000)]
         public string ManagerAssessment { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Please select an overall rating.")]
-        [Display(Name = "Overall Rating")]
+        [Required]
         public OverallRating OverallRating { get; set; }
 
-        [MaxLength(2000, ErrorMessage = "Strengths cannot exceed 2000 characters.")]
-        [Display(Name = "Strengths Noted")]
+        [MaxLength(2000)]
         public string? StrengthsNoted { get; set; }
 
-        [MaxLength(2000, ErrorMessage = "Areas for improvement cannot exceed 2000 characters.")]
-        [Display(Name = "Areas for Improvement")]
+        [MaxLength(2000)]
         public string? AreasForImprovement { get; set; }
 
-        [MaxLength(5000, ErrorMessage = "Goals cannot exceed 5000 characters.")]
-        [Display(Name = "Goals")]
+        [MaxLength(5000)]
         public string? Goals { get; set; }
     }
 
     public async Task<IActionResult> OnGetAsync(int id)
     {
-        var review = await _reviewService.GetByIdAsync(id);
-        if (review == null)
-        {
-            return NotFound();
-        }
-
-        if (review.Status != ReviewStatus.ManagerReviewPending)
-        {
-            TempData["ErrorMessage"] = "Manager review can only be completed when the review status is Manager Review Pending.";
-            return RedirectToPage("Details", new { id });
-        }
-
-        Review = review;
-        LoadRatingOptions();
+        Review = await _reviewService.GetByIdAsync(id);
+        if (Review == null) return NotFound();
         return Page();
     }
 
     public async Task<IActionResult> OnPostAsync(int id)
     {
-        var review = await _reviewService.GetByIdAsync(id);
-        if (review == null)
-        {
-            return NotFound();
-        }
+        Review = await _reviewService.GetByIdAsync(id);
+        if (Review == null) return NotFound();
 
-        if (review.Status != ReviewStatus.ManagerReviewPending)
+        if (!ModelState.IsValid) return Page();
+
+        try
         {
-            TempData["ErrorMessage"] = "Manager review can only be completed when the review status is Manager Review Pending.";
+            await _reviewService.CompleteManagerReviewAsync(id,
+                Input.ManagerAssessment,
+                Input.OverallRating,
+                Input.StrengthsNoted,
+                Input.AreasForImprovement,
+                Input.Goals);
+
+            TempData["Success"] = "Performance review completed.";
             return RedirectToPage("Details", new { id });
         }
-
-        if (!ModelState.IsValid)
+        catch (InvalidOperationException ex)
         {
-            Review = review;
-            LoadRatingOptions();
+            TempData["Error"] = ex.Message;
             return Page();
         }
-
-        await _reviewService.CompleteManagerReviewAsync(
-            id,
-            Input.ManagerAssessment,
-            Input.OverallRating,
-            Input.StrengthsNoted,
-            Input.AreasForImprovement,
-            Input.Goals);
-
-        TempData["SuccessMessage"] = "Manager review completed successfully.";
-        return RedirectToPage("Details", new { id });
-    }
-
-    private void LoadRatingOptions()
-    {
-        RatingOptions = new SelectList(
-            Enum.GetValues<OverallRating>().Select(r => new
-            {
-                Value = r.ToString(),
-                Text = System.Text.RegularExpressions.Regex.Replace(r.ToString(), "([a-z])([A-Z])", "$1 $2")
-            }),
-            "Value", "Text");
     }
 }

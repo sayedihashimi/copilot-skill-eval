@@ -23,48 +23,39 @@ public class CreateModel : PageModel
     [BindProperty]
     public InputModel Input { get; set; } = new();
 
-    public List<SelectListItem> CategoryOptions { get; set; } = new();
-    public List<SelectListItem> VenueOptions { get; set; } = new();
+    public List<SelectListItem> Categories { get; set; } = new();
+    public List<SelectListItem> Venues { get; set; } = new();
 
     public class InputModel
     {
-        [Required]
-        [MaxLength(300)]
+        [Required, MaxLength(300)]
         public string Title { get; set; } = string.Empty;
 
-        [Required]
-        [MaxLength(5000)]
+        [Required, MaxLength(5000)]
         public string Description { get; set; } = string.Empty;
 
-        [Required]
-        [Display(Name = "Category")]
+        [Required, Display(Name = "Category")]
         public int EventCategoryId { get; set; }
 
-        [Required]
-        [Display(Name = "Venue")]
+        [Required, Display(Name = "Venue")]
         public int VenueId { get; set; }
 
-        [Required]
-        [Display(Name = "Start Date")]
+        [Required, Display(Name = "Start Date")]
         public DateTime StartDate { get; set; }
 
-        [Required]
-        [Display(Name = "End Date")]
+        [Required, Display(Name = "End Date")]
         public DateTime EndDate { get; set; }
 
-        [Required]
-        [Display(Name = "Registration Opens")]
+        [Required, Display(Name = "Registration Opens")]
         public DateTime RegistrationOpenDate { get; set; }
 
-        [Required]
-        [Display(Name = "Registration Closes")]
+        [Required, Display(Name = "Registration Closes")]
         public DateTime RegistrationCloseDate { get; set; }
 
-        [Display(Name = "Early-Bird Deadline")]
+        [Display(Name = "Early Bird Deadline")]
         public DateTime? EarlyBirdDeadline { get; set; }
 
-        [Required]
-        [Range(1, int.MaxValue, ErrorMessage = "Total capacity must be positive.")]
+        [Required, Range(1, int.MaxValue, ErrorMessage = "Capacity must be positive")]
         [Display(Name = "Total Capacity")]
         public int TotalCapacity { get; set; }
 
@@ -74,14 +65,14 @@ public class CreateModel : PageModel
 
     public async Task OnGetAsync()
     {
-        await LoadOptionsAsync();
+        await LoadSelectListsAsync();
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
         if (!ModelState.IsValid)
         {
-            await LoadOptionsAsync();
+            await LoadSelectListsAsync();
             return Page();
         }
 
@@ -89,23 +80,22 @@ public class CreateModel : PageModel
         if (Input.EndDate <= Input.StartDate)
         {
             ModelState.AddModelError("Input.EndDate", "End date must be after start date.");
-            await LoadOptionsAsync();
+            await LoadSelectListsAsync();
             return Page();
         }
-
         if (Input.RegistrationCloseDate > Input.StartDate)
         {
-            ModelState.AddModelError("Input.RegistrationCloseDate", "Registration close date must be on or before the start date.");
-            await LoadOptionsAsync();
+            ModelState.AddModelError("Input.RegistrationCloseDate", "Registration close date must be before or on the start date.");
+            await LoadSelectListsAsync();
             return Page();
         }
 
         // Validate capacity against venue
-        var venue = await _venueService.GetByIdAsync(Input.VenueId);
+        var venue = await _venueService.GetVenueByIdAsync(Input.VenueId);
         if (venue != null && Input.TotalCapacity > venue.MaxCapacity)
         {
-            ModelState.AddModelError("Input.TotalCapacity", $"Total capacity cannot exceed venue max capacity of {venue.MaxCapacity}.");
-            await LoadOptionsAsync();
+            ModelState.AddModelError("Input.TotalCapacity", $"Capacity cannot exceed venue max capacity of {venue.MaxCapacity}.");
+            await LoadSelectListsAsync();
             return Page();
         }
 
@@ -125,17 +115,17 @@ public class CreateModel : PageModel
             Status = EventStatus.Draft
         };
 
-        await _eventService.CreateAsync(evt);
+        await _eventService.CreateEventAsync(evt);
         TempData["SuccessMessage"] = "Event created successfully.";
         return RedirectToPage("Details", new { id = evt.Id });
     }
 
-    private async Task LoadOptionsAsync()
+    private async Task LoadSelectListsAsync()
     {
-        var categories = await _categoryService.GetAllAsync();
-        CategoryOptions = categories.Select(c => new SelectListItem(c.Name, c.Id.ToString())).ToList();
+        var categories = await _categoryService.GetAllCategoriesAsync();
+        Categories = categories.Select(c => new SelectListItem(c.Name, c.Id.ToString())).ToList();
 
-        var venues = await _venueService.GetAllAsync();
-        VenueOptions = venues.Select(v => new SelectListItem($"{v.Name} (Max: {v.MaxCapacity})", v.Id.ToString())).ToList();
+        var venues = await _venueService.GetAllVenuesAsync();
+        Venues = venues.Select(v => new SelectListItem($"{v.Name} (Max: {v.MaxCapacity})", v.Id.ToString())).ToList();
     }
 }

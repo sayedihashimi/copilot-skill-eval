@@ -18,11 +18,11 @@ public class Unit
     public int? Floor { get; set; }
 
     [Required]
-    [Range(0, 5)]
+    [Range(0, 5, ErrorMessage = "Bedrooms must be between 0 and 5")]
     public int Bedrooms { get; set; }
 
     [Required]
-    [Range(0.5, 4.0)]
+    [Range(0.5, 4.0, ErrorMessage = "Bathrooms must be between 0.5 and 4")]
     public decimal Bathrooms { get; set; }
 
     [Required]
@@ -51,7 +51,6 @@ public class Unit
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
-    // Navigation
     public Property Property { get; set; } = null!;
     public ICollection<Lease> Leases { get; set; } = new List<Lease>();
     public ICollection<MaintenanceRequest> MaintenanceRequests { get; set; } = new List<MaintenanceRequest>();

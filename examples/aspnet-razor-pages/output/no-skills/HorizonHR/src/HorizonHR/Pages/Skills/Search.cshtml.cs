@@ -1,6 +1,6 @@
 using HorizonHR.Models;
+using HorizonHR.Models.Enums;
 using HorizonHR.Services;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
@@ -15,42 +15,22 @@ public class SearchModel : PageModel
         _skillService = skillService;
     }
 
-    [BindProperty(SupportsGet = true)]
     public int? SkillId { get; set; }
-
-    [BindProperty(SupportsGet = true)]
     public ProficiencyLevel? MinLevel { get; set; }
-
-    public List<SelectListItem> SkillOptions { get; set; } = new();
-    public List<SelectListItem> ProficiencyOptions { get; set; } = new();
     public List<Employee> Results { get; set; } = new();
-    public bool SearchPerformed { get; set; }
+    public List<SelectListItem> SkillOptions { get; set; } = new();
 
-    public async Task OnGetAsync()
+    public async Task OnGetAsync(int? skillId, ProficiencyLevel? minLevel)
     {
-        await LoadSkillOptionsAsync();
+        SkillId = skillId;
+        MinLevel = minLevel;
 
-        if (SkillId.HasValue)
-        {
-            SearchPerformed = true;
-            Results = await _skillService.SearchBySkillAsync(SkillId.Value, MinLevel);
-        }
-    }
-
-    private async Task LoadSkillOptionsAsync()
-    {
         var skills = await _skillService.GetAllAsync();
-        SkillOptions = skills.Select(s => new SelectListItem
-        {
-            Value = s.Id.ToString(),
-            Text = $"{s.Name} ({s.Category})"
-        }).ToList();
+        SkillOptions = skills.Select(s => new SelectListItem($"{s.Name} ({s.Category})", s.Id.ToString())).ToList();
 
-        ProficiencyOptions = Enum.GetValues<ProficiencyLevel>()
-            .Select(p => new SelectListItem
-            {
-                Value = ((int)p).ToString(),
-                Text = p.ToString()
-            }).ToList();
+        if (skillId.HasValue)
+        {
+            Results = await _skillService.SearchBySkillAsync(skillId.Value, minLevel);
+        }
     }
 }

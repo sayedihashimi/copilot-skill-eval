@@ -12,8 +12,7 @@ public class CheckIn
 
     public DateTime CheckInTime { get; set; } = DateTime.UtcNow;
 
-    [Required]
-    [MaxLength(200)]
+    [Required, MaxLength(200)]
     public string CheckedInBy { get; set; } = string.Empty;
 
     [MaxLength(500)]

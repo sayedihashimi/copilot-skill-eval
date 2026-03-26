@@ -1,8 +1,7 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using HorizonHR.Models;
 using HorizonHR.Services;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace HorizonHR.Pages.Leave;
 
@@ -18,22 +17,13 @@ public class BalancesModel : PageModel
     }
 
     public List<LeaveBalance> Balances { get; set; } = new();
-    public IEnumerable<IGrouping<int, LeaveBalance>> GroupedBalances { get; set; } = null!;
+    public int Year { get; set; } = DateTime.UtcNow.Year;
+    public List<SelectListItem> DepartmentOptions { get; set; } = new();
 
-    [BindProperty(SupportsGet = true)]
-    public int? DepartmentId { get; set; }
-
-    public SelectList DepartmentOptions { get; set; } = null!;
-    public int CurrentYear { get; set; }
-
-    public async Task OnGetAsync()
+    public async Task OnGetAsync(int? departmentId)
     {
-        CurrentYear = DateTime.UtcNow.Year;
-
-        var departments = await _departmentService.GetAllFlatAsync();
-        DepartmentOptions = new SelectList(departments, "Id", "Name", DepartmentId);
-
-        Balances = await _leaveService.GetBalancesAsync(departmentId: DepartmentId, year: CurrentYear);
-        GroupedBalances = Balances.GroupBy(b => b.EmployeeId);
+        var departments = await _departmentService.GetAllAsync();
+        DepartmentOptions = departments.Select(d => new SelectListItem(d.Name, d.Id.ToString())).ToList();
+        Balances = await _leaveService.GetBalancesAsync(departmentId);
     }
 }

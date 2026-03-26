@@ -22,143 +22,97 @@ public class EditModel : PageModel
 
     [BindProperty]
     public InputModel Input { get; set; } = new();
-
-    public List<SelectListItem> CategoryOptions { get; set; } = new();
-    public List<SelectListItem> VenueOptions { get; set; } = new();
+    public List<SelectListItem> Categories { get; set; } = new();
+    public List<SelectListItem> Venues { get; set; } = new();
     public int CurrentRegistrations { get; set; }
 
     public class InputModel
     {
         public int Id { get; set; }
-
-        [Required]
-        [MaxLength(300)]
+        [Required, MaxLength(300)]
         public string Title { get; set; } = string.Empty;
-
-        [Required]
-        [MaxLength(5000)]
+        [Required, MaxLength(5000)]
         public string Description { get; set; } = string.Empty;
-
-        [Required]
-        [Display(Name = "Category")]
+        [Required, Display(Name = "Category")]
         public int EventCategoryId { get; set; }
-
-        [Required]
-        [Display(Name = "Venue")]
+        [Required, Display(Name = "Venue")]
         public int VenueId { get; set; }
-
-        [Required]
-        [Display(Name = "Start Date")]
+        [Required, Display(Name = "Start Date")]
         public DateTime StartDate { get; set; }
-
-        [Required]
-        [Display(Name = "End Date")]
+        [Required, Display(Name = "End Date")]
         public DateTime EndDate { get; set; }
-
-        [Required]
-        [Display(Name = "Registration Opens")]
+        [Required, Display(Name = "Registration Opens")]
         public DateTime RegistrationOpenDate { get; set; }
-
-        [Required]
-        [Display(Name = "Registration Closes")]
+        [Required, Display(Name = "Registration Closes")]
         public DateTime RegistrationCloseDate { get; set; }
-
-        [Display(Name = "Early-Bird Deadline")]
+        [Display(Name = "Early Bird Deadline")]
         public DateTime? EarlyBirdDeadline { get; set; }
-
-        [Required]
-        [Range(1, int.MaxValue)]
+        [Required, Range(1, int.MaxValue)]
         [Display(Name = "Total Capacity")]
         public int TotalCapacity { get; set; }
-
         [Display(Name = "Featured")]
         public bool IsFeatured { get; set; }
     }
 
     public async Task<IActionResult> OnGetAsync(int id)
     {
-        var evt = await _eventService.GetByIdAsync(id);
+        var evt = await _eventService.GetEventByIdAsync(id);
         if (evt == null) return NotFound();
 
         CurrentRegistrations = evt.CurrentRegistrations;
         Input = new InputModel
         {
-            Id = evt.Id,
-            Title = evt.Title,
-            Description = evt.Description,
-            EventCategoryId = evt.EventCategoryId,
-            VenueId = evt.VenueId,
-            StartDate = evt.StartDate,
-            EndDate = evt.EndDate,
+            Id = evt.Id, Title = evt.Title, Description = evt.Description,
+            EventCategoryId = evt.EventCategoryId, VenueId = evt.VenueId,
+            StartDate = evt.StartDate, EndDate = evt.EndDate,
             RegistrationOpenDate = evt.RegistrationOpenDate,
             RegistrationCloseDate = evt.RegistrationCloseDate,
             EarlyBirdDeadline = evt.EarlyBirdDeadline,
-            TotalCapacity = evt.TotalCapacity,
-            IsFeatured = evt.IsFeatured
+            TotalCapacity = evt.TotalCapacity, IsFeatured = evt.IsFeatured
         };
 
-        await LoadOptionsAsync();
+        await LoadSelectListsAsync();
         return Page();
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
-        if (!ModelState.IsValid)
-        {
-            await LoadOptionsAsync();
-            return Page();
-        }
-
-        var evt = await _eventService.GetByIdAsync(Input.Id);
-        if (evt == null) return NotFound();
-
-        CurrentRegistrations = evt.CurrentRegistrations;
+        if (!ModelState.IsValid) { await LoadSelectListsAsync(); return Page(); }
 
         if (Input.EndDate <= Input.StartDate)
         {
             ModelState.AddModelError("Input.EndDate", "End date must be after start date.");
-            await LoadOptionsAsync();
-            return Page();
+            await LoadSelectListsAsync(); return Page();
         }
 
-        if (Input.TotalCapacity < evt.CurrentRegistrations)
-        {
-            ModelState.AddModelError("Input.TotalCapacity", $"Cannot reduce capacity below current registrations ({evt.CurrentRegistrations}).");
-            await LoadOptionsAsync();
-            return Page();
-        }
-
-        var venue = await _venueService.GetByIdAsync(Input.VenueId);
+        var venue = await _venueService.GetVenueByIdAsync(Input.VenueId);
         if (venue != null && Input.TotalCapacity > venue.MaxCapacity)
         {
-            ModelState.AddModelError("Input.TotalCapacity", $"Total capacity cannot exceed venue max capacity of {venue.MaxCapacity}.");
-            await LoadOptionsAsync();
-            return Page();
+            ModelState.AddModelError("Input.TotalCapacity", $"Cannot exceed venue max capacity of {venue.MaxCapacity}.");
+            await LoadSelectListsAsync(); return Page();
         }
 
-        evt.Title = Input.Title;
-        evt.Description = Input.Description;
-        evt.EventCategoryId = Input.EventCategoryId;
-        evt.VenueId = Input.VenueId;
-        evt.StartDate = Input.StartDate;
-        evt.EndDate = Input.EndDate;
+        var evt = await _eventService.GetEventByIdAsync(Input.Id);
+        if (evt == null) return NotFound();
+
+        evt.Title = Input.Title; evt.Description = Input.Description;
+        evt.EventCategoryId = Input.EventCategoryId; evt.VenueId = Input.VenueId;
+        evt.StartDate = Input.StartDate; evt.EndDate = Input.EndDate;
         evt.RegistrationOpenDate = Input.RegistrationOpenDate;
         evt.RegistrationCloseDate = Input.RegistrationCloseDate;
         evt.EarlyBirdDeadline = Input.EarlyBirdDeadline;
-        evt.TotalCapacity = Input.TotalCapacity;
-        evt.IsFeatured = Input.IsFeatured;
+        evt.TotalCapacity = Input.TotalCapacity; evt.IsFeatured = Input.IsFeatured;
 
-        await _eventService.UpdateAsync(evt);
+        await _eventService.UpdateEventAsync(evt);
         TempData["SuccessMessage"] = "Event updated successfully.";
         return RedirectToPage("Details", new { id = evt.Id });
     }
 
-    private async Task LoadOptionsAsync()
+    private async Task LoadSelectListsAsync()
     {
-        var categories = await _categoryService.GetAllAsync();
-        CategoryOptions = categories.Select(c => new SelectListItem(c.Name, c.Id.ToString())).ToList();
-
-        var venues = await _venueService.GetAllAsync();
-        VenueOptions = venues.Select(v => new SelectListItem($"{v.Name} (Max: {v.MaxCapacity})", v.Id.ToString())).ToList();
+        var categories = await _categoryService.GetAllCategoriesAsync();
+        Categories = categories.Select(c => new SelectListItem(c.Name, c.Id.ToString())).ToList();
+        var venues = await _venueService.GetAllVenuesAsync();
+        Venues = venues.Select(v => new SelectListItem($"{v.Name} (Max: {v.MaxCapacity})", v.Id.ToString())).ToList();
     }
 }

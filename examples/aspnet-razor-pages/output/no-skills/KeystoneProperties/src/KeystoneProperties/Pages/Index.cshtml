@@ -1,4 +1,4 @@
-@page
+﻿@page
 @model KeystoneProperties.Pages.IndexModel
 @{
     ViewData["Title"] = "Dashboard";
@@ -6,107 +6,91 @@
 
 <h1 class="mb-4">Dashboard</h1>
 
-<section class="row mb-4">
-    <div class="col-md-3 mb-3">
-        <div class="card text-white bg-primary h-100">
+<div class="row g-4 mb-4">
+    <div class="col-md-4 col-lg-2">
+        <div class="card text-center border-primary">
             <div class="card-body">
-                <h5 class="card-title">Properties</h5>
-                <p class="card-text display-6">@Model.Stats.TotalProperties</p>
+                <h5 class="card-title text-primary">Properties</h5>
+                <p class="display-6">@Model.Dashboard.TotalProperties</p>
             </div>
         </div>
     </div>
-    <div class="col-md-3 mb-3">
-        <div class="card text-white bg-success h-100">
+    <div class="col-md-4 col-lg-2">
+        <div class="card text-center border-info">
             <div class="card-body">
-                <h5 class="card-title">Total Units</h5>
-                <p class="card-text display-6">@Model.Stats.TotalUnits</p>
+                <h5 class="card-title text-info">Units</h5>
+                <p class="display-6">@Model.Dashboard.TotalUnits</p>
             </div>
         </div>
     </div>
-    <div class="col-md-3 mb-3">
-        <div class="card text-white bg-info h-100">
+    <div class="col-md-4 col-lg-2">
+        <div class="card text-center border-success">
             <div class="card-body">
-                <h5 class="card-title">Occupancy Rate</h5>
-                <p class="card-text display-6">@Model.Stats.OccupancyRate%</p>
+                <h5 class="card-title text-success">Occupancy</h5>
+                <p class="display-6">@Model.Dashboard.OccupancyRate%</p>
             </div>
         </div>
     </div>
-    <div class="col-md-3 mb-3">
-        <div class="card text-white bg-dark h-100">
+    <div class="col-md-4 col-lg-2">
+        <div class="card text-center border-success">
             <div class="card-body">
-                <h5 class="card-title">Rent This Month</h5>
-                <p class="card-text display-6">@Model.Stats.RentCollectedThisMonth.ToString("C0")</p>
+                <h5 class="card-title text-success">Rent (Month)</h5>
+                <p class="display-6">@Model.Dashboard.RentCollectedThisMonth.ToString("C0")</p>
             </div>
         </div>
     </div>
-</section>
-
-<section class="row mb-4">
-    <div class="col-md-6 mb-3">
-        <div class="card border-danger h-100">
-            <div class="card-header bg-danger text-white">
-                <strong>Overdue Payments</strong>
-                <span class="badge bg-light text-danger float-end">@Model.Stats.OverduePaymentsCount</span>
-            </div>
+    <div class="col-md-4 col-lg-2">
+        <div class="card text-center border-danger">
             <div class="card-body">
-                @if (Model.Stats.OverduePaymentsCount > 0)
-                {
-                    <p>There are <strong>@Model.Stats.OverduePaymentsCount</strong> overdue payment(s).</p>
-                    <a asp-page="/Payments/Overdue" class="btn btn-outline-danger btn-sm">View Overdue</a>
-                }
-                else
-                {
-                    <p class="text-muted">No overdue payments. All caught up!</p>
-                }
+                <h5 class="card-title text-danger">Overdue</h5>
+                <p class="display-6">@Model.Dashboard.OverduePaymentsCount</p>
             </div>
         </div>
     </div>
-    <div class="col-md-6 mb-3">
-        <div class="card border-warning h-100">
-            <div class="card-header bg-warning text-dark">
-                <strong>Open Maintenance Requests</strong>
-                <span class="badge bg-dark float-end">@Model.Stats.OpenMaintenanceCount</span>
-            </div>
+    <div class="col-md-4 col-lg-2">
+        <div class="card text-center border-warning">
             <div class="card-body">
-                @if (Model.Stats.OpenMaintenanceCount > 0)
-                {
-                    <p>There are <strong>@Model.Stats.OpenMaintenanceCount</strong> open maintenance request(s).</p>
-                    <a asp-page="/Maintenance/Index" class="btn btn-outline-warning btn-sm">View Requests</a>
-                }
-                else
-                {
-                    <p class="text-muted">No open maintenance requests.</p>
-                }
+                <h5 class="card-title text-warning">Maintenance</h5>
+                <p class="display-6">@Model.Dashboard.OpenMaintenanceCount</p>
             </div>
         </div>
     </div>
-</section>
+</div>
 
 <section>
     <h3>Upcoming Lease Expirations (Next 30 Days)</h3>
-    @if (Model.Stats.UpcomingExpirations.Any())
+    @if (Model.Dashboard.UpcomingExpirations.Any())
     {
         <table class="table table-striped">
             <thead>
                 <tr>
                     <th>Tenant</th>
-                    <th>Property</th>
                     <th>Unit</th>
                     <th>End Date</th>
+                    <th>Days Left</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach (var lease in Model.Stats.UpcomingExpirations)
+                @foreach (var item in Model.Dashboard.UpcomingExpirations)
                 {
                     <tr>
-                        <td>@lease.Tenant.FullName</td>
-                        <td>@lease.Unit.Property.Name</td>
-                        <td>@lease.Unit.UnitNumber</td>
-                        <td>@lease.EndDate.ToString("MMM dd, yyyy")</td>
+                        <td>@item.TenantName</td>
+                        <td>@item.UnitInfo</td>
+                        <td>@item.EndDate.ToString("MMM dd, yyyy")</td>
                         <td>
-                            <a asp-page="/Leases/Details" asp-route-id="@lease.Id" class="btn btn-sm btn-outline-primary">View</a>
-                            <a asp-page="/Leases/Renew" asp-route-id="@lease.Id" class="btn btn-sm btn-outline-success">Renew</a>
+                            @if (item.DaysUntilExpiration <= 7)
+                            {
+                                <span class="badge bg-danger">@item.DaysUntilExpiration days</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-warning text-dark">@item.DaysUntilExpiration days</span>
+                            }
+                        </td>
+                        <td>
+                            <a asp-page="/Leases/Details" asp-route-id="@item.LeaseId" class="btn btn-sm btn-outline-primary">View</a>
+                            <a asp-page="/Leases/Renew" asp-route-id="@item.LeaseId" class="btn btn-sm btn-outline-success">Renew</a>
                         </td>
                     </tr>
                 }

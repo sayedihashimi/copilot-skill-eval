@@ -1,20 +1,15 @@
-﻿@page
+@page
 @model ErrorModel
 @{
     ViewData["Title"] = "Error";
 }
 
-<section class="text-center py-5">
-    <h1 class="text-danger display-4">Oops!</h1>
-    <h2 class="text-muted">An error occurred while processing your request.</h2>
-    <p class="lead mt-3">We're sorry for the inconvenience. Please try again or go back to the dashboard.</p>
-
-    @if (Model.ShowRequestId)
+<section class="text-center">
+    <h1 class="text-danger">Error</h1>
+    <p class="lead">An unexpected error occurred. Please try again later.</p>
+    @if (!string.IsNullOrEmpty(Model.RequestId))
     {
-        <p class="mt-3">
-            <strong>Request ID:</strong> <code>@Model.RequestId</code>
-        </p>
+        <p><strong>Request ID:</strong> <code>@Model.RequestId</code></p>
     }
-
-    <a asp-page="/Index" class="btn btn-primary mt-3">Back to Dashboard</a>
+    <a asp-page="/Index" class="btn btn-primary mt-3">Return to Dashboard</a>
 </section>

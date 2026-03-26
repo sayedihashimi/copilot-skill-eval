@@ -1,8 +1,8 @@
-using Microsoft.AspNetCore.Mvc;
+using HorizonHR.Models;
+using HorizonHR.Models.Enums;
+using HorizonHR.Services;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using HorizonHR.Models;
-using HorizonHR.Services;
 
 namespace HorizonHR.Pages.Reviews;
 
@@ -17,41 +17,26 @@ public class IndexModel : PageModel
         _departmentService = departmentService;
     }
 
-    public PaginatedList<PerformanceReview> Reviews { get; set; } = null!;
-
-    [BindProperty(SupportsGet = true)]
+    public List<PerformanceReview> Reviews { get; set; } = new();
+    public ReviewStatus? StatusFilter { get; set; }
+    public OverallRating? RatingFilter { get; set; }
+    public int? DepartmentFilter { get; set; }
     public int PageNumber { get; set; } = 1;
+    public int TotalPages { get; set; }
+    public List<SelectListItem> DepartmentOptions { get; set; } = new();
 
-    [BindProperty(SupportsGet = true)]
-    public ReviewStatus? Status { get; set; }
-
-    [BindProperty(SupportsGet = true)]
-    public OverallRating? Rating { get; set; }
-
-    [BindProperty(SupportsGet = true)]
-    public int? DepartmentId { get; set; }
-
-    public SelectList StatusOptions { get; set; } = null!;
-    public SelectList RatingOptions { get; set; } = null!;
-    public SelectList DepartmentOptions { get; set; } = null!;
-
-    public async Task OnGetAsync()
+    public async Task OnGetAsync(ReviewStatus? status, OverallRating? rating, int? departmentId, int pageNumber = 1)
     {
-        await LoadFilterOptionsAsync();
-        Reviews = await _reviewService.GetAllAsync(PageNumber, 10, Status, Rating, DepartmentId);
-    }
+        StatusFilter = status;
+        RatingFilter = rating;
+        DepartmentFilter = departmentId;
+        PageNumber = pageNumber;
 
-    private async Task LoadFilterOptionsAsync()
-    {
-        StatusOptions = new SelectList(
-            Enum.GetValues<ReviewStatus>().Select(s => new { Value = s.ToString(), Text = System.Text.RegularExpressions.Regex.Replace(s.ToString(), "([a-z])([A-Z])", "$1 $2") }),
-            "Value", "Text", Status?.ToString());
+        var departments = await _departmentService.GetAllAsync();
+        DepartmentOptions = departments.Select(d => new SelectListItem(d.Name, d.Id.ToString())).ToList();
 
-        RatingOptions = new SelectList(
-            Enum.GetValues<OverallRating>().Select(r => new { Value = r.ToString(), Text = System.Text.RegularExpressions.Regex.Replace(r.ToString(), "([a-z])([A-Z])", "$1 $2") }),
-            "Value", "Text", Rating?.ToString());
-
-        var departments = await _departmentService.GetAllFlatAsync();
-        DepartmentOptions = new SelectList(departments, "Id", "Name", DepartmentId);
+        var (items, totalCount) = await _reviewService.GetPagedAsync(pageNumber, 10, status, rating, departmentId);
+        Reviews = items;
+        TotalPages = (int)Math.Ceiling(totalCount / 10.0);
     }
 }

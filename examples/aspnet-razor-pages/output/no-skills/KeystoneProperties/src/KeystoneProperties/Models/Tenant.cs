@@ -15,10 +15,11 @@ public class Tenant
     public string LastName { get; set; } = string.Empty;
 
     [Required, EmailAddress]
-    [MaxLength(200)]
+    [Display(Name = "Email")]
     public string Email { get; set; } = string.Empty;
 
     [Required, Phone]
+    [Display(Name = "Phone")]
     public string Phone { get; set; } = string.Empty;
 
     [Required]
@@ -41,7 +42,6 @@ public class Tenant
 
     public string FullName => $"{FirstName} {LastName}";
 
-    // Navigation
     public ICollection<Lease> Leases { get; set; } = new List<Lease>();
     public ICollection<MaintenanceRequest> MaintenanceRequests { get; set; } = new List<MaintenanceRequest>();
 }

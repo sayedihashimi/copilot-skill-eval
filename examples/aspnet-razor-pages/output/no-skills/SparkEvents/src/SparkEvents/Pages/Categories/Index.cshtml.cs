@@ -17,6 +17,6 @@ public class IndexModel : PageModel
 
     public async Task OnGetAsync()
     {
-        Categories = await _categoryService.GetAllAsync();
+        Categories = await _categoryService.GetAllCategoriesAsync();
     }
 }

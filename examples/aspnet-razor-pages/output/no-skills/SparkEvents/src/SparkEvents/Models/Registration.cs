@@ -19,11 +19,11 @@ public class Registration
     public int TicketTypeId { get; set; }
     public TicketType TicketType { get; set; } = null!;
 
-    [Required]
+    [Required, MaxLength(20)]
     public string ConfirmationNumber { get; set; } = string.Empty;
 
     [Required]
-    public RegistrationStatus Status { get; set; }
+    public RegistrationStatus Status { get; set; } = RegistrationStatus.Confirmed;
 
     [Required]
     [Column(TypeName = "decimal(18,2)")]
@@ -35,6 +35,7 @@ public class Registration
 
     public DateTime? CancellationDate { get; set; }
 
+    [MaxLength(500)]
     public string? CancellationReason { get; set; }
 
     public DateTime? CheckInTime { get; set; }

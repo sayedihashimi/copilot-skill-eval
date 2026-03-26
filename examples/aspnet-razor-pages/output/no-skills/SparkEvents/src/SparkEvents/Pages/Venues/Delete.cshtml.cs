@@ -14,27 +14,25 @@ public class DeleteModel : PageModel
         _venueService = venueService;
     }
 
-    public Venue? Venue { get; set; }
+    public Venue Venue { get; set; } = null!;
+    public bool HasFutureEvents { get; set; }
 
     public async Task<IActionResult> OnGetAsync(int id)
     {
-        Venue = await _venueService.GetByIdAsync(id);
-        if (Venue == null) return NotFound();
+        var venue = await _venueService.GetVenueByIdAsync(id);
+        if (venue == null) return NotFound();
+
+        Venue = venue;
+        HasFutureEvents = await _venueService.HasFutureEventsAsync(id);
         return Page();
     }
 
     public async Task<IActionResult> OnPostAsync(int id)
     {
-        if (await _venueService.HasFutureEventsAsync(id))
-        {
-            TempData["ErrorMessage"] = "Cannot delete a venue that has future events.";
-            return RedirectToPage("Index");
-        }
-
-        var result = await _venueService.DeleteAsync(id);
+        var result = await _venueService.DeleteVenueAsync(id);
         if (!result)
         {
-            TempData["ErrorMessage"] = "Could not delete venue.";
+            TempData["ErrorMessage"] = "Cannot delete this venue. It may have future events.";
             return RedirectToPage("Index");
         }
 

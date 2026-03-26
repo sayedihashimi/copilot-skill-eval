@@ -15,24 +15,13 @@ public class DepartmentService : IDepartmentService
         _logger = logger;
     }
 
-    public async Task<PaginatedList<Department>> GetAllAsync(int pageNumber, int pageSize)
-    {
-        var query = _context.Departments
-            .Include(d => d.Manager)
-            .Include(d => d.ParentDepartment)
-            .Include(d => d.Employees)
-            .OrderBy(d => d.Name);
-
-        return await PaginatedList<Department>.CreateAsync(query, pageNumber, pageSize);
-    }
-
-    public async Task<List<Department>> GetHierarchyAsync()
+    public async Task<List<Department>> GetAllAsync()
     {
         return await _context.Departments
             .Include(d => d.Manager)
+            .Include(d => d.ParentDepartment)
             .Include(d => d.Employees)
             .Include(d => d.ChildDepartments)
-            .Where(d => d.ParentDepartmentId == null)
             .OrderBy(d => d.Name)
             .ToListAsync();
     }
@@ -49,39 +38,48 @@ public class DepartmentService : IDepartmentService
 
     public async Task<Department> CreateAsync(Department department)
     {
-        department.CreatedAt = DateTime.UtcNow;
-        department.UpdatedAt = DateTime.UtcNow;
         _context.Departments.Add(department);
         await _context.SaveChangesAsync();
-        _logger.LogInformation("Department created: {DepartmentName} ({DepartmentCode})", department.Name, department.Code);
+        _logger.LogInformation("Department created: {Name} ({Code})", department.Name, department.Code);
         return department;
     }
 
     public async Task UpdateAsync(Department department)
     {
-        department.UpdatedAt = DateTime.UtcNow;
         _context.Departments.Update(department);
         await _context.SaveChangesAsync();
-        _logger.LogInformation("Department updated: {DepartmentName}", department.Name);
+        _logger.LogInformation("Department updated: {Name} ({Code})", department.Name, department.Code);
     }
 
-    public async Task<bool> HasCircularReference(int departmentId, int? parentId)
+    public async Task<bool> IsCircularReference(int departmentId, int? parentDepartmentId)
     {
-        if (parentId == null) return false;
-        if (parentId == departmentId) return true;
+        if (parentDepartmentId == null) return false;
+        if (departmentId == parentDepartmentId) return true;
 
-        var current = await _context.Departments.FindAsync(parentId);
-        while (current != null)
+        var visited = new HashSet<int> { departmentId };
+        var currentId = parentDepartmentId;
+
+        while (currentId != null)
         {
-            if (current.ParentDepartmentId == departmentId) return true;
-            if (current.ParentDepartmentId == null) break;
-            current = await _context.Departments.FindAsync(current.ParentDepartmentId);
+            if (visited.Contains(currentId.Value)) return true;
+            visited.Add(currentId.Value);
+
+            var dept = await _context.Departments.FindAsync(currentId);
+            currentId = dept?.ParentDepartmentId;
         }
+
         return false;
     }
 
-    public async Task<List<Department>> GetAllFlatAsync()
+    public async Task<List<Department>> GetTopLevelDepartmentsAsync()
     {
-        return await _context.Departments.OrderBy(d => d.Name).ToListAsync();
+        return await _context.Departments
+            .Where(d => d.ParentDepartmentId == null)
+            .Include(d => d.Manager)
+            .Include(d => d.Employees)
+            .Include(d => d.ChildDepartments).ThenInclude(c => c.Employees)
+            .Include(d => d.ChildDepartments).ThenInclude(c => c.Manager)
+            .OrderBy(d => d.Name)
+            .ToListAsync();
     }
 }

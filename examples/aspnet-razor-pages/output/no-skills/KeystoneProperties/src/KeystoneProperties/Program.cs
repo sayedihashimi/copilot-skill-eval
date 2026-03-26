@@ -1,12 +1,11 @@
-using Microsoft.EntityFrameworkCore;
 using KeystoneProperties.Data;
 using KeystoneProperties.Services;
-using KeystoneProperties.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Database
-builder.Services.AddDbContext<AppDbContext>(options =>
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Services
@@ -26,18 +25,18 @@ var app = builder.Build();
 // Ensure database is created and seeded
 using (var scope = app.Services.CreateScope())
 {
-    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    context.Database.EnsureCreated();
-    DataSeeder.Seed(context);
+    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    await context.Database.EnsureCreatedAsync();
+    await DataSeeder.SeedAsync(context);
 }
 
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
+    app.UseHsts();
 }
 
-app.UseStatusCodePagesWithReExecute("/Error", "?statusCode={0}");
-
+app.UseHttpsRedirection();
 app.UseRouting();
 app.UseAuthorization();
 

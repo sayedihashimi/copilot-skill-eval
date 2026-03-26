@@ -1,21 +1,22 @@
+using KeystoneProperties.Models;
+using KeystoneProperties.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using KeystoneProperties.Models;
-using KeystoneProperties.Services.Interfaces;
 
 namespace KeystoneProperties.Pages.Tenants;
 
 public class DeactivateModel : PageModel
 {
     private readonly ITenantService _tenantService;
-    public DeactivateModel(ITenantService tenantService) => _tenantService = tenantService;
+    public DeactivateModel(ITenantService tenantService) { _tenantService = tenantService; }
 
-    public Tenant? Tenant { get; set; }
+    public Tenant Tenant { get; set; } = null!;
 
     public async Task<IActionResult> OnGetAsync(int id)
     {
-        Tenant = await _tenantService.GetByIdAsync(id);
-        if (Tenant == null) return NotFound();
+        var tenant = await _tenantService.GetByIdAsync(id);
+        if (tenant == null) return NotFound();
+        Tenant = tenant;
         return Page();
     }
 

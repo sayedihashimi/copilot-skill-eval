@@ -4,50 +4,51 @@
     ViewData["Title"] = "Create Review";
 }
 
-<h1 class="mb-4">Create Performance Review</h1>
+<section>
+    <h1>Create Performance Review</h1>
 
-<div class="row">
-    <div class="col-md-8">
-        <form method="post">
-            <div asp-validation-summary="All" class="text-danger mb-3"></div>
+    <form method="post" class="mt-3">
+        <div asp-validation-summary="All" class="text-danger"></div>
 
-            <div class="mb-3">
-                <label asp-for="Input.EmployeeId" class="form-label"></label>
-                <select asp-for="Input.EmployeeId" asp-items="Model.EmployeeOptions" class="form-select">
-                    <option value="">-- Select Employee --</option>
-                </select>
-                <span asp-validation-for="Input.EmployeeId" class="text-danger"></span>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label asp-for="Input.EmployeeId" class="form-label">Employee</label>
+                    <select asp-for="Input.EmployeeId" class="form-select" asp-items="Model.EmployeeOptions">
+                        <option value="">Select Employee</option>
+                    </select>
+                    <span asp-validation-for="Input.EmployeeId" class="text-danger"></span>
+                </div>
             </div>
-
-            <div class="mb-3">
-                <label asp-for="Input.ReviewerId" class="form-label"></label>
-                <select asp-for="Input.ReviewerId" asp-items="Model.ReviewerOptions" class="form-select">
-                    <option value="">-- Select Reviewer --</option>
-                </select>
-                <span asp-validation-for="Input.ReviewerId" class="text-danger"></span>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label asp-for="Input.ReviewerId" class="form-label">Reviewer</label>
+                    <select asp-for="Input.ReviewerId" class="form-select" asp-items="Model.ReviewerOptions">
+                        <option value="">Select Reviewer</option>
+                    </select>
+                    <span asp-validation-for="Input.ReviewerId" class="text-danger"></span>
+                </div>
             </div>
+        </div>
 
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label asp-for="Input.ReviewPeriodStart" class="form-label"></label>
-                    <input asp-for="Input.ReviewPeriodStart" type="date" class="form-control" />
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label asp-for="Input.ReviewPeriodStart" class="form-label">Period Start</label>
+                    <input asp-for="Input.ReviewPeriodStart" class="form-control" type="date" />
                     <span asp-validation-for="Input.ReviewPeriodStart" class="text-danger"></span>
                 </div>
-                <div class="col-md-6 mb-3">
-                    <label asp-for="Input.ReviewPeriodEnd" class="form-label"></label>
-                    <input asp-for="Input.ReviewPeriodEnd" type="date" class="form-control" />
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label asp-for="Input.ReviewPeriodEnd" class="form-label">Period End</label>
+                    <input asp-for="Input.ReviewPeriodEnd" class="form-control" type="date" />
                     <span asp-validation-for="Input.ReviewPeriodEnd" class="text-danger"></span>
                 </div>
             </div>
+        </div>
 
-            <div class="mt-3">
-                <button type="submit" class="btn btn-primary">Create Review</button>
-                <a asp-page="Index" class="btn btn-outline-secondary ms-2">Cancel</a>
-            </div>
-        </form>
-    </div>
-</div>
-
-@section Scripts {
-    <partial name="_ValidationScriptsPartial" />
-}
+        <button type="submit" class="btn btn-primary">Create Review</button>
+        <a asp-page="Index" class="btn btn-outline-secondary ms-2">Cancel</a>
+    </form>
+</section>

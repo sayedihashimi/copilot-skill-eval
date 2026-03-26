@@ -16,14 +16,14 @@ public class WaitlistModel : PageModel
         _registrationService = registrationService;
     }
 
-    public Event? Event { get; set; }
+    public Event Event { get; set; } = null!;
     public List<Registration> WaitlistRegistrations { get; set; } = new();
 
     public async Task<IActionResult> OnGetAsync(int eventId)
     {
-        Event = await _eventService.GetByIdAsync(eventId);
-        if (Event == null) return NotFound();
-
+        var evt = await _eventService.GetEventByIdAsync(eventId);
+        if (evt == null) return NotFound();
+        Event = evt;
         WaitlistRegistrations = await _registrationService.GetEventWaitlistAsync(eventId);
         return Page();
     }

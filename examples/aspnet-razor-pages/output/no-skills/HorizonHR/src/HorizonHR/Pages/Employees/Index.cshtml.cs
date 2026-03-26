@@ -1,8 +1,8 @@
-using Microsoft.AspNetCore.Mvc;
+using HorizonHR.Models;
+using HorizonHR.Models.Enums;
+using HorizonHR.Services;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using HorizonHR.Models;
-using HorizonHR.Services;
 
 namespace HorizonHR.Pages.Employees;
 
@@ -17,36 +17,28 @@ public class IndexModel : PageModel
         _departmentService = departmentService;
     }
 
-    public PaginatedList<Employee> Employees { get; set; } = default!;
-
-    [BindProperty(SupportsGet = true)]
+    public List<Employee> Employees { get; set; } = new();
     public string? Search { get; set; }
-
-    [BindProperty(SupportsGet = true)]
     public int? DepartmentId { get; set; }
-
-    [BindProperty(SupportsGet = true)]
-    public EmploymentType? EmploymentType { get; set; }
-
-    [BindProperty(SupportsGet = true)]
-    public EmployeeStatus? Status { get; set; }
-
-    [BindProperty(SupportsGet = true)]
+    public EmploymentType? EmploymentTypeFilter { get; set; }
+    public EmployeeStatus? StatusFilter { get; set; }
     public int PageNumber { get; set; } = 1;
+    public int TotalPages { get; set; }
+    public List<SelectListItem> DepartmentOptions { get; set; } = new();
 
-    public SelectList DepartmentList { get; set; } = default!;
-
-    public async Task OnGetAsync()
+    public async Task OnGetAsync(string? search, int? departmentId, EmploymentType? employmentType, EmployeeStatus? status, int pageNumber = 1)
     {
-        var departments = await _departmentService.GetAllFlatAsync();
-        DepartmentList = new SelectList(departments, "Id", "Name");
+        Search = search;
+        DepartmentId = departmentId;
+        EmploymentTypeFilter = employmentType;
+        StatusFilter = status;
+        PageNumber = pageNumber;
 
-        Employees = await _employeeService.GetAllAsync(
-            PageNumber,
-            pageSize: 10,
-            search: Search,
-            departmentId: DepartmentId,
-            employmentType: EmploymentType,
-            status: Status);
+        var departments = await _departmentService.GetAllAsync();
+        DepartmentOptions = departments.Select(d => new SelectListItem(d.Name, d.Id.ToString())).ToList();
+
+        var (items, totalCount) = await _employeeService.GetPagedAsync(pageNumber, 10, search, departmentId, employmentType, status);
+        Employees = items;
+        TotalPages = (int)Math.Ceiling(totalCount / 10.0);
     }
 }

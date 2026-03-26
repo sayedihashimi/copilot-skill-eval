@@ -4,63 +4,47 @@
     ViewData["Title"] = "Cancel Leave Request";
 }
 
-<h1>Cancel Leave Request</h1>
+<section>
+    @if (Model.LeaveRequest == null)
+    {
+        <p class="text-muted">Leave request not found.</p>
+    }
+    else
+    {
+        var lr = Model.LeaveRequest;
+        <h1>Cancel Leave Request #@lr.Id</h1>
 
-<div class="row">
-    <div class="col-md-8">
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">Request Details</h5>
-            </div>
+        <div class="alert alert-warning" role="alert">
+            Are you sure you want to cancel this leave request?
+            @if (lr.Status == LeaveRequestStatus.Approved)
+            {
+                <strong>@lr.TotalDays day(s) will be restored to the employee's leave balance.</strong>
+            }
+        </div>
+
+        <div class="card mb-3">
             <div class="card-body">
                 <dl class="row mb-0">
-                    <dt class="col-sm-4">Employee</dt>
-                    <dd class="col-sm-8">@Model.LeaveRequest.Employee.FullName</dd>
-
-                    <dt class="col-sm-4">Leave Type</dt>
-                    <dd class="col-sm-8">@Model.LeaveRequest.LeaveType.Name</dd>
-
-                    <dt class="col-sm-4">Start Date</dt>
-                    <dd class="col-sm-8">@Model.LeaveRequest.StartDate.ToString("MMMM dd, yyyy")</dd>
-
-                    <dt class="col-sm-4">End Date</dt>
-                    <dd class="col-sm-8">@Model.LeaveRequest.EndDate.ToString("MMMM dd, yyyy")</dd>
-
-                    <dt class="col-sm-4">Total Days</dt>
-                    <dd class="col-sm-8">@Model.LeaveRequest.TotalDays</dd>
-
-                    <dt class="col-sm-4">Status</dt>
-                    <dd class="col-sm-8">
-                        <partial name="_StatusBadge" model="@Model.LeaveRequest.Status.ToString()" />
+                    <dt class="col-sm-3">Employee</dt>
+                    <dd class="col-sm-9">@lr.Employee.FullName</dd>
+                    <dt class="col-sm-3">Leave Type</dt>
+                    <dd class="col-sm-9">@lr.LeaveType.Name</dd>
+                    <dt class="col-sm-3">Dates</dt>
+                    <dd class="col-sm-9">@lr.StartDate.ToString("MMM dd, yyyy") – @lr.EndDate.ToString("MMM dd, yyyy")</dd>
+                    <dt class="col-sm-3">Days</dt>
+                    <dd class="col-sm-9">@lr.TotalDays</dd>
+                    <dt class="col-sm-3">Current Status</dt>
+                    <dd class="col-sm-9">
+                        @{ ViewData["StatusText"] = lr.Status.ToString(); }
+                        <partial name="Shared/_StatusBadge" />
                     </dd>
-
-                    <dt class="col-sm-4">Reason</dt>
-                    <dd class="col-sm-8">@Model.LeaveRequest.Reason</dd>
                 </dl>
             </div>
         </div>
 
-        @if (Model.WasApproved)
-        {
-            <div class="alert alert-warning">
-                <strong>Note:</strong> This request was already approved. Cancelling it will restore the used leave
-                balance of <strong>@Model.LeaveRequest.TotalDays day(s)</strong> back to the employee's
-                <strong>@Model.LeaveRequest.LeaveType.Name</strong> balance.
-            </div>
-        }
-
-        <div class="card border-danger">
-            <div class="card-body">
-                <h5 class="card-title text-danger">Confirm Cancellation</h5>
-                <p>Are you sure you want to cancel this leave request? This action cannot be undone.</p>
-
-                <form method="post" asp-route-id="@Model.LeaveRequest.Id">
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-danger">Yes, Cancel Request</button>
-                        <a asp-page="Details" asp-route-id="@Model.LeaveRequest.Id" class="btn btn-outline-secondary">Go Back</a>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
+        <form method="post">
+            <button type="submit" class="btn btn-warning">Confirm Cancellation</button>
+            <a asp-page="Details" asp-route-id="@lr.Id" class="btn btn-outline-secondary ms-2">Go Back</a>
+        </form>
+    }
+</section>

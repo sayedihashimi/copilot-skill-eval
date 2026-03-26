@@ -1,23 +1,24 @@
-using Microsoft.EntityFrameworkCore;
 using KeystoneProperties.Data;
 using KeystoneProperties.Models;
 using KeystoneProperties.Models.Enums;
-using KeystoneProperties.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace KeystoneProperties.Services;
 
 public class PaymentService : IPaymentService
 {
-    private readonly AppDbContext _context;
+    private readonly ApplicationDbContext _context;
     private readonly ILogger<PaymentService> _logger;
 
-    public PaymentService(AppDbContext context, ILogger<PaymentService> logger)
+    public PaymentService(ApplicationDbContext context, ILogger<PaymentService> logger)
     {
         _context = context;
         _logger = logger;
     }
 
-    public async Task<PaginatedList<Payment>> GetPaymentsAsync(PaymentType? type, PaymentStatus? status, DateOnly? fromDate, DateOnly? toDate, int? propertyId, int pageNumber, int pageSize)
+    public async Task<(List<Payment> Items, int TotalCount)> GetPaymentsAsync(
+        PaymentType? type, PaymentStatus? status, DateOnly? fromDate, DateOnly? toDate,
+        int? propertyId, int page, int pageSize, string? sortBy, bool descending)
     {
         var query = _context.Payments
             .Include(p => p.Lease).ThenInclude(l => l.Tenant)
@@ -30,10 +31,17 @@ public class PaymentService : IPaymentService
         if (toDate.HasValue) query = query.Where(p => p.PaymentDate <= toDate.Value);
         if (propertyId.HasValue) query = query.Where(p => p.Lease.Unit.PropertyId == propertyId.Value);
 
-        query = query.OrderByDescending(p => p.PaymentDate).ThenByDescending(p => p.CreatedAt);
-        var count = await query.CountAsync();
-        var items = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
-        return new PaginatedList<Payment>(items, count, pageNumber, pageSize);
+        var totalCount = await query.CountAsync();
+
+        query = (sortBy?.ToLower()) switch
+        {
+            "amount" => descending ? query.OrderByDescending(p => p.Amount) : query.OrderBy(p => p.Amount),
+            "duedate" => descending ? query.OrderByDescending(p => p.DueDate) : query.OrderBy(p => p.DueDate),
+            _ => descending ? query.OrderByDescending(p => p.PaymentDate) : query.OrderBy(p => p.PaymentDate),
+        };
+
+        var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        return (items, totalCount);
     }
 
     public async Task<Payment?> GetByIdAsync(int id) =>
@@ -44,19 +52,20 @@ public class PaymentService : IPaymentService
 
     public async Task<Payment?> GetWithDetailsAsync(int id) => await GetByIdAsync(id);
 
-    public async Task<(bool Success, string? Error)> RecordPaymentAsync(Payment payment)
+    public async Task<(bool Success, string? Error, Payment? LateFeePayment)> RecordPaymentAsync(Payment payment)
     {
         payment.CreatedAt = DateTime.UtcNow;
         _context.Payments.Add(payment);
 
-        // Late fee calculation for rent payments
+        Payment? lateFeePayment = null;
+
+        // Calculate late fee for rent payments
         if (payment.PaymentType == PaymentType.Rent && payment.Status == PaymentStatus.Completed)
         {
-            int daysLate = payment.PaymentDate.DayNumber - payment.DueDate.DayNumber;
-            if (daysLate > 5)
+            var lateFee = CalculateLateFee(payment.PaymentDate, payment.DueDate);
+            if (lateFee > 0)
             {
-                decimal lateFee = Math.Min(50m + (daysLate - 5) * 5m, 200m);
-                var lateFeePayment = new Payment
+                lateFeePayment = new Payment
                 {
                     LeaseId = payment.LeaseId,
                     Amount = lateFee,
@@ -65,8 +74,7 @@ public class PaymentService : IPaymentService
                     PaymentMethod = payment.PaymentMethod,
                     PaymentType = PaymentType.LateFee,
                     Status = PaymentStatus.Completed,
-                    ReferenceNumber = $"LF-{DateTime.UtcNow:yyyyMMddHHmmss}",
-                    Notes = $"Late fee: {daysLate} days past due date. $50 base + ${(daysLate - 5) * 5} additional (capped at $200).",
+                    Notes = $"Late fee for rent payment due {payment.DueDate:d}",
                     CreatedAt = DateTime.UtcNow
                 };
                 _context.Payments.Add(lateFeePayment);
@@ -74,13 +82,13 @@ public class PaymentService : IPaymentService
         }
 
         await _context.SaveChangesAsync();
-        _logger.LogInformation("Payment recorded: {PaymentType} of {Amount} for Lease {LeaseId}", payment.PaymentType, payment.Amount, payment.LeaseId);
-        return (true, null);
+        _logger.LogInformation("Payment recorded: ID {Id}, Amount {Amount}, Type {Type}", payment.Id, payment.Amount, payment.PaymentType);
+        return (true, null, lateFeePayment);
     }
 
-    public async Task<List<OverdueLeaseInfo>> GetOverduePaymentsAsync()
+    public async Task<List<(Lease Lease, DateOnly DueDate)>> GetOverduePaymentsAsync()
     {
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var today = DateOnly.FromDateTime(DateTime.Today);
         var activeLeases = await _context.Leases
             .Include(l => l.Tenant)
             .Include(l => l.Unit).ThenInclude(u => u.Property)
@@ -88,49 +96,58 @@ public class PaymentService : IPaymentService
             .Where(l => l.Status == LeaseStatus.Active)
             .ToListAsync();
 
-        var overdueList = new List<OverdueLeaseInfo>();
-
+        var overdue = new List<(Lease, DateOnly)>();
         foreach (var lease in activeLeases)
         {
-            // Check each month from start to current
-            var currentMonth = lease.StartDate;
-            while (currentMonth <= today && currentMonth <= lease.EndDate)
+            // Check each month from start to today
+            var checkDate = lease.StartDate;
+            while (checkDate <= today && checkDate <= lease.EndDate)
             {
-                var hasPayment = lease.Payments.Any(p =>
-                    p.PaymentType == PaymentType.Rent &&
-                    p.Status == PaymentStatus.Completed &&
-                    p.DueDate.Year == currentMonth.Year &&
-                    p.DueDate.Month == currentMonth.Month);
-
-                if (!hasPayment && currentMonth < today)
+                var dueDate = new DateOnly(checkDate.Year, checkDate.Month, 1);
+                if (dueDate <= today)
                 {
-                    overdueList.Add(new OverdueLeaseInfo
-                    {
-                        Lease = lease,
-                        DueDate = currentMonth,
-                        DaysOverdue = today.DayNumber - currentMonth.DayNumber,
-                        AmountDue = lease.MonthlyRentAmount
-                    });
-                }
+                    var hasPaid = lease.Payments.Any(p =>
+                        p.PaymentType == PaymentType.Rent &&
+                        p.Status == PaymentStatus.Completed &&
+                        p.DueDate.Year == dueDate.Year &&
+                        p.DueDate.Month == dueDate.Month);
 
-                currentMonth = currentMonth.AddMonths(1);
+                    if (!hasPaid)
+                        overdue.Add((lease, dueDate));
+                }
+                checkDate = checkDate.AddMonths(1);
             }
         }
-
-        return overdueList.OrderByDescending(o => o.DaysOverdue).ToList();
+        return overdue.OrderBy(x => x.Item2).ToList();
     }
 
     public async Task<decimal> GetRentCollectedThisMonthAsync()
     {
-        var now = DateTime.UtcNow;
-        var firstOfMonth = new DateOnly(now.Year, now.Month, 1);
-        var lastOfMonth = firstOfMonth.AddMonths(1).AddDays(-1);
+        var now = DateTime.Now;
+        var startOfMonth = new DateOnly(now.Year, now.Month, 1);
+        var endOfMonth = startOfMonth.AddMonths(1).AddDays(-1);
 
         return await _context.Payments
             .Where(p => p.PaymentType == PaymentType.Rent &&
                         p.Status == PaymentStatus.Completed &&
-                        p.PaymentDate >= firstOfMonth &&
-                        p.PaymentDate <= lastOfMonth)
+                        p.PaymentDate >= startOfMonth &&
+                        p.PaymentDate <= endOfMonth)
             .SumAsync(p => p.Amount);
+    }
+
+    public async Task<int> GetOverdueCountAsync()
+    {
+        var overdueList = await GetOverduePaymentsAsync();
+        return overdueList.Count;
+    }
+
+    public decimal CalculateLateFee(DateOnly paymentDate, DateOnly dueDate)
+    {
+        var daysLate = paymentDate.DayNumber - dueDate.DayNumber;
+        if (daysLate <= 5) return 0;
+
+        var additionalDays = daysLate - 5;
+        var fee = 50.00m + (additionalDays * 5.00m);
+        return Math.Min(fee, 200.00m);
     }
 }

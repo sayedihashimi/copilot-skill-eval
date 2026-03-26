@@ -1,8 +1,8 @@
-using Microsoft.AspNetCore.Mvc;
+using HorizonHR.Models;
+using HorizonHR.Models.Enums;
+using HorizonHR.Services;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using HorizonHR.Models;
-using HorizonHR.Services;
 
 namespace HorizonHR.Pages.Leave;
 
@@ -17,40 +17,30 @@ public class IndexModel : PageModel
         _employeeService = employeeService;
     }
 
-    public PaginatedList<LeaveRequest> LeaveRequests { get; set; } = null!;
-
-    [BindProperty(SupportsGet = true)]
+    public List<LeaveRequest> LeaveRequests { get; set; } = new();
+    public LeaveRequestStatus? StatusFilter { get; set; }
+    public int? EmployeeFilter { get; set; }
+    public int? LeaveTypeFilter { get; set; }
     public int PageNumber { get; set; } = 1;
+    public int TotalPages { get; set; }
+    public List<SelectListItem> EmployeeOptions { get; set; } = new();
+    public List<SelectListItem> LeaveTypeOptions { get; set; } = new();
 
-    [BindProperty(SupportsGet = true)]
-    public LeaveRequestStatus? Status { get; set; }
-
-    [BindProperty(SupportsGet = true)]
-    public int? EmployeeId { get; set; }
-
-    [BindProperty(SupportsGet = true)]
-    public int? LeaveTypeId { get; set; }
-
-    public SelectList StatusOptions { get; set; } = null!;
-    public SelectList EmployeeOptions { get; set; } = null!;
-    public SelectList LeaveTypeOptions { get; set; } = null!;
-
-    public async Task OnGetAsync()
+    public async Task OnGetAsync(LeaveRequestStatus? status, int? employeeId, int? leaveTypeId, int pageNumber = 1)
     {
-        await PopulateFiltersAsync();
-        LeaveRequests = await _leaveService.GetAllRequestsAsync(PageNumber, 10, Status, EmployeeId, LeaveTypeId);
-    }
-
-    private async Task PopulateFiltersAsync()
-    {
-        StatusOptions = new SelectList(
-            Enum.GetValues<LeaveRequestStatus>().Select(s => new { Value = s, Text = s.ToString() }),
-            "Value", "Text", Status);
+        StatusFilter = status;
+        EmployeeFilter = employeeId;
+        LeaveTypeFilter = leaveTypeId;
+        PageNumber = pageNumber;
 
         var employees = await _employeeService.GetAllActiveAsync();
-        EmployeeOptions = new SelectList(employees, "Id", "FullName", EmployeeId);
+        EmployeeOptions = employees.Select(e => new SelectListItem(e.FullName, e.Id.ToString())).ToList();
 
         var leaveTypes = await _leaveService.GetLeaveTypesAsync();
-        LeaveTypeOptions = new SelectList(leaveTypes, "Id", "Name", LeaveTypeId);
+        LeaveTypeOptions = leaveTypes.Select(lt => new SelectListItem(lt.Name, lt.Id.ToString())).ToList();
+
+        var (items, totalCount) = await _leaveService.GetPagedRequestsAsync(pageNumber, 10, status, employeeId, leaveTypeId);
+        LeaveRequests = items;
+        TotalPages = (int)Math.Ceiling(totalCount / 10.0);
     }
 }

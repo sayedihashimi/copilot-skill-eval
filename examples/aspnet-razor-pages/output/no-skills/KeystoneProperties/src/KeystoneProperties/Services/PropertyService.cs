@@ -1,47 +1,49 @@
-using Microsoft.EntityFrameworkCore;
 using KeystoneProperties.Data;
 using KeystoneProperties.Models;
 using KeystoneProperties.Models.Enums;
-using KeystoneProperties.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace KeystoneProperties.Services;
 
 public class PropertyService : IPropertyService
 {
-    private readonly AppDbContext _context;
+    private readonly ApplicationDbContext _context;
     private readonly ILogger<PropertyService> _logger;
 
-    public PropertyService(AppDbContext context, ILogger<PropertyService> logger)
+    public PropertyService(ApplicationDbContext context, ILogger<PropertyService> logger)
     {
         _context = context;
         _logger = logger;
     }
 
-    public async Task<PaginatedList<Property>> GetPropertiesAsync(string? search, PropertyType? type, bool? isActive, int pageNumber, int pageSize)
+    public async Task<(List<Property> Items, int TotalCount)> GetPropertiesAsync(
+        string? search, PropertyType? type, bool? isActive, int page, int pageSize)
     {
         var query = _context.Properties.Include(p => p.Units).AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(search))
-            query = query.Where(p => p.Name.Contains(search) || p.City.Contains(search));
-        if (type.HasValue)
-            query = query.Where(p => p.PropertyType == type.Value);
-        if (isActive.HasValue)
-            query = query.Where(p => p.IsActive == isActive.Value);
+        {
+            var s = search.ToLower();
+            query = query.Where(p => p.Name.ToLower().Contains(s) || p.City.ToLower().Contains(s));
+        }
+        if (type.HasValue) query = query.Where(p => p.PropertyType == type.Value);
+        if (isActive.HasValue) query = query.Where(p => p.IsActive == isActive.Value);
 
-        query = query.OrderBy(p => p.Name);
-        var count = await query.CountAsync();
-        var items = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
-        return new PaginatedList<Property>(items, count, pageNumber, pageSize);
+        var totalCount = await query.CountAsync();
+        var items = await query.OrderBy(p => p.Name)
+            .Skip((page - 1) * pageSize).Take(pageSize)
+            .ToListAsync();
+
+        return (items, totalCount);
     }
 
     public async Task<Property?> GetByIdAsync(int id) =>
         await _context.Properties.FindAsync(id);
 
     public async Task<Property?> GetWithUnitsAsync(int id) =>
-        await _context.Properties
-            .Include(p => p.Units)
-                .ThenInclude(u => u.Leases.Where(l => l.Status == LeaseStatus.Active))
-                    .ThenInclude(l => l.Tenant)
+        await _context.Properties.Include(p => p.Units)
+            .ThenInclude(u => u.Leases.Where(l => l.Status == LeaseStatus.Active))
+            .ThenInclude(l => l.Tenant)
             .FirstOrDefaultAsync(p => p.Id == id);
 
     public async Task CreateAsync(Property property)
@@ -50,7 +52,7 @@ public class PropertyService : IPropertyService
         property.UpdatedAt = DateTime.UtcNow;
         _context.Properties.Add(property);
         await _context.SaveChangesAsync();
-        _logger.LogInformation("Property created: {PropertyName} (ID: {PropertyId})", property.Name, property.Id);
+        _logger.LogInformation("Property created: {Name} (ID: {Id})", property.Name, property.Id);
     }
 
     public async Task UpdateAsync(Property property)
@@ -62,17 +64,22 @@ public class PropertyService : IPropertyService
 
     public async Task<(bool Success, string? Error)> DeactivateAsync(int id)
     {
-        var property = await _context.Properties.Include(p => p.Units).ThenInclude(u => u.Leases).FirstOrDefaultAsync(p => p.Id == id);
+        var property = await _context.Properties.Include(p => p.Units)
+            .ThenInclude(u => u.Leases)
+            .FirstOrDefaultAsync(p => p.Id == id);
+
         if (property == null) return (false, "Property not found.");
 
-        var hasActiveLeases = property.Units.Any(u => u.Leases.Any(l => l.Status == LeaseStatus.Active));
+        var hasActiveLeases = property.Units.Any(u =>
+            u.Leases.Any(l => l.Status == LeaseStatus.Active));
+
         if (hasActiveLeases)
-            return (false, "Cannot deactivate property with active leases.");
+            return (false, "Cannot deactivate property — one or more units have active leases.");
 
         property.IsActive = false;
         property.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
-        _logger.LogInformation("Property deactivated: {PropertyName} (ID: {PropertyId})", property.Name, property.Id);
+        _logger.LogInformation("Property deactivated: {Name} (ID: {Id})", property.Name, property.Id);
         return (true, null);
     }
 

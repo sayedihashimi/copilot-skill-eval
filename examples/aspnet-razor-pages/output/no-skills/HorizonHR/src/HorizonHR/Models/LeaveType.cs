@@ -9,7 +9,7 @@ public class LeaveType
     [Required, MaxLength(100)]
     public string Name { get; set; } = string.Empty;
 
-    [Range(1, int.MaxValue)]
+    [Required, Range(1, 365)]
     public int DefaultDaysPerYear { get; set; }
 
     public bool IsCarryOverAllowed { get; set; } = false;

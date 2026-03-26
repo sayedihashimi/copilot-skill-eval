@@ -1,5 +1,6 @@
 using HorizonHR.Data;
 using HorizonHR.Models;
+using HorizonHR.Models.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace HorizonHR.Services;
@@ -17,8 +18,7 @@ public class SkillService : ISkillService
     {
         return await _context.Skills
             .Include(s => s.EmployeeSkills)
-            .OrderBy(s => s.Category)
-            .ThenBy(s => s.Name)
+            .OrderBy(s => s.Category).ThenBy(s => s.Name)
             .ToListAsync();
     }
 
@@ -47,20 +47,21 @@ public class SkillService : ISkillService
         return await _context.EmployeeSkills
             .Include(es => es.Skill)
             .Where(es => es.EmployeeId == employeeId)
-            .OrderBy(es => es.Skill.Category)
-            .ThenBy(es => es.Skill.Name)
+            .OrderBy(es => es.Skill.Category).ThenBy(es => es.Skill.Name)
             .ToListAsync();
     }
 
-    public async Task AddEmployeeSkillAsync(EmployeeSkill employeeSkill)
+    public async Task<EmployeeSkill> AddEmployeeSkillAsync(EmployeeSkill employeeSkill)
     {
         var exists = await _context.EmployeeSkills
             .AnyAsync(es => es.EmployeeId == employeeSkill.EmployeeId && es.SkillId == employeeSkill.SkillId);
+
         if (exists)
-            throw new InvalidOperationException("Employee already has this skill.");
+            throw new InvalidOperationException("This employee already has this skill assigned.");
 
         _context.EmployeeSkills.Add(employeeSkill);
         await _context.SaveChangesAsync();
+        return employeeSkill;
     }
 
     public async Task UpdateEmployeeSkillAsync(EmployeeSkill employeeSkill)
@@ -69,15 +70,22 @@ public class SkillService : ISkillService
         await _context.SaveChangesAsync();
     }
 
-    public async Task RemoveEmployeeSkillAsync(int employeeId, int skillId)
+    public async Task RemoveEmployeeSkillAsync(int id)
     {
-        var es = await _context.EmployeeSkills
-            .FirstOrDefaultAsync(es => es.EmployeeId == employeeId && es.SkillId == skillId);
-        if (es != null)
+        var skill = await _context.EmployeeSkills.FindAsync(id);
+        if (skill != null)
         {
-            _context.EmployeeSkills.Remove(es);
+            _context.EmployeeSkills.Remove(skill);
             await _context.SaveChangesAsync();
         }
+    }
+
+    public async Task<EmployeeSkill?> GetEmployeeSkillByIdAsync(int id)
+    {
+        return await _context.EmployeeSkills
+            .Include(es => es.Skill)
+            .Include(es => es.Employee)
+            .FirstOrDefaultAsync(es => es.Id == id);
     }
 
     public async Task<List<Employee>> SearchBySkillAsync(int skillId, ProficiencyLevel? minLevel = null)
@@ -90,19 +98,7 @@ public class SkillService : ISkillService
         if (minLevel.HasValue)
             query = query.Where(es => es.ProficiencyLevel >= minLevel.Value);
 
-        var results = await query.ToListAsync();
+        var results = await query.OrderByDescending(es => es.ProficiencyLevel).ToListAsync();
         return results.Select(es => es.Employee).ToList();
-    }
-
-    public async Task<Dictionary<string, List<Skill>>> GetGroupedByCategoryAsync()
-    {
-        var skills = await _context.Skills
-            .Include(s => s.EmployeeSkills)
-            .OrderBy(s => s.Category)
-            .ThenBy(s => s.Name)
-            .ToListAsync();
-
-        return skills.GroupBy(s => s.Category)
-            .ToDictionary(g => g.Key, g => g.ToList());
     }
 }

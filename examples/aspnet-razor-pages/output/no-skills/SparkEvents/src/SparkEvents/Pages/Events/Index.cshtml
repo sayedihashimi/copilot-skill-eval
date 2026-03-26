@@ -1,6 +1,5 @@
 @page
 @model SparkEvents.Pages.Events.IndexModel
-
 @{
     ViewData["Title"] = "Events";
 }
@@ -13,79 +12,77 @@
 
     <form method="get" class="row g-3 mb-4">
         <div class="col-md-3">
-            <input asp-for="Search" class="form-control" placeholder="Search by title..." />
+            <input type="text" name="search" value="@Model.Search" class="form-control" placeholder="Search by title..." />
         </div>
         <div class="col-md-2">
-            <select asp-for="CategoryId" asp-items="Model.CategoryOptions" class="form-select">
+            <select name="categoryId" class="form-select">
                 <option value="">All Categories</option>
+                @foreach (var cat in Model.Categories)
+                {
+                    <option value="@cat.Id" selected="@(Model.CategoryId == cat.Id)">@cat.Name</option>
+                }
             </select>
         </div>
         <div class="col-md-2">
-            <select asp-for="Status" class="form-select">
+            <select name="status" class="form-select">
                 <option value="">All Statuses</option>
-                <option value="Draft">Draft</option>
-                <option value="Published">Published</option>
-                <option value="SoldOut">Sold Out</option>
-                <option value="Completed">Completed</option>
-                <option value="Cancelled">Cancelled</option>
+                @foreach (EventStatus s in Enum.GetValues<EventStatus>())
+                {
+                    <option value="@((int)s)" selected="@(Model.Status == s)">@s</option>
+                }
             </select>
         </div>
         <div class="col-md-2">
-            <input asp-for="StartDate" class="form-control" type="date" placeholder="From date" />
+            <input type="date" name="startDate" value="@Model.StartDate?.ToString("yyyy-MM-dd")" class="form-control" placeholder="From" />
         </div>
         <div class="col-md-2">
-            <input asp-for="EndDate" class="form-control" type="date" placeholder="To date" />
+            <input type="date" name="endDate" value="@Model.EndDate?.ToString("yyyy-MM-dd")" class="form-control" placeholder="To" />
         </div>
         <div class="col-md-1">
-            <button type="submit" class="btn btn-outline-primary">Filter</button>
+            <button type="submit" class="btn btn-outline-secondary">Filter</button>
         </div>
     </form>
 
     @if (Model.Events.Any())
     {
-        <div class="table-responsive">
-            <table class="table table-striped">
-                <thead>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Category</th>
+                    <th>Venue</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Registrations</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var evt in Model.Events)
+                {
                     <tr>
-                        <th>Title</th>
-                        <th>Category</th>
-                        <th>Venue</th>
-                        <th>Date</th>
-                        <th>Status</th>
-                        <th>Registrations</th>
-                        <th>Actions</th>
+                        <td>
+                            @if (evt.IsFeatured) { <span class="badge bg-warning text-dark">⭐</span> }
+                            <a asp-page="Details" asp-route-id="@evt.Id">@evt.Title</a>
+                        </td>
+                        <td>@evt.EventCategory.Name</td>
+                        <td>@evt.Venue.Name</td>
+                        <td>@evt.StartDate.ToString("MMM dd, yyyy")</td>
+                        <td><partial name="_StatusBadge" model="evt.Status" /></td>
+                        <td>@evt.CurrentRegistrations / @evt.TotalCapacity</td>
+                        <td>
+                            <a asp-page="Details" asp-route-id="@evt.Id" class="btn btn-sm btn-outline-info">View</a>
+                            <a asp-page="Edit" asp-route-id="@evt.Id" class="btn btn-sm btn-outline-primary">Edit</a>
+                        </td>
                     </tr>
-                </thead>
-                <tbody>
-                    @foreach (var evt in Model.Events)
-                    {
-                        <tr>
-                            <td>
-                                @if (evt.IsFeatured)
-                                {
-                                    <span class="badge bg-warning text-dark me-1">⭐</span>
-                                }
-                                <a asp-page="Details" asp-route-id="@evt.Id">@evt.Title</a>
-                            </td>
-                            <td>@evt.EventCategory.Name</td>
-                            <td>@evt.Venue.Name</td>
-                            <td>@evt.StartDate.ToString("MMM dd, yyyy")</td>
-                            <td><partial name="Shared/_StatusBadge" model="@evt.Status.ToString()" /></td>
-                            <td>@evt.CurrentRegistrations / @evt.TotalCapacity</td>
-                            <td>
-                                <a asp-page="Details" asp-route-id="@evt.Id" class="btn btn-sm btn-outline-info">View</a>
-                                <a asp-page="Edit" asp-route-id="@evt.Id" class="btn btn-sm btn-outline-primary">Edit</a>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+                }
+            </tbody>
+        </table>
 
-        <partial name="Shared/_Pagination" model="Model.Pagination" />
+        <partial name="_Pagination" model="@(new { Model.Events.PageIndex, Model.Events.TotalPages, Model.Events.HasPreviousPage, Model.Events.HasNextPage, PageUrl = $"?search={Model.Search}&categoryId={Model.CategoryId}&status={(Model.Status.HasValue ? ((int)Model.Status.Value).ToString() : "")}&startDate={Model.StartDate?.ToString("yyyy-MM-dd")}&endDate={Model.EndDate?.ToString("yyyy-MM-dd")}" })" />
     }
     else
     {
-        <p class="text-muted">No events found matching the criteria.</p>
+        <p class="text-muted">No events found matching your criteria.</p>
     }
 </section>

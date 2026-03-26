@@ -1,5 +1,5 @@
+using KeystoneProperties.Services;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using KeystoneProperties.Services.Interfaces;
 
 namespace KeystoneProperties.Pages;
 
@@ -12,10 +12,10 @@ public class IndexModel : PageModel
         _dashboardService = dashboardService;
     }
 
-    public DashboardStats Stats { get; set; } = new();
+    public DashboardViewModel Dashboard { get; set; } = new();
 
     public async Task OnGetAsync()
     {
-        Stats = await _dashboardService.GetStatsAsync();
+        Dashboard = await _dashboardService.GetDashboardDataAsync();
     }
 }

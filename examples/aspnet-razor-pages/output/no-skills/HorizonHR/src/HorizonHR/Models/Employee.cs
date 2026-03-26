@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using HorizonHR.Models.Enums;
 
 namespace HorizonHR.Models;
 
@@ -26,20 +28,24 @@ public class Employee
     [Required]
     public DateOnly HireDate { get; set; }
 
+    [Required]
     public int DepartmentId { get; set; }
     public Department Department { get; set; } = null!;
 
     [Required, MaxLength(200)]
     public string JobTitle { get; set; } = string.Empty;
 
+    [Required]
     public EmploymentType EmploymentType { get; set; }
 
-    [Range(0.01, double.MaxValue)]
+    [Required, Column(TypeName = "decimal(18,2)")]
+    [Range(0.01, double.MaxValue, ErrorMessage = "Salary must be positive")]
     public decimal Salary { get; set; }
 
     public int? ManagerId { get; set; }
     public Employee? Manager { get; set; }
 
+    [Required]
     public EmployeeStatus Status { get; set; } = EmployeeStatus.Active;
 
     public DateOnly? TerminationDate { get; set; }

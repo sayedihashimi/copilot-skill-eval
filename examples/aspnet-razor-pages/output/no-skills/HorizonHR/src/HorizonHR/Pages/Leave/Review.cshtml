@@ -4,105 +4,66 @@
     ViewData["Title"] = "Review Leave Request";
 }
 
-<h1>Review Leave Request</h1>
+<section>
+    @if (Model.LeaveRequest == null)
+    {
+        <p class="text-muted">Leave request not found.</p>
+    }
+    else
+    {
+        var lr = Model.LeaveRequest;
+        <h1>Review Leave Request #@lr.Id</h1>
 
-<div class="row">
-    <div class="col-md-8">
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">Request Details</h5>
-            </div>
+        <div class="card mb-3">
             <div class="card-body">
                 <dl class="row mb-0">
-                    <dt class="col-sm-4">Employee</dt>
-                    <dd class="col-sm-8">@Model.LeaveRequest.Employee.FullName</dd>
-
-                    <dt class="col-sm-4">Leave Type</dt>
-                    <dd class="col-sm-8">@Model.LeaveRequest.LeaveType.Name</dd>
-
-                    <dt class="col-sm-4">Start Date</dt>
-                    <dd class="col-sm-8">@Model.LeaveRequest.StartDate.ToString("MMMM dd, yyyy")</dd>
-
-                    <dt class="col-sm-4">End Date</dt>
-                    <dd class="col-sm-8">@Model.LeaveRequest.EndDate.ToString("MMMM dd, yyyy")</dd>
-
-                    <dt class="col-sm-4">Total Days</dt>
-                    <dd class="col-sm-8">@Model.LeaveRequest.TotalDays</dd>
-
-                    <dt class="col-sm-4">Reason</dt>
-                    <dd class="col-sm-8">@Model.LeaveRequest.Reason</dd>
+                    <dt class="col-sm-3">Employee</dt>
+                    <dd class="col-sm-9">@lr.Employee.FullName</dd>
+                    <dt class="col-sm-3">Leave Type</dt>
+                    <dd class="col-sm-9">@lr.LeaveType.Name</dd>
+                    <dt class="col-sm-3">Dates</dt>
+                    <dd class="col-sm-9">@lr.StartDate.ToString("MMM dd, yyyy") – @lr.EndDate.ToString("MMM dd, yyyy")</dd>
+                    <dt class="col-sm-3">Total Days</dt>
+                    <dd class="col-sm-9">@lr.TotalDays</dd>
+                    <dt class="col-sm-3">Reason</dt>
+                    <dd class="col-sm-9">@lr.Reason</dd>
                 </dl>
             </div>
         </div>
 
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Review Decision</h5>
+        <div class="row">
+            <div class="col-md-6">
+                <form method="post" asp-page-handler="Approve">
+                    <div class="mb-3">
+                        <label asp-for="ReviewedById" class="form-label">Reviewer</label>
+                        <select asp-for="ReviewedById" class="form-select" asp-items="Model.ReviewerOptions">
+                            <option value="">Select Reviewer</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="ReviewNotes" class="form-label">Notes</label>
+                        <textarea asp-for="ReviewNotes" class="form-control" rows="2"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-success">Approve</button>
+                </form>
             </div>
-            <div class="card-body">
-                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
-
-                <div class="mb-3">
-                    <label asp-for="ReviewedById" class="form-label"></label>
-                    <select asp-for="ReviewedById" asp-items="Model.ReviewerOptions" class="form-select">
-                        <option value="">-- Select Reviewer --</option>
-                    </select>
-                    <span asp-validation-for="ReviewedById" class="text-danger"></span>
-                </div>
-
-                <div class="mb-3">
-                    <label asp-for="ReviewNotes" class="form-label"></label>
-                    <textarea asp-for="ReviewNotes" class="form-control" rows="4"></textarea>
-                    <span asp-validation-for="ReviewNotes" class="text-danger"></span>
-                </div>
-
-                <div class="d-flex gap-2">
-                    <form method="post" asp-page-handler="Approve" asp-route-id="@Model.LeaveRequest.Id">
-                        <input type="hidden" asp-for="ReviewedById" />
-                        <input type="hidden" asp-for="ReviewNotes" />
-                        <button type="submit" class="btn btn-success">Approve</button>
-                    </form>
-                    <form method="post" asp-page-handler="Reject" asp-route-id="@Model.LeaveRequest.Id">
-                        <input type="hidden" asp-for="ReviewedById" />
-                        <input type="hidden" asp-for="ReviewNotes" />
-                        <button type="submit" class="btn btn-danger">Reject</button>
-                    </form>
-                    <a asp-page="Details" asp-route-id="@Model.LeaveRequest.Id" class="btn btn-outline-secondary">Cancel</a>
-                </div>
+            <div class="col-md-6">
+                <form method="post" asp-page-handler="Reject">
+                    <div class="mb-3">
+                        <label class="form-label">Reviewer</label>
+                        <select name="ReviewedById" class="form-select" asp-items="Model.ReviewerOptions">
+                            <option value="">Select Reviewer</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea name="ReviewNotes" class="form-control" rows="2"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-danger">Reject</button>
+                </form>
             </div>
         </div>
-    </div>
 
-    <div class="col-md-4">
-        @if (Model.CurrentBalance != null)
-        {
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Current Balance</h5>
-                </div>
-                <div class="card-body">
-                    <dl class="row mb-0">
-                        <dt class="col-sm-6">Leave Type</dt>
-                        <dd class="col-sm-6">@Model.LeaveRequest.LeaveType.Name</dd>
-
-                        <dt class="col-sm-6">Total Days</dt>
-                        <dd class="col-sm-6">@Model.CurrentBalance.TotalDays</dd>
-
-                        <dt class="col-sm-6">Used Days</dt>
-                        <dd class="col-sm-6">@Model.CurrentBalance.UsedDays</dd>
-
-                        <dt class="col-sm-6">Carried Over</dt>
-                        <dd class="col-sm-6">@Model.CurrentBalance.CarriedOverDays</dd>
-
-                        <dt class="col-sm-6">Remaining</dt>
-                        <dd class="col-sm-6 fw-bold">@Model.CurrentBalance.RemainingDays</dd>
-                    </dl>
-                </div>
-            </div>
-        }
-    </div>
-</div>
-
-@section Scripts {
-    <partial name="_ValidationScriptsPartial" />
-}
+        <a asp-page="Details" asp-route-id="@lr.Id" class="btn btn-outline-secondary mt-3">Cancel</a>
+    }
+</section>

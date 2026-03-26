@@ -1,26 +1,23 @@
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using HorizonHR.Models;
 using HorizonHR.Services;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace HorizonHR.Pages;
 
 public class IndexModel : PageModel
 {
     private readonly IEmployeeService _employeeService;
+    private readonly IDepartmentService _departmentService;
     private readonly ILeaveService _leaveService;
     private readonly IReviewService _reviewService;
-    private readonly IDepartmentService _departmentService;
 
-    public IndexModel(
-        IEmployeeService employeeService,
-        ILeaveService leaveService,
-        IReviewService reviewService,
-        IDepartmentService departmentService)
+    public IndexModel(IEmployeeService employeeService, IDepartmentService departmentService,
+        ILeaveService leaveService, IReviewService reviewService)
     {
         _employeeService = employeeService;
+        _departmentService = departmentService;
         _leaveService = leaveService;
         _reviewService = reviewService;
-        _departmentService = departmentService;
     }
 
     public int TotalEmployees { get; set; }
@@ -29,16 +26,20 @@ public class IndexModel : PageModel
     public int UpcomingReviews { get; set; }
     public List<Employee> RecentHires { get; set; } = new();
     public List<Employee> OnLeaveEmployees { get; set; } = new();
-    public List<Department> Departments { get; set; } = new();
+    public Dictionary<string, int> DepartmentHeadcounts { get; set; } = new();
 
     public async Task OnGetAsync()
     {
         TotalEmployees = await _employeeService.GetTotalCountAsync();
+        var departments = await _departmentService.GetAllAsync();
+        DepartmentCount = departments.Count;
         PendingLeaveRequests = await _leaveService.GetPendingCountAsync();
         UpcomingReviews = await _reviewService.GetUpcomingCountAsync();
         RecentHires = await _employeeService.GetRecentHiresAsync(30);
         OnLeaveEmployees = await _employeeService.GetOnLeaveAsync();
-        Departments = await _departmentService.GetAllFlatAsync();
-        DepartmentCount = Departments.Count;
+
+        DepartmentHeadcounts = departments
+            .Where(d => d.IsActive)
+            .ToDictionary(d => d.Name, d => d.Employees.Count(e => e.Status != Models.Enums.EmployeeStatus.Terminated));
     }
 }

@@ -1,296 +1,210 @@
 @page "{id:int}"
 @model HorizonHR.Pages.Employees.DetailsModel
 @{
-    ViewData["Title"] = $"{Model.Employee.FullName} - Employee Profile";
+    ViewData["Title"] = Model.Employee?.FullName ?? "Employee Details";
 }
 
-<nav aria-label="breadcrumb">
-    <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a asp-page="Index">Employees</a></li>
-        <li class="breadcrumb-item active" aria-current="page">@Model.Employee.FullName</li>
-    </ol>
-</nav>
-
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>@Model.Employee.FullName</h1>
-    <div class="d-flex gap-2">
-        <a asp-page="Edit" asp-route-id="@Model.Employee.Id" class="btn btn-outline-primary">Edit</a>
-        @if (Model.Employee.Status != HorizonHR.Models.EmployeeStatus.Terminated)
-        {
-            <a asp-page="Terminate" asp-route-id="@Model.Employee.Id" class="btn btn-outline-danger">Terminate</a>
-        }
-        <a asp-page="DirectReports" asp-route-id="@Model.Employee.Id" class="btn btn-outline-secondary">View Direct Reports</a>
-    </div>
-</div>
-
-<div class="row mb-4">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header">
-                <ul class="nav nav-tabs card-header-tabs" id="profileTabs" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="personal-tab" data-bs-toggle="tab"
-                                data-bs-target="#personal" type="button" role="tab"
-                                aria-controls="personal" aria-selected="true">Personal Info</button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="employment-tab" data-bs-toggle="tab"
-                                data-bs-target="#employment" type="button" role="tab"
-                                aria-controls="employment" aria-selected="false">Employment</button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="leave-tab" data-bs-toggle="tab"
-                                data-bs-target="#leave" type="button" role="tab"
-                                aria-controls="leave" aria-selected="false">Leave Balances</button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="reviews-tab" data-bs-toggle="tab"
-                                data-bs-target="#reviews" type="button" role="tab"
-                                aria-controls="reviews" aria-selected="false">Reviews</button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="skills-tab" data-bs-toggle="tab"
-                                data-bs-target="#skills" type="button" role="tab"
-                                aria-controls="skills" aria-selected="false">Skills</button>
-                    </li>
-                </ul>
+<section>
+    @if (Model.Employee == null)
+    {
+        <p class="text-muted">Employee not found.</p>
+    }
+    else
+    {
+        var emp = Model.Employee;
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h1>@emp.FullName
+                @{ ViewData["StatusText"] = emp.Status.ToString(); }
+                <partial name="Shared/_StatusBadge" />
+            </h1>
+            <div>
+                <a asp-page="Edit" asp-route-id="@emp.Id" class="btn btn-outline-secondary">Edit</a>
+                @if (emp.Status != EmployeeStatus.Terminated)
+                {
+                    <a asp-page="Terminate" asp-route-id="@emp.Id" class="btn btn-outline-danger ms-1">Terminate</a>
+                }
             </div>
-            <div class="card-body">
-                <div class="tab-content" id="profileTabsContent">
-                    @* Personal Info Tab *@
-                    <div class="tab-pane fade show active" id="personal" role="tabpanel" aria-labelledby="personal-tab">
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-3">
+                    <div class="card-header"><h5 class="mb-0">Personal Information</h5></div>
+                    <div class="card-body">
                         <dl class="row mb-0">
-                            <dt class="col-sm-4">Employee Number</dt>
-                            <dd class="col-sm-8">@Model.Employee.EmployeeNumber</dd>
-
-                            <dt class="col-sm-4">Full Name</dt>
-                            <dd class="col-sm-8">@Model.Employee.FullName</dd>
-
-                            <dt class="col-sm-4">Email</dt>
-                            <dd class="col-sm-8"><a href="mailto:@Model.Employee.Email">@Model.Employee.Email</a></dd>
-
-                            <dt class="col-sm-4">Phone</dt>
-                            <dd class="col-sm-8">@(Model.Employee.Phone ?? "—")</dd>
-
-                            <dt class="col-sm-4">Date of Birth</dt>
-                            <dd class="col-sm-8">@Model.Employee.DateOfBirth.ToString("MMMM d, yyyy")</dd>
-
-                            @if (!string.IsNullOrEmpty(Model.Employee.Address))
-                            {
-                                <dt class="col-sm-4">Address</dt>
-                                <dd class="col-sm-8">
-                                    @Model.Employee.Address<br />
-                                    @Model.Employee.City, @Model.Employee.State @Model.Employee.ZipCode
-                                </dd>
-                            }
-                        </dl>
-                    </div>
-
-                    @* Employment Tab *@
-                    <div class="tab-pane fade" id="employment" role="tabpanel" aria-labelledby="employment-tab">
-                        <dl class="row mb-0">
-                            <dt class="col-sm-4">Department</dt>
+                            <dt class="col-sm-4">Employee #</dt><dd class="col-sm-8">@emp.EmployeeNumber</dd>
+                            <dt class="col-sm-4">Email</dt><dd class="col-sm-8">@emp.Email</dd>
+                            <dt class="col-sm-4">Phone</dt><dd class="col-sm-8">@(emp.Phone ?? "—")</dd>
+                            <dt class="col-sm-4">Date of Birth</dt><dd class="col-sm-8">@emp.DateOfBirth.ToString("MMM dd, yyyy")</dd>
+                            <dt class="col-sm-4">Address</dt>
                             <dd class="col-sm-8">
-                                @if (Model.Employee.Department != null)
+                                @if (!string.IsNullOrEmpty(emp.Address))
                                 {
-                                    <a asp-page="/Departments/Details" asp-route-id="@Model.Employee.DepartmentId">
-                                        @Model.Employee.Department.Name
-                                    </a>
-                                }
-                            </dd>
-
-                            <dt class="col-sm-4">Job Title</dt>
-                            <dd class="col-sm-8">@Model.Employee.JobTitle</dd>
-
-                            <dt class="col-sm-4">Employment Type</dt>
-                            <dd class="col-sm-8">
-                                <partial name="_StatusBadge" model="@Model.Employee.EmploymentType.ToString()" />
-                            </dd>
-
-                            <dt class="col-sm-4">Status</dt>
-                            <dd class="col-sm-8">
-                                <partial name="_StatusBadge" model="@Model.Employee.Status.ToString()" />
-                            </dd>
-
-                            <dt class="col-sm-4">Salary</dt>
-                            <dd class="col-sm-8">@Model.Employee.Salary.ToString("C")</dd>
-
-                            <dt class="col-sm-4">Hire Date</dt>
-                            <dd class="col-sm-8">@Model.Employee.HireDate.ToString("MMMM d, yyyy")</dd>
-
-                            @if (Model.Employee.TerminationDate.HasValue)
-                            {
-                                <dt class="col-sm-4">Termination Date</dt>
-                                <dd class="col-sm-8">@Model.Employee.TerminationDate.Value.ToString("MMMM d, yyyy")</dd>
-                            }
-
-                            <dt class="col-sm-4">Manager</dt>
-                            <dd class="col-sm-8">
-                                @if (Model.Employee.Manager != null)
-                                {
-                                    <a asp-page="Details" asp-route-id="@Model.Employee.ManagerId">
-                                        @Model.Employee.Manager.FullName
-                                    </a>
+                                    @emp.Address<br />@emp.City @emp.State @emp.ZipCode
                                 }
                                 else
                                 {
-                                    <span class="text-muted">—</span>
+                                    <text>—</text>
                                 }
                             </dd>
                         </dl>
                     </div>
-
-                    @* Leave Balances Tab *@
-                    <div class="tab-pane fade" id="leave" role="tabpanel" aria-labelledby="leave-tab">
-                        @if (Model.Employee.LeaveBalances.Any())
-                        {
-                            <table class="table table-sm">
-                                <thead>
-                                    <tr>
-                                        <th>Leave Type</th>
-                                        <th class="text-end">Total Days</th>
-                                        <th class="text-end">Used</th>
-                                        <th class="text-end">Remaining</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var balance in Model.Employee.LeaveBalances)
-                                    {
-                                        <tr>
-                                            <td>@balance.LeaveType.Name</td>
-                                            <td class="text-end">@balance.TotalDays</td>
-                                            <td class="text-end">@balance.UsedDays</td>
-                                            <td class="text-end">
-                                                <strong class="@(balance.RemainingDays <= 0 ? "text-danger" : "")">
-                                                    @balance.RemainingDays
-                                                </strong>
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        }
-                        else
-                        {
-                            <p class="text-muted mb-0">No leave balances on record.</p>
-                        }
-                    </div>
-
-                    @* Reviews Tab *@
-                    <div class="tab-pane fade" id="reviews" role="tabpanel" aria-labelledby="reviews-tab">
-                        @if (Model.Employee.PerformanceReviews.Any())
-                        {
-                            <table class="table table-sm">
-                                <thead>
-                                    <tr>
-                                        <th>Period</th>
-                                        <th>Status</th>
-                                        <th>Rating</th>
-                                        <th>Reviewer</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var review in Model.Employee.PerformanceReviews.OrderByDescending(r => r.ReviewPeriodEnd))
-                                    {
-                                        <tr>
-                                            <td>@review.ReviewPeriodStart.ToString("MMM yyyy") – @review.ReviewPeriodEnd.ToString("MMM yyyy")</td>
-                                            <td>
-                                                <partial name="_StatusBadge" model="@review.Status.ToString()" />
-                                            </td>
-                                            <td>
-                                                @if (review.OverallRating.HasValue)
-                                                {
-                                                    <partial name="_StatusBadge" model="@review.OverallRating.Value.ToString()" />
-                                                }
-                                                else
-                                                {
-                                                    <span class="text-muted">—</span>
-                                                }
-                                            </td>
-                                            <td>@review.Reviewer?.FullName</td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        }
-                        else
-                        {
-                            <p class="text-muted mb-0">No performance reviews on record.</p>
-                        }
-                    </div>
-
-                    @* Skills Tab *@
-                    <div class="tab-pane fade" id="skills" role="tabpanel" aria-labelledby="skills-tab">
-                        @if (Model.Employee.EmployeeSkills.Any())
-                        {
-                            <div class="d-flex flex-wrap gap-2 mb-3">
-                                @foreach (var es in Model.Employee.EmployeeSkills.OrderBy(s => s.Skill.Category).ThenBy(s => s.Skill.Name))
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card mb-3">
+                    <div class="card-header"><h5 class="mb-0">Employment Details</h5></div>
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-4">Department</dt>
+                            <dd class="col-sm-8"><a asp-page="/Departments/Details" asp-route-id="@emp.DepartmentId">@emp.Department.Name</a></dd>
+                            <dt class="col-sm-4">Job Title</dt><dd class="col-sm-8">@emp.JobTitle</dd>
+                            <dt class="col-sm-4">Type</dt>
+                            <dd class="col-sm-8">
+                                @{ ViewData["StatusText"] = emp.EmploymentType.ToString(); }
+                                <partial name="Shared/_StatusBadge" />
+                            </dd>
+                            <dt class="col-sm-4">Hire Date</dt><dd class="col-sm-8">@emp.HireDate.ToString("MMM dd, yyyy")</dd>
+                            <dt class="col-sm-4">Salary</dt><dd class="col-sm-8">@emp.Salary.ToString("C")</dd>
+                            <dt class="col-sm-4">Manager</dt>
+                            <dd class="col-sm-8">
+                                @if (emp.Manager != null)
                                 {
-                                    <div class="card" style="min-width: 200px;">
-                                        <div class="card-body p-2">
-                                            <strong>@es.Skill.Name</strong>
-                                            <br />
-                                            <small class="text-muted">@es.Skill.Category</small>
-                                            <br />
-                                            <partial name="_StatusBadge" model="@es.ProficiencyLevel.ToString()" />
-                                            @if (es.YearsOfExperience.HasValue)
-                                            {
-                                                <small class="text-muted ms-1">@es.YearsOfExperience yrs</small>
-                                            }
-                                        </div>
-                                    </div>
+                                    <a asp-page="Details" asp-route-id="@emp.Manager.Id">@emp.Manager.FullName</a>
                                 }
-                            </div>
-                            <a asp-page="/Skills/Index" class="btn btn-sm btn-outline-secondary">Manage Skills</a>
+                                else
+                                {
+                                    <text>—</text>
+                                }
+                            </dd>
+                            @if (emp.TerminationDate.HasValue)
+                            {
+                                <dt class="col-sm-4">Termination Date</dt>
+                                <dd class="col-sm-8">@emp.TerminationDate.Value.ToString("MMM dd, yyyy")</dd>
+                            }
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (emp.DirectReports.Any())
+        {
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0">Direct Reports
+                        <a asp-page="DirectReports" asp-route-id="@emp.Id" class="btn btn-sm btn-outline-primary float-end">View All</a>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        @foreach (var dr in emp.DirectReports)
+                        {
+                            <li><a asp-page="Details" asp-route-id="@dr.Id">@dr.FullName</a> — @dr.JobTitle</li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        }
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h5 class="mb-0">Leave Balances
+                            <a asp-page="/Leave/Employee" asp-route-id="@emp.Id" class="btn btn-sm btn-outline-primary float-end">View Details</a>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        @if (emp.LeaveBalances.Any())
+                        {
+                            <table class="table table-sm mb-0">
+                                <thead><tr><th>Type</th><th>Total</th><th>Used</th><th>Remaining</th></tr></thead>
+                                <tbody>
+                                    @foreach (var lb in emp.LeaveBalances)
+                                    {
+                                        <tr>
+                                            <td>@lb.LeaveType.Name</td>
+                                            <td>@lb.TotalDays</td>
+                                            <td>@lb.UsedDays</td>
+                                            <td>@lb.RemainingDays</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
                         }
                         else
                         {
-                            <p class="text-muted mb-0">No skills recorded.</p>
-                            <a asp-page="/Skills/Index" class="btn btn-sm btn-outline-secondary mt-2">Manage Skills</a>
+                            <p class="text-muted mb-0">No leave balances.</p>
+                        }
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h5 class="mb-0">Skills
+                            <a asp-page="Skills" asp-route-id="@emp.Id" class="btn btn-sm btn-outline-primary float-end">Manage</a>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        @if (emp.EmployeeSkills.Any())
+                        {
+                            @foreach (var es in emp.EmployeeSkills)
+                            {
+                                <span class="me-1 mb-1 d-inline-block">
+                                    @es.Skill.Name
+                                    @{ ViewData["StatusText"] = es.ProficiencyLevel.ToString(); }
+                                    <partial name="Shared/_StatusBadge" />
+                                </span>
+                            }
+                        }
+                        else
+                        {
+                            <p class="text-muted mb-0">No skills assigned.</p>
                         }
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    @* Sidebar: Direct Reports *@
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Direct Reports</h5>
-                <span class="badge bg-secondary">@Model.Employee.DirectReports.Count</span>
-            </div>
-            <div class="card-body p-0">
-                @if (Model.Employee.DirectReports.Any())
-                {
+        @if (emp.PerformanceReviews.Any())
+        {
+            <div class="card mb-3">
+                <div class="card-header"><h5 class="mb-0">Recent Reviews</h5></div>
+                <div class="card-body">
                     <table class="table table-sm mb-0">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
+                        <thead><tr><th>Period</th><th>Reviewer</th><th>Status</th><th>Rating</th><th></th></tr></thead>
                         <tbody>
-                            @foreach (var report in Model.Employee.DirectReports)
+                            @foreach (var r in emp.PerformanceReviews.OrderByDescending(r => r.ReviewPeriodEnd))
                             {
                                 <tr>
+                                    <td>@r.ReviewPeriodStart.ToString("MMM yyyy") – @r.ReviewPeriodEnd.ToString("MMM yyyy")</td>
+                                    <td>@r.Reviewer.FullName</td>
                                     <td>
-                                        <a asp-page="Details" asp-route-id="@report.Id">@report.FullName</a>
+                                        @{ ViewData["StatusText"] = r.Status.ToString(); }
+                                        <partial name="Shared/_StatusBadge" />
                                     </td>
                                     <td>
-                                        <partial name="_StatusBadge" model="@report.Status.ToString()" />
+                                        @if (r.OverallRating.HasValue)
+                                        {
+                                            ViewData["StatusText"] = r.OverallRating.ToString();
+                                            <partial name="Shared/_StatusBadge" />
+                                        }
+                                        else
+                                        {
+                                            <text>—</text>
+                                        }
                                     </td>
+                                    <td><a asp-page="/Reviews/Details" asp-route-id="@r.Id" class="btn btn-sm btn-outline-primary">View</a></td>
                                 </tr>
                             }
                         </tbody>
                     </table>
-                }
-                else
-                {
-                    <p class="text-muted p-3 mb-0">No direct reports.</p>
-                }
+                </div>
             </div>
-        </div>
-    </div>
-</div>
+        }
+    }
+
+    <a asp-page="Index" class="btn btn-outline-secondary mt-3">Back to Directory</a>
+</section>

@@ -20,8 +20,7 @@ public class CreateModel : PageModel
 
     public class InputModel
     {
-        [Required]
-        [MaxLength(100)]
+        [Required, MaxLength(100)]
         public string Name { get; set; } = string.Empty;
 
         [MaxLength(500)]
@@ -45,7 +44,7 @@ public class CreateModel : PageModel
             ColorHex = Input.ColorHex
         };
 
-        await _categoryService.CreateAsync(category);
+        await _categoryService.CreateCategoryAsync(category);
         TempData["SuccessMessage"] = "Category created successfully.";
         return RedirectToPage("Index");
     }

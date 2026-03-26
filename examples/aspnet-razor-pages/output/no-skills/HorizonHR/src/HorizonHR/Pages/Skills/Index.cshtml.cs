@@ -17,6 +17,8 @@ public class IndexModel : PageModel
 
     public async Task OnGetAsync()
     {
-        SkillsByCategory = await _skillService.GetGroupedByCategoryAsync();
+        var skills = await _skillService.GetAllAsync();
+        SkillsByCategory = skills.GroupBy(s => s.Category)
+            .ToDictionary(g => g.Key, g => g.ToList());
     }
 }

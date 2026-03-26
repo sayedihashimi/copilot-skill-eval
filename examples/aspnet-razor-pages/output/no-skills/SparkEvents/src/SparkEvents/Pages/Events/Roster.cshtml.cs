@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using SparkEvents.Models;
-using SparkEvents.Pages.Shared;
 using SparkEvents.Services;
 
 namespace SparkEvents.Pages.Events;
@@ -17,28 +16,17 @@ public class RosterModel : PageModel
         _registrationService = registrationService;
     }
 
-    public Event? Event { get; set; }
-    public List<Registration> Registrations { get; set; } = new();
-    public PaginationModel Pagination { get; set; } = new();
-
-    [BindProperty(SupportsGet = true)]
+    public Event Event { get; set; } = null!;
+    public PaginatedList<Registration> Registrations { get; set; } = null!;
     public string? Search { get; set; }
 
-    [BindProperty(SupportsGet = true)]
-    public int PageNumber { get; set; } = 1;
-
-    public async Task<IActionResult> OnGetAsync(int eventId)
+    public async Task<IActionResult> OnGetAsync(int eventId, string? search, int pageNumber = 1)
     {
-        Event = await _eventService.GetByIdAsync(eventId);
-        if (Event == null) return NotFound();
-
-        var (items, total) = await _registrationService.GetEventRosterAsync(eventId, Search, PageNumber, 10);
-        Registrations = items;
-
-        Pagination = new PaginationModel(PageNumber, total, 10,
-            $"/Events/{eventId}/Roster",
-            new Dictionary<string, string?> { ["search"] = Search });
-
+        var evt = await _eventService.GetEventByIdAsync(eventId);
+        if (evt == null) return NotFound();
+        Event = evt;
+        Search = search;
+        Registrations = await _registrationService.GetEventRosterAsync(eventId, search, pageNumber, 10);
         return Page();
     }
 }

@@ -1,6 +1,5 @@
 @page
 @model SparkEvents.Pages.Categories.IndexModel
-
 @{
     ViewData["Title"] = "Categories";
 }
@@ -13,44 +12,42 @@
 
     @if (Model.Categories.Any())
     {
-        <div class="table-responsive">
-            <table class="table table-striped">
-                <thead>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Color</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var cat in Model.Categories)
+                {
                     <tr>
-                        <th>Name</th>
-                        <th>Description</th>
-                        <th>Color</th>
-                        <th>Actions</th>
+                        <td>
+                            @if (!string.IsNullOrEmpty(cat.ColorHex))
+                            {
+                                <span class="badge" style="background-color: @cat.ColorHex">@cat.Name</span>
+                            }
+                            else
+                            {
+                                @cat.Name
+                            }
+                        </td>
+                        <td>@cat.Description</td>
+                        <td>@cat.ColorHex</td>
+                        <td>
+                            <a asp-page="Edit" asp-route-id="@cat.Id" class="btn btn-sm btn-outline-primary">Edit</a>
+                            <a asp-page="Delete" asp-route-id="@cat.Id" class="btn btn-sm btn-outline-danger">Delete</a>
+                        </td>
                     </tr>
-                </thead>
-                <tbody>
-                    @foreach (var cat in Model.Categories)
-                    {
-                        <tr>
-                            <td>
-                                @if (!string.IsNullOrEmpty(cat.ColorHex))
-                                {
-                                    <span class="badge" style="background-color: @cat.ColorHex">@cat.Name</span>
-                                }
-                                else
-                                {
-                                    @cat.Name
-                                }
-                            </td>
-                            <td>@cat.Description</td>
-                            <td>@cat.ColorHex</td>
-                            <td>
-                                <a asp-page="Edit" asp-route-id="@cat.Id" class="btn btn-sm btn-outline-primary">Edit</a>
-                                <a asp-page="Delete" asp-route-id="@cat.Id" class="btn btn-sm btn-outline-danger">Delete</a>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+                }
+            </tbody>
+        </table>
     }
     else
     {
-        <p class="text-muted">No categories found.</p>
+        <p class="text-muted">No categories found. Create one to get started.</p>
     }
 </section>

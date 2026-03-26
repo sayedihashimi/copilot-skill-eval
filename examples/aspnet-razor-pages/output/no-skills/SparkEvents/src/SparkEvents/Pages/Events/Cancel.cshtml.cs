@@ -15,19 +15,18 @@ public class CancelModel : PageModel
         _eventService = eventService;
     }
 
-    public Event? Event { get; set; }
+    public Event Event { get; set; } = null!;
     public int RegistrationCount { get; set; }
 
-    [BindProperty]
-    [Required(ErrorMessage = "Cancellation reason is required.")]
+    [BindProperty, Required(ErrorMessage = "Cancellation reason is required.")]
     public string CancellationReason { get; set; } = string.Empty;
 
     public async Task<IActionResult> OnGetAsync(int id)
     {
-        Event = await _eventService.GetByIdWithDetailsAsync(id);
-        if (Event == null) return NotFound();
-
-        RegistrationCount = Event.Registrations.Count(r => r.Status != RegistrationStatus.Cancelled);
+        var evt = await _eventService.GetEventByIdAsync(id);
+        if (evt == null) return NotFound();
+        Event = evt;
+        RegistrationCount = evt.CurrentRegistrations + evt.WaitlistCount;
         return Page();
     }
 
@@ -35,20 +34,21 @@ public class CancelModel : PageModel
     {
         if (!ModelState.IsValid)
         {
-            Event = await _eventService.GetByIdWithDetailsAsync(id);
-            if (Event == null) return NotFound();
-            RegistrationCount = Event.Registrations.Count(r => r.Status != RegistrationStatus.Cancelled);
+            var evt = await _eventService.GetEventByIdAsync(id);
+            if (evt == null) return NotFound();
+            Event = evt;
+            RegistrationCount = evt.CurrentRegistrations + evt.WaitlistCount;
             return Page();
         }
 
-        var error = await _eventService.CancelEventAsync(id, CancellationReason);
-        if (error != null)
+        var result = await _eventService.CancelEventAsync(id, CancellationReason);
+        if (!result)
         {
-            TempData["ErrorMessage"] = error;
+            TempData["ErrorMessage"] = "This event cannot be cancelled.";
             return RedirectToPage("Details", new { id });
         }
 
-        TempData["SuccessMessage"] = "Event has been cancelled.";
+        TempData["SuccessMessage"] = "Event cancelled successfully.";
         return RedirectToPage("Details", new { id });
     }
 }

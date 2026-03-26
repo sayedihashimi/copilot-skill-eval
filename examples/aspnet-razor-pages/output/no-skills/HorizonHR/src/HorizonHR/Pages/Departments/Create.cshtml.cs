@@ -1,9 +1,9 @@
 using System.ComponentModel.DataAnnotations;
+using HorizonHR.Models;
+using HorizonHR.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using HorizonHR.Models;
-using HorizonHR.Services;
 
 namespace HorizonHR.Pages.Departments;
 
@@ -21,8 +21,8 @@ public class CreateModel : PageModel
     [BindProperty]
     public InputModel Input { get; set; } = new();
 
-    public SelectList ParentDepartmentOptions { get; set; } = default!;
-    public SelectList ManagerOptions { get; set; } = default!;
+    public List<SelectListItem> DepartmentOptions { get; set; } = new();
+    public List<SelectListItem> EmployeeOptions { get; set; } = new();
 
     public class InputModel
     {
@@ -35,23 +35,20 @@ public class CreateModel : PageModel
         [MaxLength(500)]
         public string? Description { get; set; }
 
-        [Display(Name = "Parent Department")]
         public int? ParentDepartmentId { get; set; }
-
-        [Display(Name = "Manager")]
         public int? ManagerId { get; set; }
     }
 
     public async Task OnGetAsync()
     {
-        await PopulateDropdownsAsync();
+        await LoadOptionsAsync();
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
         if (!ModelState.IsValid)
         {
-            await PopulateDropdownsAsync();
+            await LoadOptionsAsync();
             return Page();
         }
 
@@ -65,17 +62,16 @@ public class CreateModel : PageModel
         };
 
         await _departmentService.CreateAsync(department);
-
-        TempData["SuccessMessage"] = $"Department '{department.Name}' was created successfully.";
+        TempData["Success"] = "Department created successfully.";
         return RedirectToPage("Index");
     }
 
-    private async Task PopulateDropdownsAsync()
+    private async Task LoadOptionsAsync()
     {
-        var departments = await _departmentService.GetAllFlatAsync();
-        ParentDepartmentOptions = new SelectList(departments, "Id", "Name");
+        var departments = await _departmentService.GetAllAsync();
+        DepartmentOptions = departments.Select(d => new SelectListItem(d.Name, d.Id.ToString())).ToList();
 
         var employees = await _employeeService.GetAllActiveAsync();
-        ManagerOptions = new SelectList(employees, "Id", "FullName");
+        EmployeeOptions = employees.Select(e => new SelectListItem(e.FullName, e.Id.ToString())).ToList();
     }
 }

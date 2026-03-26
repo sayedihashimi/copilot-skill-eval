@@ -1,23 +1,24 @@
-using Microsoft.EntityFrameworkCore;
 using KeystoneProperties.Data;
 using KeystoneProperties.Models;
 using KeystoneProperties.Models.Enums;
-using KeystoneProperties.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace KeystoneProperties.Services;
 
 public class MaintenanceService : IMaintenanceService
 {
-    private readonly AppDbContext _context;
+    private readonly ApplicationDbContext _context;
     private readonly ILogger<MaintenanceService> _logger;
 
-    public MaintenanceService(AppDbContext context, ILogger<MaintenanceService> logger)
+    public MaintenanceService(ApplicationDbContext context, ILogger<MaintenanceService> logger)
     {
         _context = context;
         _logger = logger;
     }
 
-    public async Task<PaginatedList<MaintenanceRequest>> GetRequestsAsync(MaintenanceStatus? status, MaintenancePriority? priority, int? propertyId, MaintenanceCategory? category, int pageNumber, int pageSize)
+    public async Task<(List<MaintenanceRequest> Items, int TotalCount)> GetRequestsAsync(
+        MaintenanceStatus? status, MaintenancePriority? priority, int? propertyId,
+        MaintenanceCategory? category, int page, int pageSize)
     {
         var query = _context.MaintenanceRequests
             .Include(m => m.Unit).ThenInclude(u => u.Property)
@@ -29,10 +30,12 @@ public class MaintenanceService : IMaintenanceService
         if (propertyId.HasValue) query = query.Where(m => m.Unit.PropertyId == propertyId.Value);
         if (category.HasValue) query = query.Where(m => m.Category == category.Value);
 
-        query = query.OrderByDescending(m => m.SubmittedDate);
-        var count = await query.CountAsync();
-        var items = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
-        return new PaginatedList<MaintenanceRequest>(items, count, pageNumber, pageSize);
+        var totalCount = await query.CountAsync();
+        var items = await query.OrderByDescending(m => m.SubmittedDate)
+            .Skip((page - 1) * pageSize).Take(pageSize)
+            .ToListAsync();
+
+        return (items, totalCount);
     }
 
     public async Task<MaintenanceRequest?> GetByIdAsync(int id) =>
@@ -46,7 +49,7 @@ public class MaintenanceService : IMaintenanceService
     public async Task<(bool Success, string? Error)> CreateAsync(MaintenanceRequest request)
     {
         if (request.Priority == MaintenancePriority.Emergency && string.IsNullOrWhiteSpace(request.AssignedTo))
-            return (false, "Emergency maintenance requests must have an assigned worker.");
+            return (false, "Emergency requests must be assigned to a maintenance worker.");
 
         request.SubmittedDate = DateTime.UtcNow;
         request.CreatedAt = DateTime.UtcNow;
@@ -57,9 +60,13 @@ public class MaintenanceService : IMaintenanceService
             request.Status = MaintenanceStatus.Assigned;
             request.AssignedDate = DateTime.UtcNow;
 
-            // Set unit to Maintenance for emergency
+            // Set unit to Maintenance status for emergency
             var unit = await _context.Units.FindAsync(request.UnitId);
-            if (unit != null) unit.Status = UnitStatus.Maintenance;
+            if (unit != null)
+            {
+                unit.Status = UnitStatus.Maintenance;
+                unit.UpdatedAt = DateTime.UtcNow;
+            }
         }
 
         _context.MaintenanceRequests.Add(request);
@@ -68,27 +75,24 @@ public class MaintenanceService : IMaintenanceService
         return (true, null);
     }
 
-    public async Task<(bool Success, string? Error)> UpdateStatusAsync(int id, MaintenanceStatus newStatus, string? assignedTo, string? completionNotes, decimal? estimatedCost, decimal? actualCost)
+    public async Task<(bool Success, string? Error)> UpdateStatusAsync(
+        int id, MaintenanceStatus newStatus, string? assignedTo,
+        string? completionNotes, decimal? estimatedCost, decimal? actualCost)
     {
-        var request = await _context.MaintenanceRequests.Include(m => m.Unit).FirstOrDefaultAsync(m => m.Id == id);
+        var request = await _context.MaintenanceRequests
+            .Include(m => m.Unit)
+            .FirstOrDefaultAsync(m => m.Id == id);
+
         if (request == null) return (false, "Maintenance request not found.");
 
-        // Validate status transitions
-        var validTransitions = request.Status switch
-        {
-            MaintenanceStatus.Submitted => new[] { MaintenanceStatus.Assigned, MaintenanceStatus.Cancelled },
-            MaintenanceStatus.Assigned => new[] { MaintenanceStatus.InProgress, MaintenanceStatus.Cancelled },
-            MaintenanceStatus.InProgress => new[] { MaintenanceStatus.Completed, MaintenanceStatus.Cancelled },
-            _ => Array.Empty<MaintenanceStatus>()
-        };
-
+        var validTransitions = await GetValidTransitionsAsync(request.Status);
         if (!validTransitions.Contains(newStatus))
             return (false, $"Cannot transition from {request.Status} to {newStatus}.");
 
         if (newStatus == MaintenanceStatus.Assigned)
         {
             if (string.IsNullOrWhiteSpace(assignedTo))
-                return (false, "Assigned To is required when assigning a maintenance request.");
+                return (false, "AssignedTo is required when assigning a request.");
             request.AssignedTo = assignedTo;
             request.AssignedDate = DateTime.UtcNow;
         }
@@ -101,8 +105,10 @@ public class MaintenanceService : IMaintenanceService
             // Restore unit status if emergency
             if (request.Priority == MaintenancePriority.Emergency)
             {
-                var hasActiveLease = await _context.Leases.AnyAsync(l => l.UnitId == request.UnitId && l.Status == LeaseStatus.Active);
+                var hasActiveLease = await _context.Leases
+                    .AnyAsync(l => l.UnitId == request.UnitId && l.Status == LeaseStatus.Active);
                 request.Unit.Status = hasActiveLease ? UnitStatus.Occupied : UnitStatus.Available;
+                request.Unit.UpdatedAt = DateTime.UtcNow;
             }
         }
 
@@ -112,11 +118,24 @@ public class MaintenanceService : IMaintenanceService
         request.Status = newStatus;
         request.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
-        _logger.LogInformation("Maintenance request {Id} status changed to {Status}", id, newStatus);
+
+        _logger.LogInformation("Maintenance status changed: ID {Id} → {Status}", id, newStatus);
         return (true, null);
     }
 
-    public async Task<int> GetOpenRequestCountAsync() =>
-        await _context.MaintenanceRequests.CountAsync(m =>
-            m.Status != MaintenanceStatus.Completed && m.Status != MaintenanceStatus.Cancelled);
+    public async Task<int> GetOpenCountAsync() =>
+        await _context.MaintenanceRequests
+            .CountAsync(m => m.Status != MaintenanceStatus.Completed && m.Status != MaintenanceStatus.Cancelled);
+
+    public Task<List<MaintenanceStatus>> GetValidTransitionsAsync(MaintenanceStatus currentStatus)
+    {
+        var transitions = currentStatus switch
+        {
+            MaintenanceStatus.Submitted => new List<MaintenanceStatus> { MaintenanceStatus.Assigned, MaintenanceStatus.Cancelled },
+            MaintenanceStatus.Assigned => new List<MaintenanceStatus> { MaintenanceStatus.InProgress, MaintenanceStatus.Cancelled },
+            MaintenanceStatus.InProgress => new List<MaintenanceStatus> { MaintenanceStatus.Completed, MaintenanceStatus.Cancelled },
+            _ => new List<MaintenanceStatus>()
+        };
+        return Task.FromResult(transitions);
+    }
 }

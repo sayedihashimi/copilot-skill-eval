@@ -1,8 +1,8 @@
 using System.ComponentModel.DataAnnotations;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using HorizonHR.Models;
 using HorizonHR.Services;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace HorizonHR.Pages.Reviews;
 
@@ -15,54 +15,36 @@ public class SelfAssessmentModel : PageModel
         _reviewService = reviewService;
     }
 
-    public PerformanceReview Review { get; set; } = null!;
+    public PerformanceReview? Review { get; set; }
 
-    [BindProperty]
-    [Required(ErrorMessage = "Self-assessment is required.")]
-    [MaxLength(5000, ErrorMessage = "Self-assessment cannot exceed 5000 characters.")]
-    [Display(Name = "Self-Assessment")]
-    public string SelfAssessment { get; set; } = string.Empty;
+    [BindProperty, Required, MaxLength(5000)]
+    public string SelfAssessmentText { get; set; } = string.Empty;
 
     public async Task<IActionResult> OnGetAsync(int id)
     {
-        var review = await _reviewService.GetByIdAsync(id);
-        if (review == null)
-        {
-            return NotFound();
-        }
-
-        if (review.Status != ReviewStatus.SelfAssessmentPending)
-        {
-            TempData["ErrorMessage"] = "Self-assessment can only be submitted when the review status is Self-Assessment Pending.";
-            return RedirectToPage("Details", new { id });
-        }
-
-        Review = review;
+        Review = await _reviewService.GetByIdAsync(id);
+        if (Review == null) return NotFound();
+        SelfAssessmentText = Review.SelfAssessment ?? string.Empty;
         return Page();
     }
 
     public async Task<IActionResult> OnPostAsync(int id)
     {
-        var review = await _reviewService.GetByIdAsync(id);
-        if (review == null)
-        {
-            return NotFound();
-        }
+        Review = await _reviewService.GetByIdAsync(id);
+        if (Review == null) return NotFound();
 
-        if (review.Status != ReviewStatus.SelfAssessmentPending)
+        if (!ModelState.IsValid) return Page();
+
+        try
         {
-            TempData["ErrorMessage"] = "Self-assessment can only be submitted when the review status is Self-Assessment Pending.";
+            await _reviewService.SubmitSelfAssessmentAsync(id, SelfAssessmentText);
+            TempData["Success"] = "Self-assessment submitted.";
             return RedirectToPage("Details", new { id });
         }
-
-        if (!ModelState.IsValid)
+        catch (InvalidOperationException ex)
         {
-            Review = review;
+            TempData["Error"] = ex.Message;
             return Page();
         }
-
-        await _reviewService.SubmitSelfAssessmentAsync(id, SelfAssessment);
-        TempData["SuccessMessage"] = "Self-assessment submitted successfully.";
-        return RedirectToPage("Details", new { id });
     }
 }

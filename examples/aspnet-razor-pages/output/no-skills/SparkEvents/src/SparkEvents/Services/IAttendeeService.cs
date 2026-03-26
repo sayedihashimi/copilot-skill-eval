@@ -4,11 +4,11 @@ namespace SparkEvents.Services;
 
 public interface IAttendeeService
 {
-    Task<(List<Attendee> Items, int TotalCount)> GetPagedAsync(string? search, int page, int pageSize);
-    Task<List<Attendee>> GetAllAsync();
-    Task<Attendee?> GetByIdAsync(int id);
-    Task<Attendee?> GetByIdWithRegistrationsAsync(int id);
-    Task<Attendee?> GetByEmailAsync(string email);
-    Task CreateAsync(Attendee attendee);
-    Task UpdateAsync(Attendee attendee);
+    Task<PaginatedList<Attendee>> GetAttendeesAsync(string? search, int pageIndex = 1, int pageSize = 10);
+    Task<Attendee?> GetAttendeeByIdAsync(int id);
+    Task<Attendee?> GetAttendeeByEmailAsync(string email);
+    Task<Attendee> CreateAttendeeAsync(Attendee attendee);
+    Task UpdateAttendeeAsync(Attendee attendee);
+    Task<List<Attendee>> GetAllAttendeesAsync();
+    Task<List<Registration>> GetAttendeeRegistrationsAsync(int attendeeId);
 }

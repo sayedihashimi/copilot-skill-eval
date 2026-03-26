@@ -1,10 +1,9 @@
-using Microsoft.EntityFrameworkCore;
 using HorizonHR.Data;
 using HorizonHR.Services;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddRazorPages();
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -18,26 +17,24 @@ builder.Services.AddScoped<ISkillService, SkillService>();
 
 var app = builder.Build();
 
-// Ensure database is created and seeded
+// Seed database
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    context.Database.EnsureCreated();
-    DataSeeder.Seed(context);
+    await context.Database.EnsureCreatedAsync();
+    await DataSeeder.SeedAsync(context);
 }
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
+    app.UseHsts();
 }
 
+app.UseHttpsRedirection();
+app.UseStaticFiles();
 app.UseRouting();
-
-app.UseAuthorization();
-
-app.MapStaticAssets();
-app.MapRazorPages()
-   .WithStaticAssets();
+app.MapRazorPages();
 
 app.Run();
+

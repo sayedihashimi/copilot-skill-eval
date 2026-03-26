@@ -6,50 +6,48 @@ namespace SparkEvents.Services;
 
 public class CategoryService : ICategoryService
 {
-    private readonly SparkEventsDbContext _db;
+    private readonly SparkEventsDbContext _context;
 
-    public CategoryService(SparkEventsDbContext db)
+    public CategoryService(SparkEventsDbContext context)
     {
-        _db = db;
+        _context = context;
     }
 
-    public async Task<List<EventCategory>> GetAllAsync()
+    public async Task<List<EventCategory>> GetAllCategoriesAsync()
     {
-        return await _db.EventCategories.OrderBy(c => c.Name).ToListAsync();
+        return await _context.EventCategories.OrderBy(c => c.Name).ToListAsync();
     }
 
-    public async Task<EventCategory?> GetByIdAsync(int id)
+    public async Task<EventCategory?> GetCategoryByIdAsync(int id)
     {
-        return await _db.EventCategories.FindAsync(id);
+        return await _context.EventCategories.FindAsync(id);
     }
 
-    public async Task CreateAsync(EventCategory category)
+    public async Task<EventCategory> CreateCategoryAsync(EventCategory category)
     {
-        _db.EventCategories.Add(category);
-        await _db.SaveChangesAsync();
+        _context.EventCategories.Add(category);
+        await _context.SaveChangesAsync();
+        return category;
     }
 
-    public async Task UpdateAsync(EventCategory category)
+    public async Task UpdateCategoryAsync(EventCategory category)
     {
-        _db.EventCategories.Update(category);
-        await _db.SaveChangesAsync();
+        _context.EventCategories.Update(category);
+        await _context.SaveChangesAsync();
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteCategoryAsync(int id)
     {
-        if (await HasEventsAsync(id))
-            return false;
-
-        var category = await _db.EventCategories.FindAsync(id);
+        var category = await _context.EventCategories.FindAsync(id);
         if (category == null) return false;
-
-        _db.EventCategories.Remove(category);
-        await _db.SaveChangesAsync();
+        if (await HasEventsAsync(id)) return false;
+        _context.EventCategories.Remove(category);
+        await _context.SaveChangesAsync();
         return true;
     }
 
     public async Task<bool> HasEventsAsync(int id)
     {
-        return await _db.Events.AnyAsync(e => e.EventCategoryId == id);
+        return await _context.Events.AnyAsync(e => e.EventCategoryId == id);
     }
 }

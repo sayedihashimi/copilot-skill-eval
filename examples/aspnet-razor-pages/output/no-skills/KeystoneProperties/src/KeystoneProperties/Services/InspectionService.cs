@@ -1,22 +1,24 @@
-using Microsoft.EntityFrameworkCore;
 using KeystoneProperties.Data;
 using KeystoneProperties.Models;
 using KeystoneProperties.Models.Enums;
-using KeystoneProperties.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace KeystoneProperties.Services;
 
 public class InspectionService : IInspectionService
 {
-    private readonly AppDbContext _context;
+    private readonly ApplicationDbContext _context;
 
-    public InspectionService(AppDbContext context) => _context = context;
+    public InspectionService(ApplicationDbContext context)
+    {
+        _context = context;
+    }
 
-    public async Task<PaginatedList<Inspection>> GetInspectionsAsync(InspectionType? type, int? unitId, DateOnly? fromDate, DateOnly? toDate, int pageNumber, int pageSize)
+    public async Task<(List<Inspection> Items, int TotalCount)> GetInspectionsAsync(
+        InspectionType? type, int? unitId, DateOnly? fromDate, DateOnly? toDate, int page, int pageSize)
     {
         var query = _context.Inspections
             .Include(i => i.Unit).ThenInclude(u => u.Property)
-            .Include(i => i.Lease)
             .AsQueryable();
 
         if (type.HasValue) query = query.Where(i => i.InspectionType == type.Value);
@@ -24,10 +26,12 @@ public class InspectionService : IInspectionService
         if (fromDate.HasValue) query = query.Where(i => i.ScheduledDate >= fromDate.Value);
         if (toDate.HasValue) query = query.Where(i => i.ScheduledDate <= toDate.Value);
 
-        query = query.OrderByDescending(i => i.ScheduledDate);
-        var count = await query.CountAsync();
-        var items = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
-        return new PaginatedList<Inspection>(items, count, pageNumber, pageSize);
+        var totalCount = await query.CountAsync();
+        var items = await query.OrderByDescending(i => i.ScheduledDate)
+            .Skip((page - 1) * pageSize).Take(pageSize)
+            .ToListAsync();
+
+        return (items, totalCount);
     }
 
     public async Task<Inspection?> GetByIdAsync(int id) =>
@@ -45,15 +49,14 @@ public class InspectionService : IInspectionService
         await _context.SaveChangesAsync();
     }
 
-    public async Task<(bool Success, string? Error)> CompleteAsync(int id, OverallCondition condition, string? notes, bool followUpRequired)
+    public async Task<(bool Success, string? Error)> CompleteAsync(
+        int id, OverallCondition condition, string? notes, bool followUpRequired)
     {
         var inspection = await _context.Inspections.FindAsync(id);
         if (inspection == null) return (false, "Inspection not found.");
+        if (inspection.CompletedDate.HasValue) return (false, "Inspection is already completed.");
 
-        if (inspection.CompletedDate.HasValue)
-            return (false, "Inspection has already been completed.");
-
-        inspection.CompletedDate = DateOnly.FromDateTime(DateTime.UtcNow);
+        inspection.CompletedDate = DateOnly.FromDateTime(DateTime.Today);
         inspection.OverallCondition = condition;
         inspection.Notes = notes;
         inspection.FollowUpRequired = followUpRequired;

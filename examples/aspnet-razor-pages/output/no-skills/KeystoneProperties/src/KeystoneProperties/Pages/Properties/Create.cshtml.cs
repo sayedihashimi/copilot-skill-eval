@@ -1,9 +1,9 @@
 using System.ComponentModel.DataAnnotations;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using KeystoneProperties.Models;
 using KeystoneProperties.Models.Enums;
-using KeystoneProperties.Services.Interfaces;
+using KeystoneProperties.Services;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace KeystoneProperties.Pages.Properties;
 
@@ -11,7 +11,10 @@ public class CreateModel : PageModel
 {
     private readonly IPropertyService _propertyService;
 
-    public CreateModel(IPropertyService propertyService) => _propertyService = propertyService;
+    public CreateModel(IPropertyService propertyService)
+    {
+        _propertyService = propertyService;
+    }
 
     [BindProperty]
     public InputModel Input { get; set; } = new();
@@ -42,7 +45,8 @@ public class CreateModel : PageModel
         [Display(Name = "Year Built")]
         public int? YearBuilt { get; set; }
 
-        [Required, Range(1, int.MaxValue, ErrorMessage = "Total units must be positive")]
+        [Required]
+        [Range(1, int.MaxValue, ErrorMessage = "Total units must be positive")]
         [Display(Name = "Total Units")]
         public int TotalUnits { get; set; }
 

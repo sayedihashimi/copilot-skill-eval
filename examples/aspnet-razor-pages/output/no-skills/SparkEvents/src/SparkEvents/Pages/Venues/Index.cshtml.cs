@@ -17,6 +17,6 @@ public class IndexModel : PageModel
 
     public async Task OnGetAsync()
     {
-        Venues = await _venueService.GetAllAsync();
+        Venues = await _venueService.GetAllVenuesAsync();
     }
 }

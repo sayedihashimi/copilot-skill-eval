@@ -1,9 +1,8 @@
 using System.ComponentModel.DataAnnotations;
+using HorizonHR.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using HorizonHR.Models;
-using HorizonHR.Services;
 
 namespace HorizonHR.Pages.Departments;
 
@@ -18,16 +17,16 @@ public class EditModel : PageModel
         _employeeService = employeeService;
     }
 
+    public int Id { get; set; }
+
     [BindProperty]
     public InputModel Input { get; set; } = new();
 
-    public SelectList ParentDepartmentOptions { get; set; } = default!;
-    public SelectList ManagerOptions { get; set; } = default!;
+    public List<SelectListItem> DepartmentOptions { get; set; } = new();
+    public List<SelectListItem> EmployeeOptions { get; set; } = new();
 
     public class InputModel
     {
-        public int Id { get; set; }
-
         [Required, MaxLength(100)]
         public string Name { get; set; } = string.Empty;
 
@@ -37,85 +36,88 @@ public class EditModel : PageModel
         [MaxLength(500)]
         public string? Description { get; set; }
 
-        [Display(Name = "Parent Department")]
         public int? ParentDepartmentId { get; set; }
-
-        [Display(Name = "Manager")]
         public int? ManagerId { get; set; }
-
-        [Display(Name = "Active")]
-        public bool IsActive { get; set; }
     }
 
     public async Task<IActionResult> OnGetAsync(int id)
     {
         var department = await _departmentService.GetByIdAsync(id);
+        if (department == null) return NotFound();
 
-        if (department == null)
-        {
-            return NotFound();
-        }
-
+        Id = id;
         Input = new InputModel
         {
-            Id = department.Id,
             Name = department.Name,
             Code = department.Code,
             Description = department.Description,
             ParentDepartmentId = department.ParentDepartmentId,
-            ManagerId = department.ManagerId,
-            IsActive = department.IsActive
+            ManagerId = department.ManagerId
         };
 
-        await PopulateDropdownsAsync(id);
+        await LoadOptionsAsync(id);
         return Page();
     }
 
-    public async Task<IActionResult> OnPostAsync()
+    public async Task<IActionResult> OnPostAsync(int id)
     {
+        Id = id;
+
         if (!ModelState.IsValid)
         {
-            await PopulateDropdownsAsync(Input.Id);
+            await LoadOptionsAsync(id);
             return Page();
         }
 
+        // Check circular reference
         if (Input.ParentDepartmentId.HasValue &&
-            await _departmentService.HasCircularReference(Input.Id, Input.ParentDepartmentId))
+            await _departmentService.IsCircularReference(id, Input.ParentDepartmentId))
         {
-            ModelState.AddModelError("Input.ParentDepartmentId",
-                "The selected parent department would create a circular reference.");
-            await PopulateDropdownsAsync(Input.Id);
+            ModelState.AddModelError("", "Cannot set parent department: circular reference detected.");
+            await LoadOptionsAsync(id);
             return Page();
         }
 
-        var department = await _departmentService.GetByIdAsync(Input.Id);
-
-        if (department == null)
-        {
-            return NotFound();
-        }
+        var department = await _departmentService.GetByIdAsync(id);
+        if (department == null) return NotFound();
 
         department.Name = Input.Name;
         department.Code = Input.Code;
         department.Description = Input.Description;
         department.ParentDepartmentId = Input.ParentDepartmentId;
+
+        // Validate manager belongs to department
+        if (Input.ManagerId.HasValue)
+        {
+            var manager = department.Employees.FirstOrDefault(e => e.Id == Input.ManagerId.Value);
+            if (manager == null)
+            {
+                ModelState.AddModelError("", "The selected manager must belong to this department.");
+                await LoadOptionsAsync(id);
+                return Page();
+            }
+        }
         department.ManagerId = Input.ManagerId;
-        department.IsActive = Input.IsActive;
 
         await _departmentService.UpdateAsync(department);
-
-        TempData["SuccessMessage"] = $"Department '{department.Name}' was updated successfully.";
-        return RedirectToPage("Index");
+        TempData["Success"] = "Department updated successfully.";
+        return RedirectToPage("Details", new { id });
     }
 
-    private async Task PopulateDropdownsAsync(int departmentId)
+    private async Task LoadOptionsAsync(int departmentId)
     {
-        var departments = await _departmentService.GetAllFlatAsync();
-        // Exclude the current department from parent options to prevent self-reference
-        var parentOptions = departments.Where(d => d.Id != departmentId).ToList();
-        ParentDepartmentOptions = new SelectList(parentOptions, "Id", "Name");
+        var departments = await _departmentService.GetAllAsync();
+        DepartmentOptions = departments
+            .Where(d => d.Id != departmentId)
+            .Select(d => new SelectListItem(d.Name, d.Id.ToString()))
+            .ToList();
 
-        var employees = await _employeeService.GetAllActiveAsync();
-        ManagerOptions = new SelectList(employees, "Id", "FullName");
+        var department = await _departmentService.GetByIdAsync(departmentId);
+        if (department != null)
+        {
+            EmployeeOptions = department.Employees
+                .Select(e => new SelectListItem(e.FullName, e.Id.ToString()))
+                .ToList();
+        }
     }
 }

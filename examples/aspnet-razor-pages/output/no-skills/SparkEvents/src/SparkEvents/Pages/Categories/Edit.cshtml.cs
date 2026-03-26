@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using SparkEvents.Models;
 using SparkEvents.Services;
 
 namespace SparkEvents.Pages.Categories;
@@ -21,8 +22,7 @@ public class EditModel : PageModel
     {
         public int Id { get; set; }
 
-        [Required]
-        [MaxLength(100)]
+        [Required, MaxLength(100)]
         public string Name { get; set; } = string.Empty;
 
         [MaxLength(500)]
@@ -35,7 +35,7 @@ public class EditModel : PageModel
 
     public async Task<IActionResult> OnGetAsync(int id)
     {
-        var category = await _categoryService.GetByIdAsync(id);
+        var category = await _categoryService.GetCategoryByIdAsync(id);
         if (category == null) return NotFound();
 
         Input = new InputModel
@@ -53,14 +53,14 @@ public class EditModel : PageModel
     {
         if (!ModelState.IsValid) return Page();
 
-        var category = await _categoryService.GetByIdAsync(Input.Id);
+        var category = await _categoryService.GetCategoryByIdAsync(Input.Id);
         if (category == null) return NotFound();
 
         category.Name = Input.Name;
         category.Description = Input.Description;
         category.ColorHex = Input.ColorHex;
 
-        await _categoryService.UpdateAsync(category);
+        await _categoryService.UpdateCategoryAsync(category);
         TempData["SuccessMessage"] = "Category updated successfully.";
         return RedirectToPage("Index");
     }

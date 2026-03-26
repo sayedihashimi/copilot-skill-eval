@@ -14,27 +14,25 @@ public class DeleteModel : PageModel
         _categoryService = categoryService;
     }
 
-    public EventCategory? Category { get; set; }
+    public EventCategory Category { get; set; } = null!;
+    public bool HasEvents { get; set; }
 
     public async Task<IActionResult> OnGetAsync(int id)
     {
-        Category = await _categoryService.GetByIdAsync(id);
-        if (Category == null) return NotFound();
+        var category = await _categoryService.GetCategoryByIdAsync(id);
+        if (category == null) return NotFound();
+
+        Category = category;
+        HasEvents = await _categoryService.HasEventsAsync(id);
         return Page();
     }
 
     public async Task<IActionResult> OnPostAsync(int id)
     {
-        if (await _categoryService.HasEventsAsync(id))
-        {
-            TempData["ErrorMessage"] = "Cannot delete a category that has events.";
-            return RedirectToPage("Index");
-        }
-
-        var result = await _categoryService.DeleteAsync(id);
+        var result = await _categoryService.DeleteCategoryAsync(id);
         if (!result)
         {
-            TempData["ErrorMessage"] = "Could not delete category.";
+            TempData["ErrorMessage"] = "Cannot delete this category. It may have associated events.";
             return RedirectToPage("Index");
         }
 

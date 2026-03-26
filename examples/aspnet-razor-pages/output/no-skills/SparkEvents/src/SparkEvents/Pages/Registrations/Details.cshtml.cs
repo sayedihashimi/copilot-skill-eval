@@ -14,12 +14,13 @@ public class DetailsModel : PageModel
         _registrationService = registrationService;
     }
 
-    public Registration? Registration { get; set; }
+    public Registration Registration { get; set; } = null!;
 
     public async Task<IActionResult> OnGetAsync(int id)
     {
-        Registration = await _registrationService.GetByIdAsync(id);
-        if (Registration == null) return NotFound();
+        var reg = await _registrationService.GetRegistrationByIdAsync(id);
+        if (reg == null) return NotFound();
+        Registration = reg;
         return Page();
     }
 }

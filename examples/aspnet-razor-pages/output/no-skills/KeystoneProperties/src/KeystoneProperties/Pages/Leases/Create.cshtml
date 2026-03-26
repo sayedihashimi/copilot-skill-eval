@@ -1,15 +1,16 @@
 @page
 @model KeystoneProperties.Pages.Leases.CreateModel
-@{ ViewData["Title"] = "Create Lease"; }
-
+@{
+    ViewData["Title"] = "Create Lease";
+}
 <h1>Create Lease</h1>
 <div class="row"><div class="col-md-8">
     <form method="post">
-        <div asp-validation-summary="All" class="text-danger"></div>
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
         <div class="mb-3">
             <label asp-for="Input.TenantId" class="form-label">Tenant</label>
             <select asp-for="Input.TenantId" class="form-select">
-                <option value="">Select Tenant...</option>
+                <option value="">Select tenant...</option>
                 @foreach (var t in Model.TenantList) { <option value="@t.Id">@t.FullName (@t.Email)</option> }
             </select>
             <span asp-validation-for="Input.TenantId" class="text-danger"></span>
@@ -17,8 +18,8 @@
         <div class="mb-3">
             <label asp-for="Input.UnitId" class="form-label">Unit</label>
             <select asp-for="Input.UnitId" class="form-select">
-                <option value="">Select Available Unit...</option>
-                @foreach (var u in Model.UnitList) { <option value="@u.Id">@u.Property.Name — Unit @u.UnitNumber (@u.MonthlyRent.ToString("C")/mo)</option> }
+                <option value="">Select unit...</option>
+                @foreach (var u in Model.AvailableUnits) { <option value="@u.Id">@u.Property.Name — Unit @u.UnitNumber (@u.MonthlyRent.ToString("C")/mo)</option> }
             </select>
             <span asp-validation-for="Input.UnitId" class="text-danger"></span>
         </div>
@@ -49,17 +50,16 @@
         <div class="mb-3">
             <label asp-for="Input.Status" class="form-label"></label>
             <select asp-for="Input.Status" class="form-select">
-                <option value="@KeystoneProperties.Models.Enums.LeaseStatus.Pending">Pending</option>
-                <option value="@KeystoneProperties.Models.Enums.LeaseStatus.Active">Active</option>
+                <option value="@LeaseStatus.Pending">Pending</option>
+                <option value="@LeaseStatus.Active">Active</option>
             </select>
         </div>
         <div class="mb-3">
             <label asp-for="Input.Notes" class="form-label"></label>
-            <textarea asp-for="Input.Notes" class="form-control" rows="3"></textarea>
+            <textarea asp-for="Input.Notes" class="form-control" rows="2"></textarea>
         </div>
         <button type="submit" class="btn btn-primary">Create Lease</button>
         <a asp-page="Index" class="btn btn-outline-secondary">Cancel</a>
     </form>
 </div></div>
-
 @section Scripts { <partial name="_ValidationScriptsPartial" /> }

@@ -1,5 +1,6 @@
 using HorizonHR.Data;
 using HorizonHR.Models;
+using HorizonHR.Models.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace HorizonHR.Services;
@@ -15,95 +16,92 @@ public class ReviewService : IReviewService
         _logger = logger;
     }
 
-    public async Task<PaginatedList<PerformanceReview>> GetAllAsync(int pageNumber, int pageSize, ReviewStatus? status = null, OverallRating? rating = null, int? departmentId = null)
+    public async Task<(List<PerformanceReview> Items, int TotalCount)> GetPagedAsync(
+        int page, int pageSize, ReviewStatus? status = null, OverallRating? rating = null, int? departmentId = null)
     {
         var query = _context.PerformanceReviews
-            .Include(r => r.Employee).ThenInclude(e => e.Department)
-            .Include(r => r.Reviewer)
+            .Include(pr => pr.Employee).ThenInclude(e => e.Department)
+            .Include(pr => pr.Reviewer)
             .AsQueryable();
 
         if (status.HasValue)
-            query = query.Where(r => r.Status == status.Value);
-
+            query = query.Where(pr => pr.Status == status.Value);
         if (rating.HasValue)
-            query = query.Where(r => r.OverallRating == rating.Value);
-
+            query = query.Where(pr => pr.OverallRating == rating.Value);
         if (departmentId.HasValue)
-            query = query.Where(r => r.Employee.DepartmentId == departmentId.Value);
+            query = query.Where(pr => pr.Employee.DepartmentId == departmentId.Value);
 
-        query = query.OrderByDescending(r => r.ReviewPeriodEnd);
+        var totalCount = await query.CountAsync();
+        var items = await query
+            .OrderByDescending(pr => pr.ReviewPeriodEnd)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
 
-        return await PaginatedList<PerformanceReview>.CreateAsync(query, pageNumber, pageSize);
+        return (items, totalCount);
     }
 
     public async Task<PerformanceReview?> GetByIdAsync(int id)
     {
         return await _context.PerformanceReviews
-            .Include(r => r.Employee).ThenInclude(e => e.Department)
-            .Include(r => r.Reviewer)
-            .FirstOrDefaultAsync(r => r.Id == id);
+            .Include(pr => pr.Employee).ThenInclude(e => e.Department)
+            .Include(pr => pr.Reviewer)
+            .FirstOrDefaultAsync(pr => pr.Id == id);
     }
 
     public async Task<PerformanceReview> CreateAsync(PerformanceReview review)
     {
         // Check for overlapping review periods
-        var overlapping = await _context.PerformanceReviews
-            .Where(r => r.EmployeeId == review.EmployeeId
-                && r.ReviewPeriodStart <= review.ReviewPeriodEnd
-                && r.ReviewPeriodEnd >= review.ReviewPeriodStart)
-            .AnyAsync();
+        var hasOverlap = await _context.PerformanceReviews
+            .AnyAsync(pr => pr.EmployeeId == review.EmployeeId
+                && pr.ReviewPeriodStart <= review.ReviewPeriodEnd
+                && pr.ReviewPeriodEnd >= review.ReviewPeriodStart);
 
-        if (overlapping)
-            throw new InvalidOperationException("This employee already has a performance review with an overlapping review period.");
-
-        review.Status = ReviewStatus.Draft;
-        review.CreatedAt = DateTime.UtcNow;
-        review.UpdatedAt = DateTime.UtcNow;
+        if (hasOverlap)
+            throw new InvalidOperationException("This employee already has a performance review with an overlapping period.");
 
         _context.PerformanceReviews.Add(review);
         await _context.SaveChangesAsync();
-
-        _logger.LogInformation("Performance review created for employee {EmployeeId} by reviewer {ReviewerId}", review.EmployeeId, review.ReviewerId);
+        _logger.LogInformation("Performance review created for employee {EmployeeId}", review.EmployeeId);
         return review;
     }
 
-    public async Task SubmitSelfAssessmentAsync(int reviewId, string selfAssessment)
+    public async Task SubmitSelfAssessmentAsync(int id, string selfAssessment)
     {
-        var review = await _context.PerformanceReviews.FindAsync(reviewId);
+        var review = await _context.PerformanceReviews.FindAsync(id);
         if (review == null) throw new InvalidOperationException("Review not found.");
         if (review.Status != ReviewStatus.SelfAssessmentPending)
-            throw new InvalidOperationException("Review is not in the SelfAssessmentPending state.");
+            throw new InvalidOperationException("Self-assessment can only be submitted when status is SelfAssessmentPending.");
 
         review.SelfAssessment = selfAssessment;
         review.Status = ReviewStatus.ManagerReviewPending;
-        review.UpdatedAt = DateTime.UtcNow;
-
         await _context.SaveChangesAsync();
+        _logger.LogInformation("Self-assessment submitted for review {Id}", id);
     }
 
-    public async Task CompleteManagerReviewAsync(int reviewId, string managerAssessment, OverallRating rating, string? strengths, string? improvements, string? goals)
+    public async Task CompleteManagerReviewAsync(int id, string managerAssessment, OverallRating rating,
+        string? strengths, string? areasForImprovement, string? goals)
     {
-        var review = await _context.PerformanceReviews.FindAsync(reviewId);
+        var review = await _context.PerformanceReviews.FindAsync(id);
         if (review == null) throw new InvalidOperationException("Review not found.");
         if (review.Status != ReviewStatus.ManagerReviewPending)
-            throw new InvalidOperationException("Review is not in the ManagerReviewPending state.");
+            throw new InvalidOperationException("Manager review can only be completed when status is ManagerReviewPending.");
 
         review.ManagerAssessment = managerAssessment;
         review.OverallRating = rating;
         review.StrengthsNoted = strengths;
-        review.AreasForImprovement = improvements;
+        review.AreasForImprovement = areasForImprovement;
         review.Goals = goals;
-        review.Status = ReviewStatus.Completed;
         review.CompletedDate = DateOnly.FromDateTime(DateTime.UtcNow);
-        review.UpdatedAt = DateTime.UtcNow;
+        review.Status = ReviewStatus.Completed;
 
         await _context.SaveChangesAsync();
-        _logger.LogInformation("Performance review {ReviewId} completed with rating {Rating}", reviewId, rating);
+        _logger.LogInformation("Performance review {Id} completed with rating {Rating}", id, rating);
     }
 
     public async Task<int> GetUpcomingCountAsync()
     {
         return await _context.PerformanceReviews
-            .CountAsync(r => r.Status != ReviewStatus.Completed);
+            .CountAsync(pr => pr.Status != ReviewStatus.Completed);
     }
 }

@@ -4,11 +4,11 @@ namespace SparkEvents.Services;
 
 public interface IVenueService
 {
-    Task<List<Venue>> GetAllAsync();
-    Task<Venue?> GetByIdAsync(int id);
-    Task<Venue?> GetByIdWithEventsAsync(int id);
-    Task CreateAsync(Venue venue);
-    Task UpdateAsync(Venue venue);
-    Task<bool> DeleteAsync(int id);
+    Task<List<Venue>> GetAllVenuesAsync();
+    Task<Venue?> GetVenueByIdAsync(int id);
+    Task<Venue> CreateVenueAsync(Venue venue);
+    Task UpdateVenueAsync(Venue venue);
+    Task<bool> DeleteVenueAsync(int id);
     Task<bool> HasFutureEventsAsync(int id);
+    Task<List<Event>> GetUpcomingEventsForVenueAsync(int venueId);
 }

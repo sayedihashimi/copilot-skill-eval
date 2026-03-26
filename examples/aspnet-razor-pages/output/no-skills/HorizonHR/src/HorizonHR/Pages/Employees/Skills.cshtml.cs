@@ -1,4 +1,6 @@
+using System.ComponentModel.DataAnnotations;
 using HorizonHR.Models;
+using HorizonHR.Models.Enums;
 using HorizonHR.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -17,97 +19,85 @@ public class SkillsModel : PageModel
         _employeeService = employeeService;
     }
 
-    public Employee Employee { get; set; } = null!;
+    public int EmployeeId { get; set; }
+    public string EmployeeName { get; set; } = string.Empty;
     public List<EmployeeSkill> EmployeeSkills { get; set; } = new();
-    public List<SelectListItem> AvailableSkills { get; set; } = new();
-    public List<SelectListItem> ProficiencyOptions { get; set; } = new();
+    public List<SelectListItem> SkillOptions { get; set; } = new();
 
     [BindProperty]
-    public int SkillId { get; set; }
+    public InputModel Input { get; set; } = new();
 
-    [BindProperty]
-    public ProficiencyLevel ProficiencyLevel { get; set; }
+    public class InputModel
+    {
+        [Required]
+        public int SkillId { get; set; }
 
-    [BindProperty]
-    public int? YearsOfExperience { get; set; }
+        [Required]
+        public ProficiencyLevel ProficiencyLevel { get; set; }
+
+        [Range(0, 50)]
+        public int? YearsOfExperience { get; set; }
+    }
 
     public async Task<IActionResult> OnGetAsync(int id)
     {
-        return await LoadPageAsync(id);
+        var employee = await _employeeService.GetByIdAsync(id);
+        if (employee == null) return NotFound();
+
+        EmployeeId = id;
+        EmployeeName = employee.FullName;
+        await LoadDataAsync(id);
+        return Page();
     }
 
     public async Task<IActionResult> OnPostAddAsync(int id)
     {
+        EmployeeId = id;
         var employee = await _employeeService.GetByIdAsync(id);
-        if (employee == null)
+        if (employee == null) return NotFound();
+        EmployeeName = employee.FullName;
+
+        if (!ModelState.IsValid)
         {
-            return NotFound();
+            await LoadDataAsync(id);
+            return Page();
         }
 
         try
         {
-            var employeeSkill = new EmployeeSkill
+            await _skillService.AddEmployeeSkillAsync(new EmployeeSkill
             {
                 EmployeeId = id,
-                SkillId = SkillId,
-                ProficiencyLevel = ProficiencyLevel,
-                YearsOfExperience = YearsOfExperience,
-                LastAssessedDate = DateOnly.FromDateTime(DateTime.UtcNow)
-            };
-
-            await _skillService.AddEmployeeSkillAsync(employeeSkill);
-            TempData["SuccessMessage"] = "Skill added successfully.";
+                SkillId = Input.SkillId,
+                ProficiencyLevel = Input.ProficiencyLevel,
+                YearsOfExperience = Input.YearsOfExperience,
+                LastAssessedDate = DateOnly.FromDateTime(DateTime.Today)
+            });
+            TempData["Success"] = "Skill added successfully.";
         }
         catch (InvalidOperationException ex)
         {
-            TempData["ErrorMessage"] = ex.Message;
+            TempData["Error"] = ex.Message;
         }
 
         return RedirectToPage(new { id });
     }
 
-    public async Task<IActionResult> OnPostRemoveAsync(int id, int skillId)
+    public async Task<IActionResult> OnPostRemoveAsync(int id, int employeeSkillId)
     {
-        var employee = await _employeeService.GetByIdAsync(id);
-        if (employee == null)
-        {
-            return NotFound();
-        }
-
-        await _skillService.RemoveEmployeeSkillAsync(id, skillId);
-        TempData["SuccessMessage"] = "Skill removed successfully.";
+        await _skillService.RemoveEmployeeSkillAsync(employeeSkillId);
+        TempData["Success"] = "Skill removed.";
         return RedirectToPage(new { id });
     }
 
-    private async Task<IActionResult> LoadPageAsync(int id)
+    private async Task LoadDataAsync(int employeeId)
     {
-        var employee = await _employeeService.GetByIdAsync(id);
-        if (employee == null)
-        {
-            return NotFound();
-        }
-
-        Employee = employee;
-        EmployeeSkills = await _skillService.GetEmployeeSkillsAsync(id);
-
+        EmployeeSkills = await _skillService.GetEmployeeSkillsAsync(employeeId);
         var allSkills = await _skillService.GetAllAsync();
-        var assignedSkillIds = EmployeeSkills.Select(es => es.SkillId).ToHashSet();
-
-        AvailableSkills = allSkills
-            .Where(s => !assignedSkillIds.Contains(s.Id))
-            .Select(s => new SelectListItem
-            {
-                Value = s.Id.ToString(),
-                Text = $"{s.Name} ({s.Category})"
-            }).ToList();
-
-        ProficiencyOptions = Enum.GetValues<ProficiencyLevel>()
-            .Select(p => new SelectListItem
-            {
-                Value = ((int)p).ToString(),
-                Text = p.ToString()
-            }).ToList();
-
-        return Page();
+        var existingSkillIds = EmployeeSkills.Select(es => es.SkillId).ToHashSet();
+        SkillOptions = allSkills
+            .Where(s => !existingSkillIds.Contains(s.Id))
+            .Select(s => new SelectListItem($"{s.Name} ({s.Category})", s.Id.ToString()))
+            .ToList();
     }
 }

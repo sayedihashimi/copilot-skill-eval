@@ -1,64 +1,38 @@
-@page "/Employees/{id:int}/DirectReports"
+@page "{id:int}"
 @model HorizonHR.Pages.Employees.DirectReportsModel
 @{
-    ViewData["Title"] = $"Direct Reports — {Model.Employee.FullName}";
+    ViewData["Title"] = $"Direct Reports - {Model.ManagerName}";
 }
 
-<nav aria-label="breadcrumb">
-    <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a asp-page="Index">Employees</a></li>
-        <li class="breadcrumb-item"><a asp-page="Details" asp-route-id="@Model.Employee.Id">@Model.Employee.FullName</a></li>
-        <li class="breadcrumb-item active" aria-current="page">Direct Reports</li>
-    </ol>
-</nav>
+<section>
+    <h1>Direct Reports — @Model.ManagerName</h1>
 
-<h1>Direct Reports</h1>
-<p class="text-muted">
-    Employees reporting to <strong>@Model.Employee.FullName</strong> (@Model.Employee.JobTitle)
-</p>
-
-@if (Model.Reports.Any())
-{
-    <div class="table-responsive">
-        <table class="table table-striped table-hover">
-            <thead class="table-dark">
-                <tr>
-                    <th>Name</th>
-                    <th>Job Title</th>
-                    <th>Department</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
+    @if (!Model.DirectReports.Any())
+    {
+        <p class="text-muted">No direct reports found.</p>
+    }
+    else
+    {
+        <table class="table">
+            <thead>
+                <tr><th>Name</th><th>Title</th><th>Department</th><th>Status</th></tr>
             </thead>
             <tbody>
-                @foreach (var report in Model.Reports)
+                @foreach (var emp in Model.DirectReports)
                 {
                     <tr>
+                        <td><a asp-page="Details" asp-route-id="@emp.Id">@emp.FullName</a></td>
+                        <td>@emp.JobTitle</td>
+                        <td>@emp.Department.Name</td>
                         <td>
-                            <a asp-page="Details" asp-route-id="@report.Id">@report.FullName</a>
-                        </td>
-                        <td>@report.JobTitle</td>
-                        <td>@report.Department?.Name</td>
-                        <td>
-                            <partial name="_StatusBadge" model="@report.Status.ToString()" />
-                        </td>
-                        <td>
-                            <a asp-page="Details" asp-route-id="@report.Id"
-                               class="btn btn-sm btn-outline-primary">Details</a>
+                            @{ ViewData["StatusText"] = emp.Status.ToString(); }
+                            <partial name="Shared/_StatusBadge" />
                         </td>
                     </tr>
                 }
             </tbody>
         </table>
-    </div>
-}
-else
-{
-    <div class="text-center text-muted py-4">
-        <p>This employee has no direct reports.</p>
-    </div>
-}
+    }
 
-<a asp-page="Details" asp-route-id="@Model.Employee.Id" class="btn btn-outline-secondary">
-    Back to Profile
-</a>
+    <a asp-page="Details" asp-route-id="@Model.ManagerId" class="btn btn-outline-secondary mt-3">Back to Profile</a>
+</section>

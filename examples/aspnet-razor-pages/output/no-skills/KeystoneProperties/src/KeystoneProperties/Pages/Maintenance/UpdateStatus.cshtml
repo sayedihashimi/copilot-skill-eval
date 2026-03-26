@@ -1,23 +1,16 @@
 @page "{id:int}"
 @model KeystoneProperties.Pages.Maintenance.UpdateStatusModel
 @{ ViewData["Title"] = "Update Maintenance Status"; }
-
-@if (Model.Request == null) { <div class="alert alert-danger">Request not found.</div> return; }
-
-<h1>Update Status: @Model.Request.Title</h1>
-
+<h1>Update Status — @Model.Request.Title</h1>
 <div class="card mb-3"><div class="card-body">
-    <dl class="row mb-0">
-        <dt class="col-sm-3">Current Status</dt><dd class="col-sm-9"><partial name="_StatusBadgePartial" view-data='@(new ViewDataDictionary(ViewData) { { "StatusText", Model.Request.Status.ToString() }, { "StatusType", "MaintenanceStatus" } })' /></dd>
-        <dt class="col-sm-3">Priority</dt><dd class="col-sm-9"><partial name="_StatusBadgePartial" view-data='@(new ViewDataDictionary(ViewData) { { "StatusText", Model.Request.Priority.ToString() }, { "StatusType", "MaintenancePriority" } })' /></dd>
-        <dt class="col-sm-3">Unit</dt><dd class="col-sm-9">@Model.Request.Unit.Property.Name — @Model.Request.Unit.UnitNumber</dd>
-    </dl>
+    <p><strong>Unit:</strong> @Model.Request.Unit.UnitNumber — @Model.Request.Unit.Property.Name</p>
+    <p><strong>Current Status:</strong> <partial name="_StatusBadge" model="@(Model.Request.Status.ToString(), "maintenance")" /></p>
+    <p><strong>Priority:</strong> <partial name="_StatusBadge" model="@(Model.Request.Priority.ToString(), "priority")" /></p>
 </div></div>
-
 <div class="row"><div class="col-md-8">
     <form method="post">
-        <input type="hidden" asp-for="Id" />
-        <div asp-validation-summary="All" class="text-danger"></div>
+        <input type="hidden" asp-for="RequestId" />
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
         <div class="mb-3">
             <label asp-for="Input.NewStatus" class="form-label">New Status</label>
             <select asp-for="Input.NewStatus" class="form-select">
@@ -27,7 +20,7 @@
         <div class="mb-3">
             <label asp-for="Input.AssignedTo" class="form-label"></label>
             <input asp-for="Input.AssignedTo" class="form-control" />
-            <small class="text-muted">Required when transitioning to Assigned.</small>
+            <span class="form-text">Required when assigning.</span>
         </div>
         <div class="mb-3">
             <label asp-for="Input.CompletionNotes" class="form-label"></label>
@@ -43,9 +36,8 @@
                 <input asp-for="Input.ActualCost" class="form-control" />
             </div>
         </div>
-        <button type="submit" class="btn btn-warning">Update Status</button>
-        <a asp-page="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary">Update Status</button>
+        <a asp-page="Details" asp-route-id="@Model.RequestId" class="btn btn-outline-secondary">Cancel</a>
     </form>
 </div></div>
-
 @section Scripts { <partial name="_ValidationScriptsPartial" /> }

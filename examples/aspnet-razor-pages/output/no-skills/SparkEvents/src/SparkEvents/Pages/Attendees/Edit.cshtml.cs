@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using SparkEvents.Models;
 using SparkEvents.Services;
 
 namespace SparkEvents.Pages.Attendees;
@@ -21,18 +22,15 @@ public class EditModel : PageModel
     {
         public int Id { get; set; }
 
-        [Required]
-        [MaxLength(100)]
+        [Required, MaxLength(100)]
         [Display(Name = "First Name")]
         public string FirstName { get; set; } = string.Empty;
 
-        [Required]
-        [MaxLength(100)]
+        [Required, MaxLength(100)]
         [Display(Name = "Last Name")]
         public string LastName { get; set; } = string.Empty;
 
-        [Required]
-        [EmailAddress]
+        [Required, EmailAddress]
         public string Email { get; set; } = string.Empty;
 
         public string? Phone { get; set; }
@@ -47,7 +45,7 @@ public class EditModel : PageModel
 
     public async Task<IActionResult> OnGetAsync(int id)
     {
-        var attendee = await _attendeeService.GetByIdAsync(id);
+        var attendee = await _attendeeService.GetAttendeeByIdAsync(id);
         if (attendee == null) return NotFound();
 
         Input = new InputModel
@@ -68,19 +66,8 @@ public class EditModel : PageModel
     {
         if (!ModelState.IsValid) return Page();
 
-        var attendee = await _attendeeService.GetByIdAsync(Input.Id);
+        var attendee = await _attendeeService.GetAttendeeByIdAsync(Input.Id);
         if (attendee == null) return NotFound();
-
-        // Check for duplicate email (if changed)
-        if (attendee.Email.ToLower() != Input.Email.ToLower())
-        {
-            var existing = await _attendeeService.GetByEmailAsync(Input.Email);
-            if (existing != null)
-            {
-                ModelState.AddModelError("Input.Email", "An attendee with this email already exists.");
-                return Page();
-            }
-        }
 
         attendee.FirstName = Input.FirstName;
         attendee.LastName = Input.LastName;
@@ -89,7 +76,7 @@ public class EditModel : PageModel
         attendee.Organization = Input.Organization;
         attendee.DietaryNeeds = Input.DietaryNeeds;
 
-        await _attendeeService.UpdateAsync(attendee);
+        await _attendeeService.UpdateAttendeeAsync(attendee);
         TempData["SuccessMessage"] = "Attendee updated successfully.";
         return RedirectToPage("Details", new { id = attendee.Id });
     }

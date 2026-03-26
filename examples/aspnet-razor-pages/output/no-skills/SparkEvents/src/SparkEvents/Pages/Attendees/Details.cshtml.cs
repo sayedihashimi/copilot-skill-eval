@@ -14,12 +14,15 @@ public class DetailsModel : PageModel
         _attendeeService = attendeeService;
     }
 
-    public Attendee? Attendee { get; set; }
+    public Attendee Attendee { get; set; } = null!;
+    public List<Registration> Registrations { get; set; } = new();
 
     public async Task<IActionResult> OnGetAsync(int id)
     {
-        Attendee = await _attendeeService.GetByIdWithRegistrationsAsync(id);
-        if (Attendee == null) return NotFound();
+        var attendee = await _attendeeService.GetAttendeeByIdAsync(id);
+        if (attendee == null) return NotFound();
+        Attendee = attendee;
+        Registrations = await _attendeeService.GetAttendeeRegistrationsAsync(id);
         return Page();
     }
 }

@@ -40,7 +40,6 @@ public class Inspection
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-    // Navigation
     public Unit Unit { get; set; } = null!;
     public Lease? Lease { get; set; }
 }

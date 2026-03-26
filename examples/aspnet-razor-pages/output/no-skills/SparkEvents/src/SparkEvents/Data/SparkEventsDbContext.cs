@@ -19,68 +19,68 @@ public class SparkEventsDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.Entity<EventCategory>(e =>
+        modelBuilder.Entity<EventCategory>(entity =>
         {
-            e.HasIndex(c => c.Name).IsUnique();
+            entity.HasIndex(e => e.Name).IsUnique();
         });
 
-        modelBuilder.Entity<Attendee>(e =>
+        modelBuilder.Entity<Attendee>(entity =>
         {
-            e.HasIndex(a => a.Email).IsUnique();
+            entity.HasIndex(e => e.Email).IsUnique();
         });
 
-        modelBuilder.Entity<Registration>(e =>
+        modelBuilder.Entity<Registration>(entity =>
         {
-            e.HasIndex(r => r.ConfirmationNumber).IsUnique();
+            entity.HasIndex(e => e.ConfirmationNumber).IsUnique();
         });
 
-        modelBuilder.Entity<CheckIn>(e =>
+        modelBuilder.Entity<CheckIn>(entity =>
         {
-            e.HasIndex(c => c.RegistrationId).IsUnique();
+            entity.HasIndex(e => e.RegistrationId).IsUnique();
         });
 
-        modelBuilder.Entity<Event>(e =>
+        modelBuilder.Entity<Event>(entity =>
         {
-            e.HasOne(ev => ev.EventCategory)
+            entity.HasOne(e => e.EventCategory)
                 .WithMany(c => c.Events)
-                .HasForeignKey(ev => ev.EventCategoryId)
+                .HasForeignKey(e => e.EventCategoryId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            e.HasOne(ev => ev.Venue)
+            entity.HasOne(e => e.Venue)
                 .WithMany(v => v.Events)
-                .HasForeignKey(ev => ev.VenueId)
+                .HasForeignKey(e => e.VenueId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
-        modelBuilder.Entity<TicketType>(e =>
+        modelBuilder.Entity<Registration>(entity =>
         {
-            e.HasOne(t => t.Event)
-                .WithMany(ev => ev.TicketTypes)
-                .HasForeignKey(t => t.EventId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        modelBuilder.Entity<Registration>(e =>
-        {
-            e.HasOne(r => r.Event)
-                .WithMany(ev => ev.Registrations)
+            entity.HasOne(r => r.Event)
+                .WithMany(e => e.Registrations)
                 .HasForeignKey(r => r.EventId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            e.HasOne(r => r.Attendee)
+            entity.HasOne(r => r.Attendee)
                 .WithMany(a => a.Registrations)
                 .HasForeignKey(r => r.AttendeeId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            e.HasOne(r => r.TicketType)
+            entity.HasOne(r => r.TicketType)
                 .WithMany(t => t.Registrations)
                 .HasForeignKey(r => r.TicketTypeId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
-        modelBuilder.Entity<CheckIn>(e =>
+        modelBuilder.Entity<TicketType>(entity =>
         {
-            e.HasOne(c => c.Registration)
+            entity.HasOne(t => t.Event)
+                .WithMany(e => e.TicketTypes)
+                .HasForeignKey(t => t.EventId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<CheckIn>(entity =>
+        {
+            entity.HasOne(c => c.Registration)
                 .WithOne(r => r.CheckIn)
                 .HasForeignKey<CheckIn>(c => c.RegistrationId)
                 .OnDelete(DeleteBehavior.Cascade);

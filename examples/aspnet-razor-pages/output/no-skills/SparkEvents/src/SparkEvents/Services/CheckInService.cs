@@ -6,33 +6,38 @@ namespace SparkEvents.Services;
 
 public class CheckInService : ICheckInService
 {
-    private readonly SparkEventsDbContext _db;
+    private readonly SparkEventsDbContext _context;
     private readonly ILogger<CheckInService> _logger;
 
-    public CheckInService(SparkEventsDbContext db, ILogger<CheckInService> logger)
+    public CheckInService(SparkEventsDbContext context, ILogger<CheckInService> logger)
     {
-        _db = db;
+        _context = context;
         _logger = logger;
     }
 
-    public async Task<(CheckIn? CheckIn, string? Error)> ProcessCheckInAsync(int registrationId, string checkedInBy, string? notes)
+    public async Task<CheckIn> ProcessCheckInAsync(int registrationId, string checkedInBy, string? notes)
     {
-        var reg = await _db.Registrations
+        var registration = await _context.Registrations
             .Include(r => r.Event)
             .Include(r => r.CheckIn)
             .FirstOrDefaultAsync(r => r.Id == registrationId);
 
-        if (reg == null) return (null, "Registration not found.");
-        if (reg.Status != RegistrationStatus.Confirmed) return (null, "Only confirmed registrations can be checked in.");
-        if (reg.CheckIn != null) return (null, "This registration has already been checked in.");
+        if (registration == null) throw new InvalidOperationException("Registration not found.");
+        if (registration.Status != RegistrationStatus.Confirmed)
+            throw new InvalidOperationException("Only confirmed registrations can be checked in.");
+        if (registration.CheckIn != null)
+            throw new InvalidOperationException("This registration has already been checked in.");
 
-        // Check-in window: StartDate - 1 hour to EndDate
+        var evt = registration.Event;
         var now = DateTime.UtcNow;
-        var windowStart = reg.Event.StartDate.AddHours(-1);
-        var windowEnd = reg.Event.EndDate;
+        var checkInStart = evt.StartDate.AddHours(-1);
 
-        if (now < windowStart || now > windowEnd)
-            return (null, $"Check-in is only available between {windowStart:g} and {windowEnd:g}.");
+        if (now < checkInStart || now > evt.EndDate)
+            throw new InvalidOperationException("Check-in is only available from 1 hour before the event start until the event ends.");
+
+        registration.Status = RegistrationStatus.CheckedIn;
+        registration.CheckInTime = now;
+        registration.UpdatedAt = now;
 
         var checkIn = new CheckIn
         {
@@ -42,55 +47,42 @@ public class CheckInService : ICheckInService
             Notes = notes
         };
 
-        reg.Status = RegistrationStatus.CheckedIn;
-        reg.CheckInTime = now;
-        reg.UpdatedAt = now;
+        _context.CheckIns.Add(checkIn);
+        await _context.SaveChangesAsync();
 
-        _db.CheckIns.Add(checkIn);
-        await _db.SaveChangesAsync();
-
-        _logger.LogInformation("Check-in processed for registration {RegistrationId} by {CheckedInBy}", registrationId, checkedInBy);
-        return (checkIn, null);
+        _logger.LogInformation("Check-in processed: Registration {Id} by {StaffName}", registrationId, checkedInBy);
+        return checkIn;
     }
 
-    public async Task<(List<Registration> Items, int TotalCheckedIn, int TotalConfirmed)> GetCheckInDashboardAsync(int eventId, string? search)
+    public async Task<List<Registration>> SearchForCheckInAsync(int eventId, string searchTerm)
     {
-        var query = _db.Registrations
+        return await _context.Registrations
             .Include(r => r.Attendee)
             .Include(r => r.TicketType)
             .Include(r => r.CheckIn)
             .Where(r => r.EventId == eventId &&
-                        (r.Status == RegistrationStatus.Confirmed || r.Status == RegistrationStatus.CheckedIn));
-
-        var allConfirmed = await query.CountAsync();
-        var checkedIn = await query.CountAsync(r => r.Status == RegistrationStatus.CheckedIn);
-
-        if (!string.IsNullOrWhiteSpace(search))
-        {
-            var s = search.ToLower();
-            query = query.Where(r =>
-                r.Attendee.FirstName.ToLower().Contains(s) ||
-                r.Attendee.LastName.ToLower().Contains(s) ||
-                r.ConfirmationNumber.ToLower().Contains(s));
-        }
-
-        var items = await query
+                (r.Status == RegistrationStatus.Confirmed || r.Status == RegistrationStatus.CheckedIn) &&
+                (r.Attendee.FirstName.Contains(searchTerm) ||
+                 r.Attendee.LastName.Contains(searchTerm) ||
+                 r.ConfirmationNumber.Contains(searchTerm)))
             .OrderBy(r => r.Attendee.LastName)
             .ToListAsync();
-
-        return (items, checkedIn, allConfirmed);
     }
 
-    public async Task<Registration?> LookupForCheckInAsync(int eventId, string searchTerm)
+    public async Task<(int CheckedIn, int Total)> GetCheckInStatsAsync(int eventId)
     {
-        var s = searchTerm.ToLower();
-        return await _db.Registrations
-            .Include(r => r.Attendee)
-            .Include(r => r.TicketType)
-            .Include(r => r.CheckIn)
-            .Where(r => r.EventId == eventId && r.Status == RegistrationStatus.Confirmed)
-            .FirstOrDefaultAsync(r =>
-                r.ConfirmationNumber.ToLower() == s ||
-                (r.Attendee.FirstName.ToLower() + " " + r.Attendee.LastName.ToLower()).Contains(s));
+        var checkedIn = await _context.Registrations.CountAsync(r =>
+            r.EventId == eventId && r.Status == RegistrationStatus.CheckedIn);
+        var total = await _context.Registrations.CountAsync(r =>
+            r.EventId == eventId && (r.Status == RegistrationStatus.Confirmed || r.Status == RegistrationStatus.CheckedIn));
+        return (checkedIn, total);
+    }
+
+    public async Task<bool> CanCheckInAsync(int eventId)
+    {
+        var evt = await _context.Events.FindAsync(eventId);
+        if (evt == null) return false;
+        var now = DateTime.UtcNow;
+        return now >= evt.StartDate.AddHours(-1) && now <= evt.EndDate;
     }
 }

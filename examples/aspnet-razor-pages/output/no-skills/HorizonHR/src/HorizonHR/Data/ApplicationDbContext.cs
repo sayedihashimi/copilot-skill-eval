@@ -46,8 +46,6 @@ public class ApplicationDbContext : DbContext
             entity.HasIndex(e => e.EmployeeNumber).IsUnique();
             entity.HasIndex(e => e.Email).IsUnique();
 
-            entity.Property(e => e.Salary).HasColumnType("decimal(18,2)");
-
             entity.HasOne(e => e.Department)
                 .WithMany(d => d.Employees)
                 .HasForeignKey(e => e.DepartmentId)
@@ -70,10 +68,6 @@ public class ApplicationDbContext : DbContext
         {
             entity.HasIndex(lb => new { lb.EmployeeId, lb.LeaveTypeId, lb.Year }).IsUnique();
 
-            entity.Property(lb => lb.TotalDays).HasColumnType("decimal(5,1)");
-            entity.Property(lb => lb.UsedDays).HasColumnType("decimal(5,1)");
-            entity.Property(lb => lb.CarriedOverDays).HasColumnType("decimal(5,1)");
-
             entity.HasOne(lb => lb.Employee)
                 .WithMany(e => e.LeaveBalances)
                 .HasForeignKey(lb => lb.EmployeeId)
@@ -88,8 +82,6 @@ public class ApplicationDbContext : DbContext
         // LeaveRequest
         modelBuilder.Entity<LeaveRequest>(entity =>
         {
-            entity.Property(lr => lr.TotalDays).HasColumnType("decimal(5,1)");
-
             entity.HasOne(lr => lr.Employee)
                 .WithMany(e => e.LeaveRequests)
                 .HasForeignKey(lr => lr.EmployeeId)
@@ -158,18 +150,30 @@ public class ApplicationDbContext : DbContext
     private void UpdateTimestamps()
     {
         var entries = ChangeTracker.Entries()
-            .Where(e => e.State == EntityState.Modified);
+            .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified);
 
         foreach (var entry in entries)
         {
             if (entry.Entity is Department dept)
+            {
                 dept.UpdatedAt = DateTime.UtcNow;
+                if (entry.State == EntityState.Added) dept.CreatedAt = DateTime.UtcNow;
+            }
             else if (entry.Entity is Employee emp)
+            {
                 emp.UpdatedAt = DateTime.UtcNow;
+                if (entry.State == EntityState.Added) emp.CreatedAt = DateTime.UtcNow;
+            }
             else if (entry.Entity is LeaveRequest lr)
+            {
                 lr.UpdatedAt = DateTime.UtcNow;
+                if (entry.State == EntityState.Added) lr.CreatedAt = DateTime.UtcNow;
+            }
             else if (entry.Entity is PerformanceReview pr)
+            {
                 pr.UpdatedAt = DateTime.UtcNow;
+                if (entry.State == EntityState.Added) pr.CreatedAt = DateTime.UtcNow;
+            }
         }
     }
 }

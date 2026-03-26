@@ -1,7 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using SparkEvents.Models;
 using SparkEvents.Services;
 
@@ -10,30 +9,37 @@ namespace SparkEvents.Pages.Events;
 public class RegisterModel : PageModel
 {
     private readonly IEventService _eventService;
-    private readonly IAttendeeService _attendeeService;
     private readonly IRegistrationService _registrationService;
+    private readonly IAttendeeService _attendeeService;
+    private readonly ITicketTypeService _ticketTypeService;
 
-    public RegisterModel(IEventService eventService, IAttendeeService attendeeService, IRegistrationService registrationService)
+    public RegisterModel(IEventService eventService, IRegistrationService registrationService,
+        IAttendeeService attendeeService, ITicketTypeService ticketTypeService)
     {
         _eventService = eventService;
-        _attendeeService = attendeeService;
         _registrationService = registrationService;
+        _attendeeService = attendeeService;
+        _ticketTypeService = ticketTypeService;
     }
 
-    public Event? Event { get; set; }
-    public List<SelectListItem> AttendeeOptions { get; set; } = new();
-    public List<SelectListItem> TicketTypeOptions { get; set; } = new();
+    public Event Event { get; set; } = null!;
+    public List<Attendee> Attendees { get; set; } = new();
+    public List<TicketType> TicketTypes { get; set; } = new();
+    public bool IsRegistrationOpen { get; set; }
+    public bool IsEarlyBird { get; set; }
 
     [BindProperty]
     public InputModel Input { get; set; } = new();
 
     public class InputModel
     {
-        [Required]
+        public int EventId { get; set; }
+
+        [Required(ErrorMessage = "Please select an attendee.")]
         [Display(Name = "Attendee")]
         public int AttendeeId { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Please select a ticket type.")]
         [Display(Name = "Ticket Type")]
         public int TicketTypeId { get; set; }
 
@@ -44,49 +50,44 @@ public class RegisterModel : PageModel
 
     public async Task<IActionResult> OnGetAsync(int eventId)
     {
-        Event = await _eventService.GetByIdWithDetailsAsync(eventId);
+        await LoadDataAsync(eventId);
         if (Event == null) return NotFound();
-
-        await LoadOptionsAsync(eventId);
+        Input.EventId = eventId;
         return Page();
     }
 
     public async Task<IActionResult> OnPostAsync(int eventId)
     {
-        Event = await _eventService.GetByIdWithDetailsAsync(eventId);
+        await LoadDataAsync(eventId);
         if (Event == null) return NotFound();
 
-        if (!ModelState.IsValid)
+        if (!ModelState.IsValid) return Page();
+
+        try
         {
-            await LoadOptionsAsync(eventId);
+            var reg = await _registrationService.RegisterAsync(eventId, Input.AttendeeId, Input.TicketTypeId, Input.SpecialRequests);
+            TempData["SuccessMessage"] = $"Registration successful! Confirmation #: {reg.ConfirmationNumber}";
+            return RedirectToPage("/Registrations/Details", new { id = reg.Id });
+        }
+        catch (InvalidOperationException ex)
+        {
+            ModelState.AddModelError("", ex.Message);
             return Page();
         }
-
-        var (registration, error) = await _registrationService.RegisterAsync(
-            eventId, Input.AttendeeId, Input.TicketTypeId, Input.SpecialRequests);
-
-        if (error != null)
-        {
-            TempData["ErrorMessage"] = error;
-            await LoadOptionsAsync(eventId);
-            return Page();
-        }
-
-        TempData["SuccessMessage"] = $"Registration successful! Confirmation number: {registration!.ConfirmationNumber}";
-        return RedirectToPage("/Registrations/Details", new { id = registration.Id });
     }
 
-    private async Task LoadOptionsAsync(int eventId)
+    private async Task LoadDataAsync(int eventId)
     {
-        var attendees = await _attendeeService.GetAllAsync();
-        AttendeeOptions = attendees.Select(a => new SelectListItem($"{a.FullName} ({a.Email})", a.Id.ToString())).ToList();
+        var evt = await _eventService.GetEventByIdAsync(eventId);
+        if (evt == null) return;
+        Event = evt;
+        Attendees = await _attendeeService.GetAllAttendeesAsync();
+        TicketTypes = await _ticketTypeService.GetTicketTypesForEventAsync(eventId);
+        TicketTypes = TicketTypes.Where(t => t.IsActive).ToList();
 
-        var ticketTypes = await _eventService.GetTicketTypesAsync(eventId);
-        TicketTypeOptions = ticketTypes
-            .Where(t => t.IsActive)
-            .Select(t => new SelectListItem(
-                $"{t.Name} — {t.Price:C} ({t.Quantity - t.QuantitySold} remaining)",
-                t.Id.ToString()))
-            .ToList();
+        var now = DateTime.UtcNow;
+        IsRegistrationOpen = now >= evt.RegistrationOpenDate && now <= evt.RegistrationCloseDate
+            && evt.Status != EventStatus.Cancelled && evt.Status != EventStatus.Completed && evt.Status != EventStatus.Draft;
+        IsEarlyBird = evt.EarlyBirdDeadline.HasValue && now <= evt.EarlyBirdDeadline.Value;
     }
 }

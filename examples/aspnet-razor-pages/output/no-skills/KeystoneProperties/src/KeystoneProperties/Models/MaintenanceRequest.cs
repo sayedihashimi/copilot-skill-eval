@@ -58,7 +58,6 @@ public class MaintenanceRequest
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
-    // Navigation
     public Unit Unit { get; set; } = null!;
     public Tenant Tenant { get; set; } = null!;
 }

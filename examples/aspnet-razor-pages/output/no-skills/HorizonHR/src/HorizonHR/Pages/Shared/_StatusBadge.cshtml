@@ -1,37 +1,32 @@
-@model string
-
 @{
-    var badgeClass = Model switch
+    var statusText = ViewData["StatusText"]?.ToString() ?? "";
+    var badgeClass = statusText switch
     {
         "Active" => "bg-success",
         "OnLeave" => "bg-warning text-dark",
-        "Terminated" => "bg-danger",
+        "Terminated" => "bg-secondary",
         "Submitted" => "bg-info text-dark",
         "Approved" => "bg-success",
         "Rejected" => "bg-danger",
         "Cancelled" => "bg-secondary",
-        "Draft" => "bg-secondary",
+        "Draft" => "bg-light text-dark border",
         "SelfAssessmentPending" => "bg-info text-dark",
         "ManagerReviewPending" => "bg-warning text-dark",
         "Completed" => "bg-success",
-        "Outstanding" => "bg-primary",
-        "ExceedsExpectations" => "bg-info",
-        "MeetsExpectations" => "bg-success",
+        "Outstanding" => "bg-success",
+        "ExceedsExpectations" => "bg-primary",
+        "MeetsExpectations" => "bg-info text-dark",
         "NeedsImprovement" => "bg-warning text-dark",
         "Unsatisfactory" => "bg-danger",
-        "FullTime" => "bg-primary",
-        "PartTime" => "bg-info",
-        "Contract" => "bg-warning text-dark",
-        "Intern" => "bg-secondary",
-        "Beginner" => "bg-secondary",
-        "Intermediate" => "bg-info",
+        "Beginner" => "bg-light text-dark border",
+        "Intermediate" => "bg-info text-dark",
         "Advanced" => "bg-primary",
         "Expert" => "bg-success",
+        "FullTime" => "bg-primary",
+        "PartTime" => "bg-info text-dark",
+        "Contract" => "bg-warning text-dark",
+        "Intern" => "bg-light text-dark border",
         _ => "bg-secondary"
     };
-
-    // Make enum values more readable
-    var displayText = System.Text.RegularExpressions.Regex.Replace(Model, "([a-z])([A-Z])", "$1 $2");
 }
-
-<span class="badge @badgeClass">@displayText</span>
+<span class="badge @badgeClass">@statusText</span>

@@ -20,18 +20,15 @@ public class CreateModel : PageModel
 
     public class InputModel
     {
-        [Required]
-        [MaxLength(100)]
+        [Required, MaxLength(100)]
         [Display(Name = "First Name")]
         public string FirstName { get; set; } = string.Empty;
 
-        [Required]
-        [MaxLength(100)]
+        [Required, MaxLength(100)]
         [Display(Name = "Last Name")]
         public string LastName { get; set; } = string.Empty;
 
-        [Required]
-        [EmailAddress]
+        [Required, EmailAddress]
         public string Email { get; set; } = string.Empty;
 
         public string? Phone { get; set; }
@@ -50,14 +47,6 @@ public class CreateModel : PageModel
     {
         if (!ModelState.IsValid) return Page();
 
-        // Check for duplicate email
-        var existing = await _attendeeService.GetByEmailAsync(Input.Email);
-        if (existing != null)
-        {
-            ModelState.AddModelError("Input.Email", "An attendee with this email already exists.");
-            return Page();
-        }
-
         var attendee = new Attendee
         {
             FirstName = Input.FirstName,
@@ -68,8 +57,16 @@ public class CreateModel : PageModel
             DietaryNeeds = Input.DietaryNeeds
         };
 
-        await _attendeeService.CreateAsync(attendee);
-        TempData["SuccessMessage"] = "Attendee added successfully.";
-        return RedirectToPage("Details", new { id = attendee.Id });
+        try
+        {
+            await _attendeeService.CreateAttendeeAsync(attendee);
+            TempData["SuccessMessage"] = "Attendee created successfully.";
+            return RedirectToPage("Details", new { id = attendee.Id });
+        }
+        catch (Exception)
+        {
+            ModelState.AddModelError("", "An attendee with this email may already exist.");
+            return Page();
+        }
     }
 }

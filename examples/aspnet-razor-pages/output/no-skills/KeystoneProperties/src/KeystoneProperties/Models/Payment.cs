@@ -32,6 +32,7 @@ public class Payment
     [Display(Name = "Payment Type")]
     public PaymentType PaymentType { get; set; }
 
+    [Required]
     public PaymentStatus Status { get; set; } = PaymentStatus.Completed;
 
     [MaxLength(100)]
@@ -43,6 +44,5 @@ public class Payment
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-    // Navigation
     public Lease Lease { get; set; } = null!;
 }

@@ -1,32 +1,21 @@
 @page
 @model KeystoneProperties.Pages.Maintenance.IndexModel
 @{ ViewData["Title"] = "Maintenance Requests"; }
-
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h1>Maintenance Requests</h1>
     <a asp-page="Create" class="btn btn-primary">New Request</a>
 </div>
-
 <form method="get" class="row g-3 mb-4">
     <div class="col-md-2">
         <select name="status" class="form-select">
             <option value="">All Status</option>
-            @foreach (var s in Enum.GetValues<KeystoneProperties.Models.Enums.MaintenanceStatus>())
-            { <option value="@s" selected="@(Model.Status == s)">@s</option> }
+            @foreach (var s in Enum.GetValues<MaintenanceStatus>()) { <option value="@s" selected="@(Model.StatusFilter == s)">@s</option> }
         </select>
     </div>
     <div class="col-md-2">
         <select name="priority" class="form-select">
-            <option value="">All Priorities</option>
-            @foreach (var p in Enum.GetValues<KeystoneProperties.Models.Enums.MaintenancePriority>())
-            { <option value="@p" selected="@(Model.Priority == p)">@p</option> }
-        </select>
-    </div>
-    <div class="col-md-2">
-        <select name="category" class="form-select">
-            <option value="">All Categories</option>
-            @foreach (var c in Enum.GetValues<KeystoneProperties.Models.Enums.MaintenanceCategory>())
-            { <option value="@c" selected="@(Model.Category == c)">@c</option> }
+            <option value="">All Priority</option>
+            @foreach (var p in Enum.GetValues<MaintenancePriority>()) { <option value="@p" selected="@(Model.PriorityFilter == p)">@p</option> }
         </select>
     </div>
     <div class="col-md-3">
@@ -36,56 +25,40 @@
         </select>
     </div>
     <div class="col-md-2">
+        <select name="category" class="form-select">
+            <option value="">All Categories</option>
+            @foreach (var c in Enum.GetValues<MaintenanceCategory>()) { <option value="@c" selected="@(Model.CategoryFilter == c)">@c</option> }
+        </select>
+    </div>
+    <div class="col-md-1">
         <button type="submit" class="btn btn-outline-secondary w-100">Filter</button>
     </div>
 </form>
-
-@if (Model.Requests.Items.Any())
+@if (Model.Requests.Any())
 {
-    <table class="table table-striped table-hover">
-        <thead class="table-dark">
-            <tr><th>Title</th><th>Property/Unit</th><th>Tenant</th><th>Priority</th><th>Category</th><th>Status</th><th>Date</th><th></th></tr>
-        </thead>
+    <table class="table table-striped">
+        <thead><tr><th>Title</th><th>Unit</th><th>Priority</th><th>Category</th><th>Status</th><th>Submitted</th><th>Actions</th></tr></thead>
         <tbody>
-            @foreach (var m in Model.Requests.Items)
+            @foreach (var r in Model.Requests)
             {
                 <tr>
-                    <td><a asp-page="Details" asp-route-id="@m.Id">@m.Title</a></td>
-                    <td>@m.Unit.Property.Name — @m.Unit.UnitNumber</td>
-                    <td>@m.Tenant.FullName</td>
-                    <td><partial name="_StatusBadgePartial" view-data='@(new ViewDataDictionary(ViewData) { { "StatusText", m.Priority.ToString() }, { "StatusType", "MaintenancePriority" } })' /></td>
-                    <td>@m.Category</td>
-                    <td><partial name="_StatusBadgePartial" view-data='@(new ViewDataDictionary(ViewData) { { "StatusText", m.Status.ToString() }, { "StatusType", "MaintenanceStatus" } })' /></td>
-                    <td>@m.SubmittedDate.ToString("MMM dd")</td>
+                    <td><a asp-page="Details" asp-route-id="@r.Id">@r.Title</a></td>
+                    <td>@r.Unit.Property.Name — @r.Unit.UnitNumber</td>
+                    <td><partial name="_StatusBadge" model="@(r.Priority.ToString(), "priority")" /></td>
+                    <td>@r.Category</td>
+                    <td><partial name="_StatusBadge" model="@(r.Status.ToString(), "maintenance")" /></td>
+                    <td>@r.SubmittedDate.ToString("MMM dd, yyyy")</td>
                     <td>
-                        <a asp-page="Details" asp-route-id="@m.Id" class="btn btn-sm btn-outline-primary">View</a>
-                        @if (m.Status != KeystoneProperties.Models.Enums.MaintenanceStatus.Completed && m.Status != KeystoneProperties.Models.Enums.MaintenanceStatus.Cancelled)
-                        { <a asp-page="UpdateStatus" asp-route-id="@m.Id" class="btn btn-sm btn-outline-warning">Update</a> }
+                        <a asp-page="Details" asp-route-id="@r.Id" class="btn btn-sm btn-outline-primary">View</a>
+                        @if (r.Status != MaintenanceStatus.Completed && r.Status != MaintenanceStatus.Cancelled)
+                        {
+                            <a asp-page="UpdateStatus" asp-route-id="@r.Id" class="btn btn-sm btn-outline-secondary">Update</a>
+                        }
                     </td>
                 </tr>
             }
         </tbody>
     </table>
-
+    <partial name="_PaginationPartial" model="@(Model.CurrentPage, Model.TotalPages, $"?status={Model.StatusFilter}&priority={Model.PriorityFilter}&propertyId={Model.PropertyId}&category={Model.CategoryFilter}")" />
 }
-else { <div class="alert alert-info">No maintenance requests found.</div> }
-
-@if (Model.Requests.TotalPages > 1)
-{
-    <nav aria-label="Page navigation">
-        <ul class="pagination justify-content-center">
-            <li class="page-item @(Model.Requests.HasPreviousPage ? "" : "disabled")">
-                <a class="page-link" href="?pageNumber=@(Model.Requests.PageNumber - 1)&status=@Model.Status&priority=@Model.Priority&category=@Model.Category&propertyId=@Model.PropertyId">Previous</a>
-            </li>
-            @for (int i = 1; i <= Model.Requests.TotalPages; i++)
-            {
-                <li class="page-item @(i == Model.Requests.PageNumber ? "active" : "")">
-                    <a class="page-link" href="?pageNumber=@i&status=@Model.Status&priority=@Model.Priority&category=@Model.Category&propertyId=@Model.PropertyId">@i</a>
-                </li>
-            }
-            <li class="page-item @(Model.Requests.HasNextPage ? "" : "disabled")">
-                <a class="page-link" href="?pageNumber=@(Model.Requests.PageNumber + 1)&status=@Model.Status&priority=@Model.Priority&category=@Model.Category&propertyId=@Model.PropertyId">Next</a>
-            </li>
-        </ul>
-    </nav>
-}
+else { <p class="text-muted">No maintenance requests found.</p> }

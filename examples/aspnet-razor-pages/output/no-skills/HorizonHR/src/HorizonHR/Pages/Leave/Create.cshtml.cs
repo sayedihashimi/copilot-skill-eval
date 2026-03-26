@@ -1,9 +1,9 @@
 using System.ComponentModel.DataAnnotations;
+using HorizonHR.Models;
+using HorizonHR.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using HorizonHR.Models;
-using HorizonHR.Services;
 
 namespace HorizonHR.Pages.Leave;
 
@@ -21,85 +21,80 @@ public class CreateModel : PageModel
     [BindProperty]
     public InputModel Input { get; set; } = new();
 
-    public SelectList EmployeeOptions { get; set; } = null!;
-    public SelectList LeaveTypeOptions { get; set; } = null!;
+    public List<SelectListItem> EmployeeOptions { get; set; } = new();
+    public List<SelectListItem> LeaveTypeOptions { get; set; } = new();
 
     public class InputModel
     {
-        [Required(ErrorMessage = "Please select an employee.")]
-        [Display(Name = "Employee")]
+        [Required]
         public int EmployeeId { get; set; }
 
-        [Required(ErrorMessage = "Please select a leave type.")]
-        [Display(Name = "Leave Type")]
+        [Required]
         public int LeaveTypeId { get; set; }
 
-        [Required(ErrorMessage = "Start date is required.")]
-        [Display(Name = "Start Date")]
-        [DataType(DataType.Date)]
+        [Required]
         public DateOnly StartDate { get; set; } = DateOnly.FromDateTime(DateTime.Today);
 
-        [Required(ErrorMessage = "End date is required.")]
-        [Display(Name = "End Date")]
-        [DataType(DataType.Date)]
+        [Required]
         public DateOnly EndDate { get; set; } = DateOnly.FromDateTime(DateTime.Today);
 
-        [Required(ErrorMessage = "Please provide a reason for the leave request.")]
-        [MaxLength(1000)]
-        [Display(Name = "Reason")]
+        [Required, Range(0.5, 365)]
+        public decimal TotalDays { get; set; } = 1;
+
+        [Required, MaxLength(1000)]
         public string Reason { get; set; } = string.Empty;
     }
 
     public async Task OnGetAsync()
     {
-        await PopulateDropdownsAsync();
+        await LoadOptionsAsync();
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
-        if (Input.EndDate < Input.StartDate)
-        {
-            ModelState.AddModelError("Input.EndDate", "End date must be on or after the start date.");
-        }
-
         if (!ModelState.IsValid)
         {
-            await PopulateDropdownsAsync();
+            await LoadOptionsAsync();
             return Page();
         }
 
-        var totalDays = await _leaveService.CalculateBusinessDays(Input.StartDate, Input.EndDate);
-
-        var request = new LeaveRequest
+        if (Input.EndDate < Input.StartDate)
         {
-            EmployeeId = Input.EmployeeId,
-            LeaveTypeId = Input.LeaveTypeId,
-            StartDate = Input.StartDate,
-            EndDate = Input.EndDate,
-            TotalDays = totalDays,
-            Reason = Input.Reason
-        };
+            ModelState.AddModelError("Input.EndDate", "End date must be on or after start date.");
+            await LoadOptionsAsync();
+            return Page();
+        }
 
         try
         {
+            var request = new LeaveRequest
+            {
+                EmployeeId = Input.EmployeeId,
+                LeaveTypeId = Input.LeaveTypeId,
+                StartDate = Input.StartDate,
+                EndDate = Input.EndDate,
+                TotalDays = Input.TotalDays,
+                Reason = Input.Reason
+            };
+
             await _leaveService.SubmitRequestAsync(request);
-            TempData["SuccessMessage"] = "Leave request submitted successfully.";
-            return RedirectToPage("Index");
+            TempData["Success"] = "Leave request submitted successfully.";
+            return RedirectToPage("Details", new { id = request.Id });
         }
         catch (InvalidOperationException ex)
         {
-            TempData["ErrorMessage"] = ex.Message;
-            await PopulateDropdownsAsync();
+            TempData["Error"] = ex.Message;
+            await LoadOptionsAsync();
             return Page();
         }
     }
 
-    private async Task PopulateDropdownsAsync()
+    private async Task LoadOptionsAsync()
     {
         var employees = await _employeeService.GetAllActiveAsync();
-        EmployeeOptions = new SelectList(employees, "Id", "FullName", Input.EmployeeId);
+        EmployeeOptions = employees.Select(e => new SelectListItem(e.FullName, e.Id.ToString())).ToList();
 
         var leaveTypes = await _leaveService.GetLeaveTypesAsync();
-        LeaveTypeOptions = new SelectList(leaveTypes, "Id", "Name", Input.LeaveTypeId);
+        LeaveTypeOptions = leaveTypes.Select(lt => new SelectListItem(lt.Name, lt.Id.ToString())).ToList();
     }
 }

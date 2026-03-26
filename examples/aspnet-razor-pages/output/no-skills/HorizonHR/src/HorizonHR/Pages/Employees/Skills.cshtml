@@ -1,93 +1,70 @@
-@page "/Employees/{id:int}/Skills"
-@using HorizonHR.Models
+@page "{id:int}"
 @model HorizonHR.Pages.Employees.SkillsModel
 @{
-    ViewData["Title"] = $"Manage Skills - {Model.Employee.FullName}";
+    ViewData["Title"] = $"Skills - {Model.EmployeeName}";
 }
 
-<h1>Manage Skills</h1>
-<h2 class="h5 text-muted mb-4">@Model.Employee.FullName</h2>
+<section>
+    <h1>Skills — @Model.EmployeeName</h1>
 
-<section class="mb-5">
-    <h3 class="h5">Current Skills</h3>
-    @if (Model.EmployeeSkills.Any())
-    {
-        <div class="table-responsive">
-            <table class="table table-striped table-hover">
-                <thead class="table-light">
-                    <tr>
-                        <th>Skill Name</th>
-                        <th>Category</th>
-                        <th>Proficiency</th>
-                        <th>Years of Experience</th>
-                        <th>Last Assessed</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var es in Model.EmployeeSkills)
-                    {
-                        <tr>
-                            <td>@es.Skill.Name</td>
-                            <td>@es.Skill.Category</td>
-                            <td>
-                                <partial name="_StatusBadge" model="@es.ProficiencyLevel.ToString()" />
-                            </td>
-                            <td>@(es.YearsOfExperience?.ToString() ?? "—")</td>
-                            <td>@(es.LastAssessedDate?.ToString("yyyy-MM-dd") ?? "—")</td>
-                            <td>
-                                <form method="post" asp-page-handler="Remove" asp-route-id="@Model.Employee.Id" asp-route-skillId="@es.SkillId" class="d-inline">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Remove this skill?');">Remove</button>
-                                </form>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+    <div class="card mb-3">
+        <div class="card-header"><h5 class="mb-0">Add Skill</h5></div>
+        <div class="card-body">
+            <form method="post" asp-page-handler="Add" class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label asp-for="Input.SkillId" class="form-label">Skill</label>
+                    <select asp-for="Input.SkillId" class="form-select" asp-items="Model.SkillOptions">
+                        <option value="">Select Skill</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="Input.ProficiencyLevel" class="form-label">Proficiency</label>
+                    <select asp-for="Input.ProficiencyLevel" class="form-select" asp-items="@(new SelectList(Enum.GetValues<ProficiencyLevel>()))"></select>
+                </div>
+                <div class="col-md-2">
+                    <label asp-for="Input.YearsOfExperience" class="form-label">Years</label>
+                    <input asp-for="Input.YearsOfExperience" class="form-control" type="number" min="0" />
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary">Add</button>
+                </div>
+            </form>
         </div>
+    </div>
+
+    @if (!Model.EmployeeSkills.Any())
+    {
+        <p class="text-muted">No skills assigned.</p>
     }
     else
     {
-        <div class="alert alert-info" role="alert">
-            No skills assigned yet.
-        </div>
+        <table class="table">
+            <thead>
+                <tr><th>Skill</th><th>Category</th><th>Proficiency</th><th>Years</th><th>Last Assessed</th><th></th></tr>
+            </thead>
+            <tbody>
+                @foreach (var es in Model.EmployeeSkills)
+                {
+                    <tr>
+                        <td>@es.Skill.Name</td>
+                        <td>@es.Skill.Category</td>
+                        <td>
+                            @{ ViewData["StatusText"] = es.ProficiencyLevel.ToString(); }
+                            <partial name="Shared/_StatusBadge" />
+                        </td>
+                        <td>@(es.YearsOfExperience?.ToString() ?? "—")</td>
+                        <td>@(es.LastAssessedDate?.ToString("MMM dd, yyyy") ?? "—")</td>
+                        <td>
+                            <form method="post" asp-page-handler="Remove" class="d-inline">
+                                <input type="hidden" name="employeeSkillId" value="@es.Id" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
     }
+
+    <a asp-page="Details" asp-route-id="@Model.EmployeeId" class="btn btn-outline-secondary mt-3">Back to Profile</a>
 </section>
-
-@if (Model.AvailableSkills.Any())
-{
-    <section>
-        <h3 class="h5">Add Skill</h3>
-        <div class="row">
-            <div class="col-md-8">
-                <form method="post" asp-page-handler="Add" asp-route-id="@Model.Employee.Id" class="card">
-                    <div class="card-body">
-                        <div class="row g-3 align-items-end">
-                            <div class="col-md-4">
-                                <label asp-for="SkillId" class="form-label">Skill</label>
-                                <select asp-for="SkillId" asp-items="Model.AvailableSkills" class="form-select">
-                                    <option value="">-- Select a skill --</option>
-                                </select>
-                            </div>
-                            <div class="col-md-3">
-                                <label asp-for="ProficiencyLevel" class="form-label">Proficiency Level</label>
-                                <select asp-for="ProficiencyLevel" asp-items="Model.ProficiencyOptions" class="form-select"></select>
-                            </div>
-                            <div class="col-md-3">
-                                <label asp-for="YearsOfExperience" class="form-label">Years of Experience</label>
-                                <input asp-for="YearsOfExperience" class="form-control" type="number" min="0" max="50" />
-                            </div>
-                            <div class="col-md-2">
-                                <button type="submit" class="btn btn-primary w-100">Add</button>
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </section>
-}
-
-<div class="mt-4">
-    <a asp-page="/Employees/Index" class="btn btn-outline-secondary">Back to Employees</a>
-</div>

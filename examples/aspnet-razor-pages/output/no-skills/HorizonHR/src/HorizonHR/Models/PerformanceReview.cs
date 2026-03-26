@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using HorizonHR.Models.Enums;
 
 namespace HorizonHR.Models;
 
@@ -6,9 +7,11 @@ public class PerformanceReview
 {
     public int Id { get; set; }
 
+    [Required]
     public int EmployeeId { get; set; }
     public Employee Employee { get; set; } = null!;
 
+    [Required]
     public int ReviewerId { get; set; }
     public Employee Reviewer { get; set; } = null!;
 
@@ -18,6 +21,7 @@ public class PerformanceReview
     [Required]
     public DateOnly ReviewPeriodEnd { get; set; }
 
+    [Required]
     public ReviewStatus Status { get; set; } = ReviewStatus.Draft;
 
     public OverallRating? OverallRating { get; set; }

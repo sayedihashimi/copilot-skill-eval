@@ -1,18 +1,22 @@
-using Microsoft.EntityFrameworkCore;
 using KeystoneProperties.Data;
 using KeystoneProperties.Models;
 using KeystoneProperties.Models.Enums;
-using KeystoneProperties.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace KeystoneProperties.Services;
 
 public class UnitService : IUnitService
 {
-    private readonly AppDbContext _context;
+    private readonly ApplicationDbContext _context;
 
-    public UnitService(AppDbContext context) => _context = context;
+    public UnitService(ApplicationDbContext context)
+    {
+        _context = context;
+    }
 
-    public async Task<PaginatedList<Unit>> GetUnitsAsync(int? propertyId, UnitStatus? status, int? bedrooms, decimal? minRent, decimal? maxRent, string? search, int pageNumber, int pageSize)
+    public async Task<(List<Unit> Items, int TotalCount)> GetUnitsAsync(
+        int? propertyId, UnitStatus? status, int? bedrooms, decimal? minRent, decimal? maxRent,
+        string? search, int page, int pageSize)
     {
         var query = _context.Units.Include(u => u.Property).AsQueryable();
 
@@ -21,12 +25,15 @@ public class UnitService : IUnitService
         if (bedrooms.HasValue) query = query.Where(u => u.Bedrooms == bedrooms.Value);
         if (minRent.HasValue) query = query.Where(u => u.MonthlyRent >= minRent.Value);
         if (maxRent.HasValue) query = query.Where(u => u.MonthlyRent <= maxRent.Value);
-        if (!string.IsNullOrWhiteSpace(search)) query = query.Where(u => u.UnitNumber.Contains(search));
+        if (!string.IsNullOrWhiteSpace(search))
+            query = query.Where(u => u.UnitNumber.ToLower().Contains(search.ToLower()));
 
-        query = query.OrderBy(u => u.Property.Name).ThenBy(u => u.UnitNumber);
-        var count = await query.CountAsync();
-        var items = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
-        return new PaginatedList<Unit>(items, count, pageNumber, pageSize);
+        var totalCount = await query.CountAsync();
+        var items = await query.OrderBy(u => u.Property.Name).ThenBy(u => u.UnitNumber)
+            .Skip((page - 1) * pageSize).Take(pageSize)
+            .ToListAsync();
+
+        return (items, totalCount);
     }
 
     public async Task<Unit?> GetByIdAsync(int id) =>
@@ -57,8 +64,7 @@ public class UnitService : IUnitService
     }
 
     public async Task<List<Unit>> GetAvailableUnitsAsync() =>
-        await _context.Units
-            .Include(u => u.Property)
+        await _context.Units.Include(u => u.Property)
             .Where(u => u.Status == UnitStatus.Available)
             .OrderBy(u => u.Property.Name).ThenBy(u => u.UnitNumber)
             .ToListAsync();

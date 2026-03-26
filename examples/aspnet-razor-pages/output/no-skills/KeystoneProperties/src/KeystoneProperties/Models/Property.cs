@@ -45,6 +45,5 @@ public class Property
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
-    // Navigation
     public ICollection<Unit> Units { get; set; } = new List<Unit>();
 }

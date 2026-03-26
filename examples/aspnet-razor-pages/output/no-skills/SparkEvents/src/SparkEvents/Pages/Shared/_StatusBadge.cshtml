@@ -1,27 +1,15 @@
-@model string
+@model EventStatus
 
 @{
-    var status = Model?.ToLower() ?? "";
-    var badgeClass = status switch
+    var (badgeClass, label) = Model switch
     {
-        "draft" => "badge-status-draft",
-        "published" => "badge-status-published",
-        "soldout" => "badge-status-soldout",
-        "completed" => "badge-status-completed",
-        "cancelled" => "badge-status-cancelled",
-        "confirmed" => "badge-status-confirmed",
-        "waitlisted" => "badge-status-waitlisted",
-        "checkedin" => "badge-status-checkedin",
-        "noshow" => "badge-status-noshow",
-        _ => "bg-secondary"
-    };
-    var displayText = status switch
-    {
-        "soldout" => "Sold Out",
-        "checkedin" => "Checked In",
-        "noshow" => "No Show",
-        _ => Model ?? ""
+        EventStatus.Draft => ("bg-secondary", "Draft"),
+        EventStatus.Published => ("bg-success", "Published"),
+        EventStatus.SoldOut => ("bg-warning text-dark", "Sold Out"),
+        EventStatus.Completed => ("bg-info", "Completed"),
+        EventStatus.Cancelled => ("bg-danger", "Cancelled"),
+        _ => ("bg-secondary", Model.ToString())
     };
 }
 
-<span class="badge @badgeClass">@displayText</span>
+<span class="badge @badgeClass status-badge">@label</span>

@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using SparkEvents.Models;
 using SparkEvents.Services;
 
 namespace SparkEvents.Pages.Venues;
@@ -21,29 +22,23 @@ public class EditModel : PageModel
     {
         public int Id { get; set; }
 
-        [Required]
-        [MaxLength(200)]
+        [Required, MaxLength(200)]
         public string Name { get; set; } = string.Empty;
 
-        [Required]
-        [MaxLength(500)]
+        [Required, MaxLength(500)]
         public string Address { get; set; } = string.Empty;
 
-        [Required]
-        [MaxLength(100)]
+        [Required, MaxLength(100)]
         public string City { get; set; } = string.Empty;
 
-        [Required]
-        [MaxLength(2)]
+        [Required, MaxLength(2)]
         public string State { get; set; } = string.Empty;
 
-        [Required]
-        [MaxLength(10)]
+        [Required, MaxLength(10)]
         [Display(Name = "Zip Code")]
         public string ZipCode { get; set; } = string.Empty;
 
-        [Required]
-        [Range(1, int.MaxValue, ErrorMessage = "Max capacity must be positive.")]
+        [Required, Range(1, int.MaxValue, ErrorMessage = "Max capacity must be positive")]
         [Display(Name = "Max Capacity")]
         public int MaxCapacity { get; set; }
 
@@ -60,7 +55,7 @@ public class EditModel : PageModel
 
     public async Task<IActionResult> OnGetAsync(int id)
     {
-        var venue = await _venueService.GetByIdAsync(id);
+        var venue = await _venueService.GetVenueByIdAsync(id);
         if (venue == null) return NotFound();
 
         Input = new InputModel
@@ -84,7 +79,7 @@ public class EditModel : PageModel
     {
         if (!ModelState.IsValid) return Page();
 
-        var venue = await _venueService.GetByIdAsync(Input.Id);
+        var venue = await _venueService.GetVenueByIdAsync(Input.Id);
         if (venue == null) return NotFound();
 
         venue.Name = Input.Name;
@@ -97,7 +92,7 @@ public class EditModel : PageModel
         venue.ContactPhone = Input.ContactPhone;
         venue.Notes = Input.Notes;
 
-        await _venueService.UpdateAsync(venue);
+        await _venueService.UpdateVenueAsync(venue);
         TempData["SuccessMessage"] = "Venue updated successfully.";
         return RedirectToPage("Index");
     }
