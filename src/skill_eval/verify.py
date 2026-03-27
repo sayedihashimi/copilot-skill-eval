@@ -42,6 +42,116 @@ def _find_build_directory(project_dir: Path, working_directory: str) -> Path:
     return cwd
 
 
+def _inject_analyzers(project_dir: Path, analyzers: list[str]) -> None:
+    """Inject Directory.Build.props with analyzer config if not already present."""
+    build_props = project_dir / "Directory.Build.props"
+    if build_props.exists():
+        return  # Don't overwrite existing config
+
+    # Find the template
+    template_path = Path(__file__).parent.parent.parent / "templates" / "Directory.Build.props"
+    if not template_path.exists():
+        return
+
+    content = template_path.read_text(encoding="utf-8")
+
+    # Add analyzer package references if specified
+    if analyzers:
+        pkg_refs = "\n".join(
+            f'    <PackageReference Include="{pkg}" Version="*">\n'
+            f'      <PrivateAssets>all</PrivateAssets>\n'
+            f'    </PackageReference>'
+            for pkg in analyzers
+        )
+        item_group = f"\n  <ItemGroup>\n{pkg_refs}\n  </ItemGroup>"
+        content = content.replace("</Project>", f"{item_group}\n</Project>")
+
+    # Write to the build directory, not project root
+    build_dir = _find_build_directory(project_dir, ".")
+    target = build_dir / "Directory.Build.props"
+    if not target.exists():
+        target.write_text(content, encoding="utf-8")
+
+
+def _parse_build_warnings(build_output: str) -> dict[str, int]:
+    """Parse Roslyn analyzer warnings from build output into category counts."""
+    categories = {
+        "naming": 0,      # CA17xx
+        "performance": 0,  # CA18xx
+        "reliability": 0,  # CA20xx
+        "security": 0,     # CA21xx, CA53xx
+        "usage": 0,        # CA22xx
+        "style": 0,        # IDExxxx
+        "other": 0,
+    }
+    total = 0
+
+    for match in re.finditer(r"warning (CA|IDE|CS)(\d{4,5})", build_output):
+        prefix = match.group(1)
+        code = int(match.group(2))
+        total += 1
+        if prefix == "IDE":
+            categories["style"] += 1
+        elif prefix == "CS":
+            categories["other"] += 1
+        elif 1700 <= code <= 1799:
+            categories["naming"] += 1
+        elif 1800 <= code <= 1899:
+            categories["performance"] += 1
+        elif 2000 <= code <= 2099:
+            categories["reliability"] += 1
+        elif 2100 <= code <= 2199 or 5300 <= code <= 5399:
+            categories["security"] += 1
+        elif 2200 <= code <= 2299:
+            categories["usage"] += 1
+        else:
+            categories["other"] += 1
+
+    categories["total"] = total
+    return categories
+
+
+def _run_format(project_dir: Path, command: str, working_directory: str) -> tuple[bool, int, str]:
+    """Run dotnet format --check and return (passed, issue_count, output)."""
+    cwd = _find_build_directory(project_dir, working_directory)
+    try:
+        result = subprocess.run(
+            command, shell=True, cwd=cwd, capture_output=True, text=True, timeout=120,
+        )
+        output = result.stdout + result.stderr
+        # Count files with formatting issues
+        issue_count = len(re.findall(r"Formatted code file", output))
+        if result.returncode != 0:
+            # dotnet format --check returns non-zero when files need formatting
+            if issue_count == 0:
+                issue_count = output.count(".cs")  # fallback count
+        return result.returncode == 0, issue_count, output
+    except subprocess.TimeoutExpired:
+        return False, 0, "Format check timed out"
+    except Exception as e:
+        return False, 0, str(e)
+
+
+def _run_security_scan(project_dir: Path) -> tuple[int, dict[str, int], str]:
+    """Run dotnet list package --vulnerable and return (total_vulns, severity_counts, output)."""
+    cwd = _find_build_directory(project_dir, ".")
+    try:
+        result = subprocess.run(
+            "dotnet list package --vulnerable",
+            shell=True, cwd=cwd, capture_output=True, text=True, timeout=60,
+        )
+        output = result.stdout + result.stderr
+        severities = {"Critical": 0, "High": 0, "Moderate": 0, "Low": 0}
+        for severity in severities:
+            severities[severity] = output.lower().count(severity.lower())
+        total = sum(severities.values())
+        return total, severities, output
+    except subprocess.TimeoutExpired:
+        return 0, {}, "Security scan timed out"
+    except Exception as e:
+        return 0, {}, str(e)
+
+
 def _run_build(
     command: str,
     project_dir: Path,
@@ -159,6 +269,10 @@ def run_verify(config: EvalConfig, project_root: Path) -> None:
             label = f"{cfg.name}/{scenario.name}"
             click.echo(f"  Verifying: {label}")
 
+            # Inject analyzers if configured
+            if config.verification.analyzers:
+                _inject_analyzers(project_dir, config.verification.analyzers)
+
             # Build
             build_ok, build_output = _run_build(
                 config.verification.build.command,
@@ -168,6 +282,11 @@ def run_verify(config: EvalConfig, project_root: Path) -> None:
             )
             build_status = "✅ Pass" if build_ok else "❌ Fail"
             click.echo(f"    Build: {build_status}")
+
+            # Parse build warnings
+            warnings = _parse_build_warnings(build_output)
+            if warnings["total"] > 0:
+                click.echo(f"    Warnings: {warnings['total']}")
 
             # Run (optional)
             run_status = "⏭️ Skipped"
@@ -186,11 +305,32 @@ def run_verify(config: EvalConfig, project_root: Path) -> None:
                     run_notes = run_output[:200]
                 click.echo(f"    Run:   {run_status}")
 
+            # Format check (optional)
+            format_status = "⏭️ Skipped"
+            if config.verification.format and build_ok:
+                fmt_ok, fmt_count, fmt_output = _run_format(
+                    project_dir,
+                    config.verification.format.command,
+                    config.verification.format.working_directory,
+                )
+                format_status = "✅ Pass" if fmt_ok else f"❌ {fmt_count} issues"
+                click.echo(f"    Format: {format_status}")
+
+            # Security scan (optional)
+            security_status = "⏭️ Skipped"
+            if config.verification.security and config.verification.security.vulnerability_scan and build_ok:
+                vuln_total, vuln_severities, vuln_output = _run_security_scan(project_dir)
+                security_status = "✅ Clean" if vuln_total == 0 else f"⚠️ {vuln_total} vulns"
+                click.echo(f"    Security: {security_status}")
+
             results.append({
                 "config": cfg.name,
                 "scenario": scenario.name,
                 "build": build_status,
                 "run": run_status,
+                "warnings": warnings,
+                "format": format_status,
+                "security": security_status,
                 "notes": build_output[:200] if not build_ok else run_notes,
             })
 
@@ -217,17 +357,41 @@ def _write_build_notes(
         f"",
         f"## Results",
         f"",
-        f"| Configuration | Scenario | Build | Run | Notes |",
-        f"|---|---|---|---|---|",
+        f"| Configuration | Scenario | Build | Run | Format | Security | Notes |",
+        f"|---|---|---|---|---|---|---|",
     ]
 
     for r in results:
         notes = r.get("notes", "").replace("\n", " ")[:100]
+        fmt = r.get("format", "⏭️ Skipped")
+        sec = r.get("security", "⏭️ Skipped")
         lines.append(
-            f"| {r['config']} | {r['scenario']} | {r['build']} | {r['run']} | {notes} |"
+            f"| {r['config']} | {r['scenario']} | {r['build']} | {r['run']} | {fmt} | {sec} | {notes} |"
         )
 
     lines.append("")
+
+    # Automated Metrics section
+    has_warnings = any(r.get("warnings", {}).get("total", 0) > 0 for r in results)
+    if has_warnings:
+        lines.extend([
+            "## Automated Metrics",
+            "",
+            "### Build Warnings by Category",
+            "",
+            "| Configuration | Scenario | Total | Naming | Performance | Reliability | Security | Usage | Style | Other |",
+            "|---|---|---|---|---|---|---|---|---|---|",
+        ])
+        for r in results:
+            w = r.get("warnings", {})
+            if w.get("total", 0) > 0:
+                lines.append(
+                    f"| {r['config']} | {r['scenario']} "
+                    f"| {w.get('total', 0)} | {w.get('naming', 0)} | {w.get('performance', 0)} "
+                    f"| {w.get('reliability', 0)} | {w.get('security', 0)} | {w.get('usage', 0)} "
+                    f"| {w.get('style', 0)} | {w.get('other', 0)} |"
+                )
+        lines.append("")
 
     # Skill configuration summary
     lines.extend([

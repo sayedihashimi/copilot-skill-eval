@@ -56,8 +56,10 @@ def init(ctx: click.Context) -> None:
     multiple=True,
     help="Only generate these configurations (can be repeated).",
 )
+@click.option("--runs", "-r", type=int, default=None,
+              help="Number of generation runs per configuration (overrides eval.yaml)")
 @click.pass_context
-def generate(ctx: click.Context, configurations: tuple[str, ...]) -> None:
+def generate(ctx: click.Context, configurations: tuple[str, ...], runs: int | None) -> None:
     """Generate code using Copilot CLI for each skill configuration.
 
     Invokes the Copilot CLI once per configuration, each time with different
@@ -66,6 +68,10 @@ def generate(ctx: click.Context, configurations: tuple[str, ...]) -> None:
     from skill_eval.generate import run_generate
 
     config = _load(ctx)
+    if runs is not None:
+        config.runs = runs
+    if config.runs > 1:
+        click.echo(f"  Multi-run mode: {config.runs} runs per configuration")
     run_generate(
         config,
         ctx.obj["project_root"],
@@ -110,6 +116,8 @@ def analyze(ctx: click.Context) -> None:
     multiple=True,
     help="Only generate these configurations (can be repeated).",
 )
+@click.option("--runs", "-r", type=int, default=None,
+              help="Number of generation runs per configuration (overrides eval.yaml)")
 @click.pass_context
 def run(
     ctx: click.Context,
@@ -117,6 +125,7 @@ def run(
     skip_verify: bool,
     analyze_only: bool,
     configurations: tuple[str, ...],
+    runs: int | None,
 ) -> None:
     """Run the full evaluation pipeline: generate → verify → analyze.
 
@@ -128,6 +137,10 @@ def run(
     from skill_eval.verify import run_verify
 
     config = _load(ctx)
+    if runs is not None:
+        config.runs = runs
+    if config.runs > 1:
+        click.echo(f"  Multi-run mode: {config.runs} runs per configuration")
     project_root = ctx.obj["project_root"]
 
     if analyze_only:

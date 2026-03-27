@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import copy
+import random
 import subprocess
 from pathlib import Path
 
@@ -30,8 +32,13 @@ def run_analyze(config: EvalConfig, project_root: Path) -> None:
     click.echo(f"  Configurations: {len(config.configurations)}")
     click.echo(f"  Scenarios:      {len(config.scenarios)}")
 
+    # Randomize configuration order to mitigate LLM position bias
+    shuffled_config = copy.deepcopy(config)
+    random.shuffle(shuffled_config.configurations)
+    click.echo(f"  Config order (randomized): {[c.name for c in shuffled_config.configurations]}")
+
     # Render the analysis prompt from the template
-    prompt = render_analyze_prompt(config, project_root)
+    prompt = render_analyze_prompt(shuffled_config, project_root)
 
     click.echo(f"\n  Generated analysis prompt ({len(prompt)} chars)")
     click.echo("  Invoking Copilot CLI for analysis...")
