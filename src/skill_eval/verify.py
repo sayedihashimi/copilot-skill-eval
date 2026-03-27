@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import os
 import re
 import signal
 import subprocess
+import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -195,13 +197,16 @@ def _run_app(
     """Start the app, optionally check health, then stop it."""
     try:
         run_dir = _find_build_directory(project_dir, ".")
-        proc = subprocess.Popen(
-            command,
+        kwargs: dict = dict(
             shell=True,
             cwd=run_dir,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
+        # On Windows, create a new process group so we can kill the tree
+        if sys.platform == "win32":
+            kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
+        proc = subprocess.Popen(command, **kwargs)
 
         # Wait for the app to start
         time.sleep(timeout_seconds)
@@ -231,13 +236,30 @@ def _run_app(
 
 
 def _terminate(proc: subprocess.Popen) -> None:
-    """Terminate a subprocess gracefully."""
-    proc.terminate()
+    """Terminate a subprocess and its entire process tree."""
+    if sys.platform == "win32":
+        # On Windows, taskkill /T kills the process tree
+        try:
+            subprocess.run(
+                f"taskkill /F /T /PID {proc.pid}",
+                shell=True, capture_output=True, timeout=10,
+            )
+        except Exception:
+            pass
+    else:
+        # On Unix, kill the process group
+        try:
+            os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+        except (ProcessLookupError, OSError):
+            pass
     try:
         proc.wait(timeout=5)
     except subprocess.TimeoutExpired:
         proc.kill()
-        proc.wait(timeout=5)
+        try:
+            proc.wait(timeout=5)
+        except Exception:
+            pass
 
 
 def run_verify(config: EvalConfig, project_root: Path) -> None:

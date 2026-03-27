@@ -1,7 +1,7 @@
 # Build & Run Verification Report
 
 **Evaluation:** ASP.NET Core Razor Pages Skill Evaluation
-**Date:** 2026-03-27 06:09 UTC
+**Date:** 2026-03-27 06:56 UTC
 **Configurations:** 5
 **Scenarios:** 3
 **Total projects:** 15
@@ -18,7 +18,7 @@
 | dotnet-webapi | HorizonHR | ✅ Pass | ✅ Pass | ❌ 0 issues | ⚠️ 1 vulns |  |
 | dotnet-artisan | SparkEvents | ✅ Pass | ✅ Pass | ❌ 0 issues | ⚠️ 1 vulns |  |
 | dotnet-artisan | KeystoneProperties | ✅ Pass | ✅ Pass | ❌ 0 issues | ⚠️ 1 vulns |  |
-| dotnet-artisan | HorizonHR | ❌ Fail | ⏭️ Skipped | ⏭️ Skipped | ⏭️ Skipped |   Determining projects to restore...   Restored C:\data\mycode\copilot-skill-eval\examples\aspnet-ra |
+| dotnet-artisan | HorizonHR | ❌ Fail | ⏭️ Skipped | ⏭️ Skipped | ⏭️ Skipped |   Determining projects to restore...   All projects are up-to-date for restore. C:\Program Files\dot |
 | managedcode-dotnet-skills | SparkEvents | ✅ Pass | ✅ Pass | ❌ 0 issues | ⚠️ 1 vulns |  |
 | managedcode-dotnet-skills | KeystoneProperties | ✅ Pass | ✅ Pass | ❌ 0 issues | ⚠️ 1 vulns |  |
 | managedcode-dotnet-skills | HorizonHR | ✅ Pass | ✅ Pass | ❌ 0 issues | ⚠️ 1 vulns |  |
