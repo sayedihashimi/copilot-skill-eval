@@ -204,6 +204,8 @@ This is specific (7–30 days), defines the computation (extend EndDate), states
 
 **Aim for 8–12 business rules per app.** Fewer than that means the domain is too simple; more than that and you risk overwhelming the generator with interacting constraints.
 
+**Evaluation note:** Business rules are now evaluated for implementation completeness. Each rule you define should be specific enough that its presence or absence in generated code can be verified. Include concrete values, thresholds, and expected HTTP status codes for violations.
+
 ### API Endpoints
 
 A complete list of every endpoint the app should expose. Use tables grouped by resource:
@@ -228,6 +230,8 @@ A complete list of every endpoint the app should expose. Use tables grouped by r
 - Use **action endpoints** for state changes: `POST /api/bookings/{id}/cancel`, not `PATCH /api/bookings/{id}` with a status field
 - Include **convenience endpoints** that aggregate data: `GET /api/classes/available`, `GET /api/loans/overdue`
 - Use **consistent URL patterns**: plural nouns for resources, nested routes for sub-resources
+
+**Evaluation note:** Endpoint completeness is a critical evaluation dimension. Every endpoint listed here will be checked against the generated code. Missing endpoints are scored as correctness failures.
 
 ### Seed Data
 
@@ -340,6 +344,9 @@ Use this checklist before finalizing a scenario prompt:
 - [ ] **Project location** is explicit and states standalone requirement
 - [ ] **No auth** — explicitly stated in Technical Requirements
 - [ ] **Consistent** with other prompts in the evaluation (same section order, similar detail level)
+- [ ] **Business rules include concrete values and expected error responses**
+- [ ] **All endpoints listed explicitly** (no "etc." or "similar endpoints")
+- [ ] **Security considerations noted** (input validation expectations)
 
 ---
 

@@ -79,6 +79,8 @@ python -m skill_eval analyze                   # Analysis only
 python -m skill_eval run --skip-generate       # Skip generation, verify + analyze
 python -m skill_eval run --analyze-only        # Only run analysis
 python -m skill_eval validate-config           # Check eval.yaml is valid
+python -m skill_eval generate --runs 3            # Generate 3 runs per config
+python -m skill_eval run --runs 3                  # Full pipeline with 3 runs
 ```
 
 ## Configuration: `eval.yaml`
@@ -86,6 +88,7 @@ python -m skill_eval validate-config           # Check eval.yaml is valid
 ```yaml
 name: "My Skill Evaluation"
 description: "Evaluate my React skills"
+runs: 1
 
 scenarios:
   - name: Dashboard
@@ -108,6 +111,10 @@ verification:
   build:
     command: "npm run build"
     success_pattern: "compiled successfully"
+  format:
+    command: "npm run lint"
+  security:
+    vulnerability_scan: true
   run:
     command: "npm start"
     timeout_seconds: 10
@@ -120,6 +127,8 @@ dimensions:
     description: "Component composition and reusability"
     what_to_look_for: "Check for atomic design, custom hooks, compound components."
     why_it_matters: "Good architecture enables reuse and simplifies testing."
+    tier: high
+    evaluation_method: llm
 
   - name: "Type Safety"
     description: "TypeScript usage and strictness"
@@ -164,6 +173,14 @@ Dimensions are the quality criteria used to compare generated code. Each dimensi
 | `description` | What this dimension measures |
 | `what_to_look_for` | Concrete things to check in the code |
 | `why_it_matters` | Why this matters for production quality |
+| `tier` | Priority tier: critical, high, medium, low (default: medium) |
+| `evaluation_method` | How it's evaluated: llm, automated, hybrid (default: llm) |
+
+**Dimension Tiers** determine weighted scoring in the analysis report:
+- **critical** (weight 3×) — Security, functional correctness, build failures
+- **high** (weight 2×) — Error handling, async patterns, core architecture
+- **medium** (weight 1×) — Code patterns, organization, documentation
+- **low** (weight 0.5×) — Style conventions, syntactic preferences
 
 **Tips:**
 - Start with 5–10 dimensions — you can always add more later
@@ -241,6 +258,28 @@ To run it:
 cd examples/aspnet-razor-pages
 python -m skill_eval --config eval.yaml run
 ```
+
+## Verification Pipeline
+
+The verify step runs multiple checks beyond basic build and run:
+
+| Check | What It Does | Configuration |
+|-------|-------------|---------------|
+| **Build** | Compiles the project, counts Roslyn analyzer warnings | `verification.build` |
+| **Format** | Runs `dotnet format --check` for code style compliance | `verification.format` (optional) |
+| **Security** | Runs `dotnet list package --vulnerable` for known CVEs | `verification.security` (optional) |
+| **Run** | Starts the app and optionally checks health endpoint | `verification.run` (optional) |
+
+The framework automatically injects a `Directory.Build.props` file to enable Roslyn analyzers before building. Additional analyzer packages can be specified:
+
+```yaml
+verification:
+  analyzers:
+    - "Meziantou.Analyzer"
+    - "Roslynator.Analyzers"
+```
+
+Build warnings are parsed and categorized (naming, performance, security, reliability) and included in the build notes report.
 
 ## The Agent: `@skill-eval`
 
