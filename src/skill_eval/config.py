@@ -123,7 +123,7 @@ class EvalConfig(BaseModel):
     verification: Verification
     dimensions: list[Dimension]
     output: OutputSettings = OutputSettings()
-    runs: int = 5
+    runs: int = 3
 
     @field_validator("scenarios")
     @classmethod

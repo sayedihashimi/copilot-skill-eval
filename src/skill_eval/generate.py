@@ -13,7 +13,10 @@ import os
 import platform
 import shutil
 import subprocess
+import sys
 import tempfile
+import threading
+import time
 from pathlib import Path
 
 import click
@@ -21,6 +24,9 @@ import click
 from skill_eval.config import Configuration, EvalConfig
 from skill_eval.prompt_renderer import render_generate_prompt
 from skill_eval.skill_manager import add_skill_directories, remove_skill_directories
+
+# Default: kill Copilot if no CPU activity for this many seconds
+_IDLE_TIMEOUT = 300  # 5 minutes
 
 
 # ---------------------------------------------------------------------------
@@ -142,11 +148,17 @@ def _run_copilot(
     *,
     cwd: Path | None = None,
     project_root: Path | None = None,
+    idle_timeout: int = _IDLE_TIMEOUT,
+    max_retries: int = 1,
 ) -> None:
-    """Invoke the Copilot CLI with the given prompt and configuration."""
+    """Invoke the Copilot CLI with a watchdog that kills hung processes.
+
+    Monitors the Copilot process CPU usage. If the process is idle
+    (no CPU consumption) for *idle_timeout* seconds, it is killed and
+    retried up to *max_retries* times.
+    """
     cmd = ["copilot", "-p", prompt, "--yolo"]
 
-    # Resolve plugin paths to absolute so they work from the staging dir
     for plugin in configuration.plugins:
         if project_root:
             abs_plugin = str((project_root / plugin).resolve())
@@ -161,12 +173,103 @@ def _run_copilot(
     if cwd:
         click.echo(f"  Working directory: {cwd}")
 
-    result = subprocess.run(cmd, cwd=cwd)
-    if result.returncode != 0:
-        raise RuntimeError(
-            f"Copilot CLI exited with code {result.returncode} "
-            f"for configuration '{configuration.name}'"
-        )
+    for attempt in range(1 + max_retries):
+        if attempt > 0:
+            click.echo(f"  ⚠️  Retry {attempt}/{max_retries} after idle timeout")
+
+        proc = subprocess.Popen(cmd, cwd=cwd)
+        timed_out = _watchdog_wait(proc, idle_timeout)
+
+        if timed_out:
+            click.echo(f"  ⚠️  Copilot idle for {idle_timeout}s — killing (PID {proc.pid})")
+            _kill_process_tree(proc)
+            if attempt < max_retries:
+                continue
+            raise RuntimeError(
+                f"Copilot CLI hung after {max_retries + 1} attempts "
+                f"for configuration '{configuration.name}'"
+            )
+
+        if proc.returncode != 0:
+            raise RuntimeError(
+                f"Copilot CLI exited with code {proc.returncode} "
+                f"for configuration '{configuration.name}'"
+            )
+        return  # success
+
+
+def _watchdog_wait(proc: subprocess.Popen, idle_timeout: int) -> bool:
+    """Wait for *proc* to finish, killing it if idle too long.
+
+    Returns True if the process was killed due to idle timeout.
+    Uses a background thread to monitor CPU usage via psutil-like
+    approach (polling /proc or tasklist).
+    """
+    idle_since = time.monotonic()
+    last_cpu = _get_process_cpu(proc.pid)
+    poll_interval = 15  # seconds between CPU checks
+
+    while proc.poll() is None:
+        time.sleep(poll_interval)
+        if proc.poll() is not None:
+            break
+
+        current_cpu = _get_process_cpu(proc.pid)
+        if current_cpu is None:
+            break  # process gone
+
+        if current_cpu != last_cpu:
+            idle_since = time.monotonic()
+            last_cpu = current_cpu
+        elif time.monotonic() - idle_since > idle_timeout:
+            return True  # timed out
+
+    return False
+
+
+def _get_process_cpu(pid: int) -> float | None:
+    """Get cumulative CPU time for a process. Returns None if process not found."""
+    try:
+        if sys.platform == "win32":
+            result = subprocess.run(
+                ["powershell", "-NoProfile", "-Command",
+                 f"(Get-Process -Id {pid} -ErrorAction SilentlyContinue).CPU"],
+                capture_output=True, text=True, timeout=10,
+            )
+            val = result.stdout.strip()
+            return float(val) if val else None
+        else:
+            stat = Path(f"/proc/{pid}/stat")
+            if stat.exists():
+                fields = stat.read_text().split()
+                utime = int(fields[13])
+                stime = int(fields[14])
+                return float(utime + stime)
+            return None
+    except Exception:
+        return None
+
+
+def _kill_process_tree(proc: subprocess.Popen) -> None:
+    """Kill a process and its children."""
+    if sys.platform == "win32":
+        try:
+            subprocess.run(
+                f"taskkill /F /T /PID {proc.pid}",
+                shell=True, capture_output=True, timeout=10,
+            )
+        except Exception:
+            pass
+    else:
+        import signal as _signal
+        try:
+            os.killpg(os.getpgid(proc.pid), _signal.SIGKILL)
+        except (ProcessLookupError, OSError):
+            pass
+    try:
+        proc.wait(timeout=10)
+    except Exception:
+        pass
 
 
 def run_generate(
@@ -255,10 +358,14 @@ def run_generate(
                         config, cfg.name, project_root,
                         scenario=scenario, run_id=run_id,
                     )
-                    _run_copilot(
-                        prompt, cfg, cwd=staging_dir, project_root=project_root,
-                    )
-                    click.echo(f"    ✅ {scenario.name} done")
+                    try:
+                        _run_copilot(
+                            prompt, cfg, cwd=staging_dir, project_root=project_root,
+                        )
+                        click.echo(f"    ✅ {scenario.name} done")
+                    except RuntimeError as e:
+                        click.echo(f"    ❌ {scenario.name} failed: {e}")
+                        continue
 
         finally:
             if added_skills:

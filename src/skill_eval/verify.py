@@ -9,6 +9,7 @@ import signal
 import subprocess
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.error import URLError
@@ -263,13 +264,103 @@ def _terminate(proc: subprocess.Popen) -> None:
             pass
 
 
-def run_verify(config: EvalConfig, project_root: Path) -> None:
-    """Verify all generated projects build and run."""
+def _verify_single(
+    config: "EvalConfig",
+    cfg_name: str,
+    run_id: int,
+    scenario_name: str,
+    project_dir: Path,
+) -> dict:
+    """Verify a single project (build, run, format, security). Thread-safe."""
+    if not project_dir.exists():
+        return {
+            "config": cfg_name,
+            "run_id": run_id,
+            "scenario": scenario_name,
+            "build": "⚠️ Not found",
+            "build_success": False,
+            "run": "⚠️ Not found",
+            "run_success": False,
+            "notes": "Project directory not found",
+        }
+
+    # Inject analyzers if configured
+    if config.verification.analyzers:
+        _inject_analyzers(project_dir, config.verification.analyzers)
+
+    # Build
+    build_ok, build_output = _run_build(
+        config.verification.build.command,
+        project_dir,
+        config.verification.build.working_directory,
+        config.verification.build.success_pattern,
+    )
+    warnings = _parse_build_warnings(build_output)
+
+    # Run (optional)
+    run_status = "⏭️ Skipped"
+    run_ok = False
+    run_notes = ""
+    if config.verification.run and build_ok:
+        hc = config.verification.run.health_check
+        run_ok, run_output = _run_app(
+            config.verification.run.command,
+            project_dir,
+            config.verification.run.timeout_seconds,
+            hc.url if hc else None,
+            hc.expected_status if hc else 200,
+        )
+        run_status = "✅ Pass" if run_ok else "❌ Fail"
+        if not run_ok:
+            run_notes = run_output[:200]
+
+    # Format check (optional)
+    format_status = "⏭️ Skipped"
+    format_issues = 0
+    if config.verification.format and build_ok:
+        fmt_ok, fmt_count, _ = _run_format(
+            project_dir,
+            config.verification.format.command,
+            config.verification.format.working_directory,
+        )
+        format_status = "✅ Pass" if fmt_ok else f"❌ {fmt_count} issues"
+        format_issues = fmt_count
+
+    # Security scan (optional)
+    security_status = "⏭️ Skipped"
+    vuln_sev: dict = {}
+    if config.verification.security and config.verification.security.vulnerability_scan and build_ok:
+        vuln_total_count, vuln_sev, _ = _run_security_scan(project_dir)
+        security_status = "✅ Clean" if vuln_total_count == 0 else f"⚠️ {vuln_total_count} vulns"
+
+    return {
+        "config": cfg_name,
+        "run_id": run_id,
+        "scenario": scenario_name,
+        "build": "✅ Pass" if build_ok else "❌ Fail",
+        "build_success": build_ok,
+        "run": run_status,
+        "run_success": run_ok,
+        "warnings": warnings,
+        "format": format_status,
+        "format_issues": format_issues,
+        "security": security_status,
+        "security_vulnerabilities": vuln_sev,
+        "notes": build_output[:200] if not build_ok else run_notes,
+    }
+
+
+def run_verify(config: EvalConfig, project_root: Path, parallel: int = 3) -> None:
+    """Verify all generated projects build and run.
+
+    Uses a thread pool to verify multiple projects in parallel.
+    """
     output_base = project_root / config.output.directory
     reports_dir = project_root / config.output.reports_directory
     reports_dir.mkdir(parents=True, exist_ok=True)
 
-    results: list[dict] = []
+    # Collect all verification tasks
+    tasks: list[tuple[str, int, str, Path]] = []
     num_runs = config.runs
 
     for cfg in config.configurations:
@@ -286,93 +377,38 @@ def run_verify(config: EvalConfig, project_root: Path) -> None:
 
             for scenario in config.scenarios:
                 project_dir = run_dir / scenario.name
-                if not project_dir.exists():
-                    results.append({
-                        "config": cfg.name,
-                        "run_id": run_id,
-                        "scenario": scenario.name,
-                        "build": "⚠️ Not found",
-                        "run": "⚠️ Not found",
-                        "notes": "Project directory not found",
-                    })
-                    continue
+                tasks.append((cfg.name, run_id, scenario.name, project_dir))
 
-                label = f"{cfg.name}/run-{run_id}/{scenario.name}"
-                click.echo(f"  Verifying: {label}")
+    click.echo(f"  Verifying {len(tasks)} projects (parallel={parallel})...")
 
-                # Inject analyzers if configured
-                if config.verification.analyzers:
-                    _inject_analyzers(project_dir, config.verification.analyzers)
-
-                # Build
-                build_ok, build_output = _run_build(
-                    config.verification.build.command,
-                    project_dir,
-                    config.verification.build.working_directory,
-                    config.verification.build.success_pattern,
-                )
-                build_status = "✅ Pass" if build_ok else "❌ Fail"
-                click.echo(f"    Build: {build_status}")
-
-                # Parse build warnings
-                warnings = _parse_build_warnings(build_output)
-                if warnings["total"] > 0:
-                    click.echo(f"    Warnings: {warnings['total']}")
-
-                # Run (optional)
-                run_status = "⏭️ Skipped"
-                run_notes = ""
-                if config.verification.run and build_ok:
-                    hc = config.verification.run.health_check
-                    run_ok, run_output = _run_app(
-                        config.verification.run.command,
-                        project_dir,
-                        config.verification.run.timeout_seconds,
-                        hc.url if hc else None,
-                        hc.expected_status if hc else 200,
-                    )
-                    run_status = "✅ Pass" if run_ok else "❌ Fail"
-                    if not run_ok:
-                        run_notes = run_output[:200]
-                    click.echo(f"    Run:   {run_status}")
-
-                # Format check (optional)
-                format_status = "⏭️ Skipped"
-                format_issues = 0
-                if config.verification.format and build_ok:
-                    fmt_ok, fmt_count, fmt_output = _run_format(
-                        project_dir,
-                        config.verification.format.command,
-                        config.verification.format.working_directory,
-                    )
-                    format_status = "✅ Pass" if fmt_ok else f"❌ {fmt_count} issues"
-                    format_issues = fmt_count
-                    click.echo(f"    Format: {format_status}")
-
-                # Security scan (optional)
-                security_status = "⏭️ Skipped"
-                vuln_total_count = 0
-                vuln_sev = {}
-                if config.verification.security and config.verification.security.vulnerability_scan and build_ok:
-                    vuln_total_count, vuln_sev, vuln_output = _run_security_scan(project_dir)
-                    security_status = "✅ Clean" if vuln_total_count == 0 else f"⚠️ {vuln_total_count} vulns"
-                    click.echo(f"    Security: {security_status}")
-
+    results: list[dict] = []
+    with ThreadPoolExecutor(max_workers=parallel) as executor:
+        futures = {
+            executor.submit(
+                _verify_single, config, cfg_name, run_id, scenario_name, project_dir,
+            ): (cfg_name, run_id, scenario_name)
+            for cfg_name, run_id, scenario_name, project_dir in tasks
+        }
+        for future in as_completed(futures):
+            cfg_name, run_id, scenario_name = futures[future]
+            try:
+                result = future.result()
+                build = result["build"]
+                run = result["run"]
+                warns = result.get("warnings", {}).get("total", 0)
+                click.echo(f"    {cfg_name}/run-{run_id}/{scenario_name}: Build {build} | Run {run} | Warnings: {warns}")
+                results.append(result)
+            except Exception as e:
+                click.echo(f"    ❌ {cfg_name}/run-{run_id}/{scenario_name}: Error: {e}")
                 results.append({
-                    "config": cfg.name,
-                    "run_id": run_id,
-                    "scenario": scenario.name,
-                    "build": build_status,
-                    "build_success": build_ok,
-                    "run": run_status,
-                    "run_success": "Pass" in run_status,
-                    "warnings": warnings,
-                    "format": format_status,
-                    "format_issues": format_issues,
-                    "security": security_status,
-                    "security_vulnerabilities": vuln_sev,
-                    "notes": build_output[:200] if not build_ok else run_notes,
+                    "config": cfg_name, "run_id": run_id, "scenario": scenario_name,
+                    "build": "❌ Error", "build_success": False,
+                    "run": "❌ Error", "run_success": False,
+                    "notes": str(e)[:200],
                 })
+
+    # Sort results for consistent output
+    results.sort(key=lambda r: (r["config"], r.get("run_id", 0), r["scenario"]))
 
     # Write build-notes.md
     notes_path = reports_dir / config.output.notes_file
