@@ -202,12 +202,14 @@ def _watchdog_wait(proc: subprocess.Popen, idle_timeout: int) -> bool:
     """Wait for *proc* to finish, killing it if idle too long.
 
     Returns True if the process was killed due to idle timeout.
-    Uses a background thread to monitor CPU usage via psutil-like
-    approach (polling /proc or tasklist).
+    A process is considered idle if its CPU usage is below 0.5s per
+    check interval — this catches processes that trickle tiny amounts
+    of CPU (heartbeats, polling) without doing real work.
     """
     idle_since = time.monotonic()
     last_cpu = _get_process_cpu(proc.pid)
     poll_interval = 15  # seconds between CPU checks
+    min_cpu_delta = 0.5  # minimum CPU seconds per interval to count as active
 
     while proc.poll() is None:
         time.sleep(poll_interval)
@@ -218,9 +220,11 @@ def _watchdog_wait(proc: subprocess.Popen, idle_timeout: int) -> bool:
         if current_cpu is None:
             break  # process gone
 
-        if current_cpu != last_cpu:
+        cpu_delta = current_cpu - (last_cpu or 0)
+        last_cpu = current_cpu
+
+        if cpu_delta >= min_cpu_delta:
             idle_since = time.monotonic()
-            last_cpu = current_cpu
         elif time.monotonic() - idle_since > idle_timeout:
             return True  # timed out
 
