@@ -371,7 +371,7 @@ dimensions:
       builder.Services.AddEndpointsApiExplorer(). Check Program.cs for
       Swashbuckle configuration like app.UseSwagger() or app.UseSwaggerUI()
       which should also not be present.
-    why_it_matters: "Swashbuckle is deprecated in .NET 9+ — the built-in OpenAPI support is the official replacement with better performance and no third-party dependency"
+    why_it_matters: "The built-in OpenAPI support is the official replacement with better performance and no third-party dependency"
     tier: critical
 
   - name: "Build & Run Success"
