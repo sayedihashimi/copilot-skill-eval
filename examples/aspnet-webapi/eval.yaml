@@ -96,7 +96,7 @@ dimensions:
       using statements across files that could be centralized. Note if implicit usings
       are enabled in .csproj via <ImplicitUsings>enable</ImplicitUsings>.
     why_it_matters: "Modern C# features reduce boilerplate, improve clarity, and signal current language proficiency"
-    tier: low
+    tier: high
 
   - name: "DTO Design"
     description: "Records vs classes, immutability, naming conventions"

@@ -462,7 +462,7 @@ dimensions:
       statements. Look for repetitive using statements across files that could be centralized.
       Note if implicit usings are enabled in .csproj via <ImplicitUsings>enable</ImplicitUsings>.
     why_it_matters: "Modern C# features reduce boilerplate, improve clarity, and signal current language version awareness"
-    tier: low
+    tier: high
 
   - name: "Build & Run Success"
     description: "Whether the generated project compiles without errors and the app starts successfully"
