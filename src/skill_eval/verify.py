@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import signal
@@ -269,6 +270,7 @@ def run_verify(config: EvalConfig, project_root: Path) -> None:
     reports_dir.mkdir(parents=True, exist_ok=True)
 
     results: list[dict] = []
+    num_runs = config.runs
 
     for cfg in config.configurations:
         config_dir = output_base / cfg.name
@@ -276,90 +278,111 @@ def run_verify(config: EvalConfig, project_root: Path) -> None:
             click.echo(f"⚠️  Skipping {cfg.name}: output directory not found")
             continue
 
-        for scenario in config.scenarios:
-            project_dir = config_dir / scenario.name
-            if not project_dir.exists():
-                results.append({
-                    "config": cfg.name,
-                    "scenario": scenario.name,
-                    "build": "⚠️ Not found",
-                    "run": "⚠️ Not found",
-                    "notes": "Project directory not found",
-                })
+        for run_id in range(1, num_runs + 1):
+            run_dir = config_dir / f"run-{run_id}"
+            if not run_dir.exists():
+                click.echo(f"⚠️  Skipping {cfg.name}/run-{run_id}: not found")
                 continue
 
-            label = f"{cfg.name}/{scenario.name}"
-            click.echo(f"  Verifying: {label}")
+            for scenario in config.scenarios:
+                project_dir = run_dir / scenario.name
+                if not project_dir.exists():
+                    results.append({
+                        "config": cfg.name,
+                        "run_id": run_id,
+                        "scenario": scenario.name,
+                        "build": "⚠️ Not found",
+                        "run": "⚠️ Not found",
+                        "notes": "Project directory not found",
+                    })
+                    continue
 
-            # Inject analyzers if configured
-            if config.verification.analyzers:
-                _inject_analyzers(project_dir, config.verification.analyzers)
+                label = f"{cfg.name}/run-{run_id}/{scenario.name}"
+                click.echo(f"  Verifying: {label}")
 
-            # Build
-            build_ok, build_output = _run_build(
-                config.verification.build.command,
-                project_dir,
-                config.verification.build.working_directory,
-                config.verification.build.success_pattern,
-            )
-            build_status = "✅ Pass" if build_ok else "❌ Fail"
-            click.echo(f"    Build: {build_status}")
+                # Inject analyzers if configured
+                if config.verification.analyzers:
+                    _inject_analyzers(project_dir, config.verification.analyzers)
 
-            # Parse build warnings
-            warnings = _parse_build_warnings(build_output)
-            if warnings["total"] > 0:
-                click.echo(f"    Warnings: {warnings['total']}")
-
-            # Run (optional)
-            run_status = "⏭️ Skipped"
-            run_notes = ""
-            if config.verification.run and build_ok:
-                hc = config.verification.run.health_check
-                run_ok, run_output = _run_app(
-                    config.verification.run.command,
+                # Build
+                build_ok, build_output = _run_build(
+                    config.verification.build.command,
                     project_dir,
-                    config.verification.run.timeout_seconds,
-                    hc.url if hc else None,
-                    hc.expected_status if hc else 200,
+                    config.verification.build.working_directory,
+                    config.verification.build.success_pattern,
                 )
-                run_status = "✅ Pass" if run_ok else "❌ Fail"
-                if not run_ok:
-                    run_notes = run_output[:200]
-                click.echo(f"    Run:   {run_status}")
+                build_status = "✅ Pass" if build_ok else "❌ Fail"
+                click.echo(f"    Build: {build_status}")
 
-            # Format check (optional)
-            format_status = "⏭️ Skipped"
-            if config.verification.format and build_ok:
-                fmt_ok, fmt_count, fmt_output = _run_format(
-                    project_dir,
-                    config.verification.format.command,
-                    config.verification.format.working_directory,
-                )
-                format_status = "✅ Pass" if fmt_ok else f"❌ {fmt_count} issues"
-                click.echo(f"    Format: {format_status}")
+                # Parse build warnings
+                warnings = _parse_build_warnings(build_output)
+                if warnings["total"] > 0:
+                    click.echo(f"    Warnings: {warnings['total']}")
 
-            # Security scan (optional)
-            security_status = "⏭️ Skipped"
-            if config.verification.security and config.verification.security.vulnerability_scan and build_ok:
-                vuln_total, vuln_severities, vuln_output = _run_security_scan(project_dir)
-                security_status = "✅ Clean" if vuln_total == 0 else f"⚠️ {vuln_total} vulns"
-                click.echo(f"    Security: {security_status}")
+                # Run (optional)
+                run_status = "⏭️ Skipped"
+                run_notes = ""
+                if config.verification.run and build_ok:
+                    hc = config.verification.run.health_check
+                    run_ok, run_output = _run_app(
+                        config.verification.run.command,
+                        project_dir,
+                        config.verification.run.timeout_seconds,
+                        hc.url if hc else None,
+                        hc.expected_status if hc else 200,
+                    )
+                    run_status = "✅ Pass" if run_ok else "❌ Fail"
+                    if not run_ok:
+                        run_notes = run_output[:200]
+                    click.echo(f"    Run:   {run_status}")
 
-            results.append({
-                "config": cfg.name,
-                "scenario": scenario.name,
-                "build": build_status,
-                "run": run_status,
-                "warnings": warnings,
-                "format": format_status,
-                "security": security_status,
-                "notes": build_output[:200] if not build_ok else run_notes,
-            })
+                # Format check (optional)
+                format_status = "⏭️ Skipped"
+                format_issues = 0
+                if config.verification.format and build_ok:
+                    fmt_ok, fmt_count, fmt_output = _run_format(
+                        project_dir,
+                        config.verification.format.command,
+                        config.verification.format.working_directory,
+                    )
+                    format_status = "✅ Pass" if fmt_ok else f"❌ {fmt_count} issues"
+                    format_issues = fmt_count
+                    click.echo(f"    Format: {format_status}")
+
+                # Security scan (optional)
+                security_status = "⏭️ Skipped"
+                vuln_total_count = 0
+                vuln_sev = {}
+                if config.verification.security and config.verification.security.vulnerability_scan and build_ok:
+                    vuln_total_count, vuln_sev, vuln_output = _run_security_scan(project_dir)
+                    security_status = "✅ Clean" if vuln_total_count == 0 else f"⚠️ {vuln_total_count} vulns"
+                    click.echo(f"    Security: {security_status}")
+
+                results.append({
+                    "config": cfg.name,
+                    "run_id": run_id,
+                    "scenario": scenario.name,
+                    "build": build_status,
+                    "build_success": build_ok,
+                    "run": run_status,
+                    "run_success": "Pass" in run_status,
+                    "warnings": warnings,
+                    "format": format_status,
+                    "format_issues": format_issues,
+                    "security": security_status,
+                    "security_vulnerabilities": vuln_sev,
+                    "notes": build_output[:200] if not build_ok else run_notes,
+                })
 
     # Write build-notes.md
     notes_path = reports_dir / config.output.notes_file
     _write_build_notes(notes_path, config, results)
     click.echo(f"\n📝 Build notes written to: {notes_path}")
+
+    # Write machine-readable verification data
+    json_path = reports_dir / config.output.verification_data_file
+    _write_verification_json(json_path, results)
+    click.echo(f"📝 Verification data written to: {json_path}")
 
 
 def _write_build_notes(
@@ -379,16 +402,17 @@ def _write_build_notes(
         f"",
         f"## Results",
         f"",
-        f"| Configuration | Scenario | Build | Run | Format | Security | Notes |",
-        f"|---|---|---|---|---|---|---|",
+        f"| Configuration | Run | Scenario | Build | Run | Format | Security | Notes |",
+        f"|---|---|---|---|---|---|---|---|",
     ]
 
     for r in results:
         notes = r.get("notes", "").replace("\n", " ")[:100]
         fmt = r.get("format", "⏭️ Skipped")
         sec = r.get("security", "⏭️ Skipped")
+        run_id = r.get("run_id", 1)
         lines.append(
-            f"| {r['config']} | {r['scenario']} | {r['build']} | {r['run']} | {fmt} | {sec} | {notes} |"
+            f"| {r['config']} | {run_id} | {r['scenario']} | {r['build']} | {r['run']} | {fmt} | {sec} | {notes} |"
         )
 
     lines.append("")
@@ -429,3 +453,21 @@ def _write_build_notes(
 
     lines.append("")
     path.write_text("\n".join(lines), encoding="utf-8")
+
+
+def _write_verification_json(path: Path, results: list[dict]) -> None:
+    """Write machine-readable verification data as JSON."""
+    json_results = []
+    for r in results:
+        json_results.append({
+            "config": r["config"],
+            "run_id": r.get("run_id", 1),
+            "scenario": r["scenario"],
+            "build_success": r.get("build_success", "Pass" in r.get("build", "")),
+            "run_success": r.get("run_success", "Pass" in r.get("run", "")),
+            "build_warnings": r.get("warnings", {}),
+            "format_issues": r.get("format_issues", 0),
+            "security_vulnerabilities": r.get("security_vulnerabilities", {}),
+        })
+    data = {"timestamp": datetime.now(timezone.utc).isoformat(), "results": json_results}
+    path.write_text(json.dumps(data, indent=2), encoding="utf-8")

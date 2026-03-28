@@ -173,6 +173,7 @@ def run_generate(
     config: EvalConfig,
     project_root: Path,
     configurations: list[str] | None = None,
+    resume: bool = False,
 ) -> None:
     """Generate code for each configuration defined in the config.
 
@@ -180,11 +181,15 @@ def run_generate(
     large skills/plugins don't exhaust the context window before later
     scenarios can be built.
 
+    When ``config.runs > 1``, each configuration is generated N times with
+    output stored under ``output/{config}/run-{N}/{scenario}/``.
+
     Args:
         config: The parsed evaluation configuration.
         project_root: Root directory of the evaluation project.
         configurations: Optional list of configuration names to run.
                         If None, runs all configurations.
+        resume: If True, skip runs where output already exists.
     """
     configs_to_run = config.configurations
     if configurations:
@@ -199,24 +204,18 @@ def run_generate(
 
     output_base = project_root / config.output.directory
     total_scenarios = len(config.scenarios)
+    num_runs = config.runs
 
     for cfg in configs_to_run:
-        config_output = output_base / cfg.name
         label = cfg.label or cfg.name
 
         click.echo(f"\n{'=' * 60}")
         click.echo(f"Generating: {label}")
-        click.echo(f"Output:     {config_output}")
+        click.echo(f"Runs:       {num_runs}")
         click.echo(f"Scenarios:  {total_scenarios} (one Copilot invocation each)")
         click.echo(f"{'=' * 60}")
 
-        # Clean previous output for this configuration
-        if config_output.exists():
-            click.echo(f"  Removing previous output: {config_output}")
-            _rmtree(config_output)
-        config_output.mkdir(parents=True, exist_ok=True)
-
-        # Create staging dir once per config and register skills
+        # Register skills once for this config
         staging_dir, staging_links = _create_staging_dir(project_root, cfg)
         added_skills: list[Path] = []
         try:
@@ -229,21 +228,37 @@ def run_generate(
                         f"{', '.join(str(p) for p in added_skills)}"
                     )
 
-            # Generate each scenario in its own Copilot invocation
-            for i, scenario in enumerate(config.scenarios, 1):
-                scenario_output = config_output / scenario.name
-                scenario_output.mkdir(parents=True, exist_ok=True)
+            for run_id in range(1, num_runs + 1):
+                run_output = output_base / cfg.name / f"run-{run_id}"
 
-                click.echo(f"\n  [{i}/{total_scenarios}] {scenario.name}")
-                click.echo(f"    {scenario.description}")
+                # Resume support: skip if output exists
+                if resume and run_output.exists() and any(run_output.iterdir()):
+                    click.echo(f"\n  ⏭️  Run {run_id}/{num_runs} — skipping (output exists)")
+                    continue
 
-                prompt = render_generate_prompt(
-                    config, cfg.name, project_root, scenario=scenario,
-                )
-                _run_copilot(
-                    prompt, cfg, cwd=staging_dir, project_root=project_root,
-                )
-                click.echo(f"    ✅ {scenario.name} done")
+                click.echo(f"\n  --- Run {run_id}/{num_runs} ---")
+
+                # Clean previous output for this run
+                if run_output.exists():
+                    _rmtree(run_output)
+                run_output.mkdir(parents=True, exist_ok=True)
+
+                # Generate each scenario
+                for i, scenario in enumerate(config.scenarios, 1):
+                    scenario_output = run_output / scenario.name
+                    scenario_output.mkdir(parents=True, exist_ok=True)
+
+                    click.echo(f"  [{i}/{total_scenarios}] {scenario.name}")
+                    click.echo(f"    {scenario.description}")
+
+                    prompt = render_generate_prompt(
+                        config, cfg.name, project_root,
+                        scenario=scenario, run_id=run_id,
+                    )
+                    _run_copilot(
+                        prompt, cfg, cwd=staging_dir, project_root=project_root,
+                    )
+                    click.echo(f"    ✅ {scenario.name} done")
 
         finally:
             if added_skills:
@@ -255,5 +270,5 @@ def run_generate(
         click.echo(f"  ✅ Done: {label}")
 
     click.echo(f"\n{'=' * 60}")
-    click.echo(f"Generation complete: {len(configs_to_run)} configuration(s)")
+    click.echo(f"Generation complete: {len(configs_to_run)} configuration(s) × {num_runs} run(s)")
     click.echo(f"{'=' * 60}")

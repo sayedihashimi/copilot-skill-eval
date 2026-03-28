@@ -58,24 +58,25 @@ def init(ctx: click.Context) -> None:
 )
 @click.option("--runs", "-r", type=int, default=None,
               help="Number of generation runs per configuration (overrides eval.yaml)")
+@click.option("--resume", is_flag=True, help="Skip runs where output already exists.")
 @click.pass_context
-def generate(ctx: click.Context, configurations: tuple[str, ...], runs: int | None) -> None:
+def generate(ctx: click.Context, configurations: tuple[str, ...], runs: int | None, resume: bool) -> None:
     """Generate code using Copilot CLI for each skill configuration.
 
-    Invokes the Copilot CLI once per configuration, each time with different
-    skills registered. Output goes to output/{configuration-name}/.
+    Invokes the Copilot CLI once per configuration per run, each time with
+    different skills registered. Output goes to output/{config}/run-{N}/.
     """
     from skill_eval.generate import run_generate
 
     config = _load(ctx)
     if runs is not None:
         config.runs = runs
-    if config.runs > 1:
-        click.echo(f"  Multi-run mode: {config.runs} runs per configuration")
+    click.echo(f"  Runs per configuration: {config.runs}")
     run_generate(
         config,
         ctx.obj["project_root"],
         configurations=list(configurations) if configurations else None,
+        resume=resume,
     )
 
 
@@ -118,6 +119,8 @@ def analyze(ctx: click.Context) -> None:
 )
 @click.option("--runs", "-r", type=int, default=None,
               help="Number of generation runs per configuration (overrides eval.yaml)")
+@click.option("--resume", is_flag=True,
+              help="Skip runs where output already exists.")
 @click.pass_context
 def run(
     ctx: click.Context,
@@ -126,6 +129,7 @@ def run(
     analyze_only: bool,
     configurations: tuple[str, ...],
     runs: int | None,
+    resume: bool,
 ) -> None:
     """Run the full evaluation pipeline: generate → verify → analyze.
 
@@ -139,8 +143,7 @@ def run(
     config = _load(ctx)
     if runs is not None:
         config.runs = runs
-    if config.runs > 1:
-        click.echo(f"  Multi-run mode: {config.runs} runs per configuration")
+    click.echo(f"  Runs per configuration: {config.runs}")
     project_root = ctx.obj["project_root"]
 
     if analyze_only:
@@ -153,6 +156,7 @@ def run(
             config,
             project_root,
             configurations=list(configurations) if configurations else None,
+            resume=resume,
         )
     else:
         click.echo("\n⏭️  Step 1/3: Generate — skipped")

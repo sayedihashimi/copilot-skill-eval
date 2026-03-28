@@ -43,44 +43,64 @@ def render_generate_prompt(
     configuration_name: str,
     project_root: Path,
     scenario: Scenario | None = None,
+    run_id: int | None = None,
 ) -> str:
     """Render the generation prompt for a specific configuration.
 
     If *scenario* is provided, renders a single-app prompt using
     ``create-single-app.md.j2``.  Otherwise falls back to the
     multi-app ``create-all-apps.md.j2`` template.
+
+    If *run_id* is provided, output goes under a ``run-{N}`` subdirectory.
     """
     cfg = next(c for c in config.configurations if c.name == configuration_name)
     has_skills = bool(cfg.skills or cfg.plugins)
     env = _get_env(project_root)
 
+    output_dir = f"{config.output.directory}/{configuration_name}"
+    if run_id is not None:
+        output_dir = f"{output_dir}/run-{run_id}"
+
     if scenario is not None:
         template = env.get_template("create-single-app.md.j2")
         return template.render(
             scenario=scenario,
-            output_directory=f"{config.output.directory}/{configuration_name}",
+            output_directory=output_dir,
             has_skills=has_skills,
         )
 
     template = env.get_template("create-all-apps.md.j2")
     return template.render(
         scenarios=config.scenarios,
-        output_directory=f"{config.output.directory}/{configuration_name}",
+        output_directory=output_dir,
         has_skills=has_skills,
     )
 
 
-def render_analyze_prompt(config: EvalConfig, project_root: Path) -> str:
-    """Render the analysis prompt from configured dimensions."""
+def render_analyze_prompt(
+    config: EvalConfig,
+    project_root: Path,
+    run_id: int | None = None,
+) -> str:
+    """Render the analysis prompt from configured dimensions.
+
+    If *run_id* is provided, the prompt targets output under ``run-{N}``
+    subdirectories for each configuration.
+    """
     env = _get_env(project_root)
     template = env.get_template("analyze.md.j2")
+
+    output_directory = config.output.directory
+    run_suffix = f"/run-{run_id}" if run_id is not None else ""
+
     return template.render(
         scenarios=config.scenarios,
         configurations=config.configurations,
         dimensions=config.dimensions,
-        output_directory=config.output.directory,
+        output_directory=output_directory,
         reports_directory=config.output.reports_directory,
         analysis_file=config.output.analysis_file,
+        run_suffix=run_suffix,
     )
 
 

@@ -2,7 +2,7 @@ name: "ASP.NET Core Web API Skill Evaluation"
 description: >
   Evaluate how custom Copilot skills impact the quality of generated
   ASP.NET Core Web API code across three realistic application scenarios.
-runs: 1
+runs: 5
 
 scenarios:
   - name: FitnessStudioApi

@@ -108,6 +108,9 @@ class OutputSettings(BaseModel):
     reports_directory: str = "reports"
     analysis_file: str = "analysis.md"
     notes_file: str = "build-notes.md"
+    per_run_analysis_pattern: str = "analysis-run-{run}.md"
+    verification_data_file: str = "verification-data.json"
+    scores_data_file: str = "scores-data.json"
 
 
 class EvalConfig(BaseModel):
@@ -120,7 +123,7 @@ class EvalConfig(BaseModel):
     verification: Verification
     dimensions: list[Dimension]
     output: OutputSettings = OutputSettings()
-    runs: int = 1
+    runs: int = 5
 
     @field_validator("scenarios")
     @classmethod
