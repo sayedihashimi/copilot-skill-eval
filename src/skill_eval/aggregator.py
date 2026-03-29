@@ -473,14 +473,39 @@ def _write_aggregated_report(
             lines.append("")
 
             if any_mismatch:
-                lines.extend([
-                    "### ⚠️ Asset Mismatches Detected",
-                    "",
-                    "One or more runs loaded skills/plugins that did not match the expected "
-                    "configuration. This may indicate skill contamination or auto-discovery "
-                    "loading additional resources. Review the session events.jsonl files for details.",
-                    "",
-                ])
+                # Check for contamination specifically
+                contaminated_runs = [
+                    u for u in generation_usage
+                    if u.get("resource_comparison", {}).get("contaminated")
+                ]
+                if contaminated_runs:
+                    lines.extend([
+                        "### 🚨 Skill Contamination Detected",
+                        "",
+                        "The following runs loaded skills from outside their configured "
+                        "directories. **Scores for these configurations may be inflated "
+                        "or deflated** because the model had access to skills it should "
+                        "not have seen.",
+                        "",
+                        "| Configuration | Run | Contaminating Skill | Loaded From |",
+                        "|---|---|---|---|",
+                    ])
+                    for u in contaminated_runs:
+                        comp = u.get("resource_comparison", {})
+                        for c in comp.get("contaminated", []):
+                            lines.append(
+                                f"| {u.get('config', '?')} | {u.get('run_id', '?')} "
+                                f"| {c['name']} | {c.get('path', '?')} |"
+                            )
+                    lines.append("")
+                else:
+                    lines.extend([
+                        "### ⚠️ Asset Notes",
+                        "",
+                        "Some runs had missing expected skills or plugins. "
+                        "Review the session events.jsonl files for details.",
+                        "",
+                    ])
 
             lines.extend(["---", ""])
 

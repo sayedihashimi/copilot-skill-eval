@@ -194,14 +194,49 @@ def compare_resources(
     trace: SessionTrace,
     expected_skills: list[str],
     expected_plugins: list[str],
+    allowed_dirs: list[str] | None = None,
 ) -> dict:
     """Compare loaded resources against expected configuration.
 
-    Returns a dict describing matches, unexpected loads, and missing assets.
+    Parameters
+    ----------
+    expected_skills:
+        Skill directory names declared in the config (e.g. ``["dotnet-webapi"]``).
+    expected_plugins:
+        Plugin directory names declared in the config (e.g. ``["dotnet-artisan"]``).
+    allowed_dirs:
+        Absolute paths to the skill/plugin directories for this configuration.
+        When provided, each loaded resource's ``path`` is checked against these
+        directories.  A resource whose path does not fall under any allowed
+        directory is flagged as **contamination** — meaning the eval framework
+        failed to isolate it from this run.
+
+    Returns a dict with match status, unexpected/missing lists, and any
+    contaminated resources.
     """
-    actual_skills = list(dict.fromkeys(trace.skill_names))  # dedupe, preserve order
+    actual_skills = list(dict.fromkeys(trace.skill_names))
     actual_plugins = list(dict.fromkeys(trace.plugin_names))
 
+    # --- Path-based contamination check (most reliable) ---
+    contaminated: list[dict] = []
+    legitimate: list[LoadedResource] = []
+    if allowed_dirs:
+        norm_dirs = [d.replace("/", "\\").rstrip("\\") for d in allowed_dirs]
+        for r in trace.resources:
+            rpath = (r.path or "").replace("/", "\\")
+            belongs = any(rpath.startswith(d) for d in norm_dirs)
+            if belongs:
+                legitimate.append(r)
+            else:
+                contaminated.append({
+                    "name": r.name,
+                    "plugin_name": r.plugin_name,
+                    "path": r.path,
+                })
+    else:
+        legitimate = list(trace.resources)
+
+    # --- Name-based comparison (for backward compat / simple configs) ---
     expected_skills_set = set(expected_skills)
     actual_skills_set = set(actual_skills)
     expected_plugins_set = set(expected_plugins)
@@ -212,8 +247,7 @@ def compare_resources(
     unexpected_plugins = sorted(actual_plugins_set - expected_plugins_set)
     missing_plugins = sorted(expected_plugins_set - actual_plugins_set)
 
-    match = (not unexpected_skills and not missing_skills
-             and not unexpected_plugins and not missing_plugins)
+    match = not contaminated and not missing_skills and not missing_plugins
 
     return {
         "expected_skills": sorted(expected_skills_set),
@@ -224,6 +258,7 @@ def compare_resources(
         "actual_plugins": actual_plugins,
         "unexpected_plugins": unexpected_plugins,
         "missing_plugins": missing_plugins,
+        "contaminated": contaminated,
         "match": match,
     }
 

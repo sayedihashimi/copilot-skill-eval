@@ -497,28 +497,57 @@ def _write_build_notes(
             lines.append("")
 
             if mismatches:
-                lines.extend([
-                    "### ⚠️ Asset Mismatches",
-                    "",
-                    "| Configuration | Run | Issue |",
-                    "|---|---|---|",
-                ])
-                for u in mismatches:
-                    comp = u.get("resource_comparison", {})
-                    issues: list[str] = []
-                    for s in comp.get("unexpected_skills", []):
-                        issues.append(f"Unexpected skill: {s}")
-                    for s in comp.get("missing_skills", []):
-                        issues.append(f"Missing expected skill: {s}")
-                    for p in comp.get("unexpected_plugins", []):
-                        issues.append(f"Unexpected plugin: {p}")
-                    for p in comp.get("missing_plugins", []):
-                        issues.append(f"Missing expected plugin: {p}")
-                    lines.append(
-                        f"| {u.get('config', '?')} | {u.get('run_id', '?')} "
-                        f"| {'; '.join(issues)} |"
-                    )
-                lines.append("")
+                # Separate contamination (loaded from wrong path) from other issues
+                has_contamination = any(
+                    u.get("resource_comparison", {}).get("contaminated")
+                    for u in mismatches
+                )
+                if has_contamination:
+                    lines.extend([
+                        "### 🚨 Skill Contamination Detected",
+                        "",
+                        "The following runs loaded skills from outside their configured "
+                        "skill/plugin directories. This means the evaluation framework "
+                        "failed to isolate this run — **results may be invalid.**",
+                        "",
+                        "| Configuration | Run | Contaminating Skill | Loaded From |",
+                        "|---|---|---|---|",
+                    ])
+                    for u in mismatches:
+                        comp = u.get("resource_comparison", {})
+                        for c in comp.get("contaminated", []):
+                            lines.append(
+                                f"| {u.get('config', '?')} | {u.get('run_id', '?')} "
+                                f"| {c['name']} | {c.get('path', '?')} |"
+                            )
+                    lines.append("")
+
+                # Other issues (missing skills/plugins)
+                other_issues = [
+                    u for u in mismatches
+                    if (u.get("resource_comparison", {}).get("missing_skills")
+                        or u.get("resource_comparison", {}).get("missing_plugins"))
+                ]
+                if other_issues:
+                    lines.extend([
+                        "### ⚠️ Missing Expected Assets",
+                        "",
+                        "| Configuration | Run | Issue |",
+                        "|---|---|---|",
+                    ])
+                    for u in other_issues:
+                        comp = u.get("resource_comparison", {})
+                        issues: list[str] = []
+                        for s in comp.get("missing_skills", []):
+                            issues.append(f"Missing skill: {s}")
+                        for p in comp.get("missing_plugins", []):
+                            issues.append(f"Missing plugin: {p}")
+                        if issues:
+                            lines.append(
+                                f"| {u.get('config', '?')} | {u.get('run_id', '?')} "
+                                f"| {'; '.join(issues)} |"
+                            )
+                    lines.append("")
 
     # Skill configuration summary
     lines.extend([

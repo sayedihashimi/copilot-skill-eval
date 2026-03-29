@@ -28,7 +28,12 @@ from skill_eval.session_tracer import (
     preserve_events_file,
     trace_session,
 )
-from skill_eval.skill_manager import add_skill_directories, remove_skill_directories
+from skill_eval.skill_manager import (
+    add_skill_directories,
+    get_skill_directories,
+    remove_skill_directories,
+    set_skill_directories,
+)
 
 # Default: kill Copilot if no CPU activity for this many seconds
 _IDLE_TIMEOUT = 300  # 5 minutes
@@ -425,18 +430,27 @@ def run_generate(
         click.echo(f"Scenarios:  {total_scenarios} available (1 randomly selected per run)")
         click.echo(f"{'=' * 60}")
 
-        # Register skills once for this config
+        # Snapshot the global skill_directories so we can restore later.
+        # Then replace with ONLY the skills for this configuration to
+        # prevent contamination from previous configs or manual registrations.
+        saved_skill_dirs = get_skill_directories()
+
         staging_dir, staging_links = _create_staging_dir(project_root, cfg)
         added_skills: list[Path] = []
         try:
+            # Clear all global skill_directories, then add only this config's
             if cfg.skills:
                 skill_paths = [project_root / s for s in cfg.skills]
-                added_skills = add_skill_directories(skill_paths)
-                if added_skills:
-                    click.echo(
-                        f"  Registered skills: "
-                        f"{', '.join(str(p) for p in added_skills)}"
-                    )
+                skill_abs = [str(p.resolve()) for p in skill_paths]
+                set_skill_directories(skill_abs)
+                added_skills = skill_paths
+                click.echo(
+                    f"  Registered skills: "
+                    f"{', '.join(cfg.skills)}"
+                )
+            else:
+                set_skill_directories([])
+                click.echo("  Skill directories cleared (no skills for this config)")
 
             for run_id in range(1, num_runs + 1):
                 run_output = output_base / cfg.name / f"run-{run_id}"
@@ -496,8 +510,14 @@ def run_generate(
                         ]
                         expected_skills = [Path(s).name for s in cfg.skills]
                         expected_plugins = [Path(p).name for p in cfg.plugins]
+                        # Build allowed directories (absolute) for path-based check
+                        allowed_dirs = (
+                            [str((project_root / s).resolve()) for s in cfg.skills]
+                            + [str((project_root / p).resolve()) for p in cfg.plugins]
+                        )
                         comparison = compare_resources(
                             trace, expected_skills, expected_plugins,
+                            allowed_dirs=allowed_dirs,
                         )
                         usage["resource_comparison"] = comparison
 
@@ -514,13 +534,16 @@ def run_generate(
                         else:
                             click.echo("    📋 No skills loaded")
 
-                        if not comparison["match"]:
-                            for s in comparison["unexpected_skills"]:
-                                click.echo(f"    ⚠️  Unexpected skill: {s}")
+                        if comparison.get("contaminated"):
+                            for c in comparison["contaminated"]:
+                                click.echo(
+                                    f"    🚨 CONTAMINATION: skill '{c['name']}' "
+                                    f"loaded from outside this config: {c['path']}"
+                                )
+                        if comparison.get("missing_skills"):
                             for s in comparison["missing_skills"]:
                                 click.echo(f"    ⚠️  Missing expected skill: {s}")
-                            for p in comparison["unexpected_plugins"]:
-                                click.echo(f"    ⚠️  Unexpected plugin: {p}")
+                        if comparison.get("missing_plugins"):
                             for p in comparison["missing_plugins"]:
                                 click.echo(f"    ⚠️  Missing expected plugin: {p}")
 
@@ -538,9 +561,9 @@ def run_generate(
                     continue
 
         finally:
-            if added_skills:
-                remove_skill_directories(added_skills)
-                click.echo("  Unregistered skills")
+            # Restore the original skill_directories
+            set_skill_directories(saved_skill_dirs)
+            click.echo("  Restored global skill_directories")
             _cleanup_staging_dir(staging_dir, staging_links)
             click.echo(f"  Cleaned up staging directory")
 
