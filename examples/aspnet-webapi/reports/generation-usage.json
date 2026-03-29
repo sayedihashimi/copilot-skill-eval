@@ -1,0 +1,101 @@
+[
+  {
+    "api_calls": 33,
+    "input_tokens": 2351722,
+    "output_tokens": 57835,
+    "cache_read_tokens": 2200558,
+    "api_duration_ms": 619705,
+    "wall_time_seconds": 730.9,
+    "config": "no-skills",
+    "run_id": 1,
+    "scenario": "FitnessStudioApi"
+  },
+  {
+    "api_calls": 37,
+    "input_tokens": 2504401,
+    "output_tokens": 48281,
+    "cache_read_tokens": 2384667,
+    "api_duration_ms": 506241,
+    "wall_time_seconds": 598.4,
+    "config": "no-skills",
+    "run_id": 2,
+    "scenario": "LibraryApi"
+  },
+  {
+    "api_calls": 27,
+    "input_tokens": 1620155,
+    "output_tokens": 47083,
+    "cache_read_tokens": 1444153,
+    "api_duration_ms": 510345,
+    "wall_time_seconds": 578.8,
+    "config": "no-skills",
+    "run_id": 3,
+    "scenario": "VetClinicApi"
+  },
+  {
+    "api_calls": 34,
+    "input_tokens": 2692257,
+    "output_tokens": 53173,
+    "cache_read_tokens": 2542911,
+    "api_duration_ms": 581873,
+    "wall_time_seconds": 695.4,
+    "config": "dotnet-webapi",
+    "run_id": 1,
+    "scenario": "FitnessStudioApi"
+  },
+  {
+    "api_calls": 56,
+    "input_tokens": 4481535,
+    "output_tokens": 57985,
+    "cache_read_tokens": 4287474,
+    "api_duration_ms": 684015,
+    "wall_time_seconds": 1804.7,
+    "config": "dotnet-webapi",
+    "run_id": 2,
+    "scenario": "LibraryApi"
+  },
+  {
+    "api_calls": 42,
+    "input_tokens": 3071551,
+    "output_tokens": 52976,
+    "cache_read_tokens": 2856206,
+    "api_duration_ms": 610029,
+    "wall_time_seconds": 747.3,
+    "config": "dotnet-webapi",
+    "run_id": 3,
+    "scenario": "VetClinicApi"
+  },
+  {
+    "api_calls": 44,
+    "input_tokens": 5372025,
+    "output_tokens": 53779,
+    "cache_read_tokens": 5163908,
+    "api_duration_ms": 632501,
+    "wall_time_seconds": 811.4,
+    "config": "dotnet-artisan",
+    "run_id": 1,
+    "scenario": "FitnessStudioApi"
+  },
+  {
+    "api_calls": 44,
+    "input_tokens": 4947928,
+    "output_tokens": 56035,
+    "cache_read_tokens": 4688690,
+    "api_duration_ms": 640158,
+    "wall_time_seconds": 799.2,
+    "config": "dotnet-artisan",
+    "run_id": 2,
+    "scenario": "LibraryApi"
+  },
+  {
+    "api_calls": 62,
+    "input_tokens": 5571950,
+    "output_tokens": 56006,
+    "cache_read_tokens": 5370797,
+    "api_duration_ms": 661774,
+    "wall_time_seconds": 881.1,
+    "config": "dotnet-skills",
+    "run_id": 3,
+    "scenario": "VetClinicApi"
+  }
+]
