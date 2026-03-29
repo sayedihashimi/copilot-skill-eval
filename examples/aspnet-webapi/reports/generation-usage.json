@@ -16,12 +16,8 @@
     "resource_comparison": {
       "expected_skills": [],
       "actual_skills": [],
-      "unexpected_skills": [],
-      "missing_skills": [],
       "expected_plugins": [],
       "actual_plugins": [],
-      "unexpected_plugins": [],
-      "missing_plugins": [],
       "contaminated": [],
       "match": true
     }
@@ -55,12 +51,8 @@
       "actual_skills": [
         "dotnet-webapi"
       ],
-      "unexpected_skills": [],
-      "missing_skills": [],
       "expected_plugins": [],
       "actual_plugins": [],
-      "unexpected_plugins": [],
-      "missing_plugins": [],
       "contaminated": [],
       "match": true
     }
@@ -116,21 +108,12 @@
         "dotnet-csharp",
         "dotnet-api"
       ],
-      "unexpected_skills": [
-        "dotnet-advisor",
-        "dotnet-api",
-        "dotnet-csharp",
-        "using-dotnet"
-      ],
-      "missing_skills": [],
       "expected_plugins": [
         "dotnet-artisan"
       ],
       "actual_plugins": [
         "dotnet-artisan"
       ],
-      "unexpected_plugins": [],
-      "missing_plugins": [],
       "contaminated": [],
       "match": true
     }
@@ -204,23 +187,10 @@
         "dotnet-microsoft-extensions",
         "dotnet-modern-csharp"
       ],
-      "unexpected_skills": [
-        "dotnet",
-        "dotnet-aspnet-core",
-        "dotnet-entity-framework-core",
-        "dotnet-microsoft-extensions",
-        "dotnet-modern-csharp",
-        "dotnet-project-setup"
-      ],
-      "missing_skills": [
-        "managedcode-dotnet-skills"
-      ],
       "expected_plugins": [],
       "actual_plugins": [],
-      "unexpected_plugins": [],
-      "missing_plugins": [],
       "contaminated": [],
-      "match": false
+      "match": true
     }
   },
   {
@@ -258,11 +228,6 @@
         "optimizing-ef-core-queries",
         "analyzing-dotnet-performance"
       ],
-      "unexpected_skills": [
-        "analyzing-dotnet-performance",
-        "optimizing-ef-core-queries"
-      ],
-      "missing_skills": [],
       "expected_plugins": [
         "dotnet",
         "dotnet-ai",
@@ -280,20 +245,8 @@
         "dotnet-data",
         "dotnet-diag"
       ],
-      "unexpected_plugins": [],
-      "missing_plugins": [
-        "dotnet",
-        "dotnet-ai",
-        "dotnet-experimental",
-        "dotnet-maui",
-        "dotnet-msbuild",
-        "dotnet-nuget",
-        "dotnet-template-engine",
-        "dotnet-test",
-        "dotnet-upgrade"
-      ],
       "contaminated": [],
-      "match": false
+      "match": true
     }
   }
 ]
