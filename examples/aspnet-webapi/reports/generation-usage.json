@@ -1,15 +1,15 @@
 [
   {
-    "api_calls": 59,
-    "input_tokens": 5038843,
-    "output_tokens": 60444,
-    "cache_read_tokens": 4896271,
-    "api_duration_ms": 710537,
-    "wall_time_seconds": 897.0,
+    "api_calls": 33,
+    "input_tokens": 2419236,
+    "output_tokens": 51451,
+    "cache_read_tokens": 2278398,
+    "api_duration_ms": 570072,
+    "wall_time_seconds": 681.8,
     "config": "no-skills",
     "run_id": 1,
     "scenario": "FitnessStudioApi",
-    "session_id": "b179652a-989e-4cfd-a97c-a2fa662ccbdd",
+    "session_id": "e8c69826-e8b0-4763-9043-a3c8a9b990de",
     "model": "claude-opus-4.6-1m",
     "copilot_version": "1.0.13-1",
     "loaded_resources": [],
@@ -22,122 +22,60 @@
       "actual_plugins": [],
       "unexpected_plugins": [],
       "missing_plugins": [],
-      "match": true
-    }
-  },
-  {
-    "api_calls": 38,
-    "input_tokens": 2540596,
-    "output_tokens": 48248,
-    "cache_read_tokens": 2399004,
-    "api_duration_ms": 535733,
-    "wall_time_seconds": 755.1,
-    "config": "no-skills",
-    "run_id": 2,
-    "scenario": "LibraryApi",
-    "session_id": "82c57f13-d229-4ae3-a7b9-d5c79cb1e5bb",
-    "model": "claude-opus-4.6-1m",
-    "copilot_version": "1.0.13-1",
-    "loaded_resources": [],
-    "resource_comparison": {
-      "expected_skills": [],
-      "actual_skills": [],
-      "unexpected_skills": [],
-      "missing_skills": [],
-      "expected_plugins": [],
-      "actual_plugins": [],
-      "unexpected_plugins": [],
-      "missing_plugins": [],
-      "match": true
-    }
-  },
-  {
-    "api_calls": 48,
-    "input_tokens": 4109744,
-    "output_tokens": 57194,
-    "cache_read_tokens": 3992114,
-    "api_duration_ms": 679554,
-    "wall_time_seconds": 1530.7,
-    "config": "dotnet-webapi",
-    "run_id": 1,
-    "scenario": "FitnessStudioApi",
-    "session_id": "a0fd980f-47d3-4628-832a-24d99c3a17f6",
-    "model": "claude-opus-4.6-1m",
-    "copilot_version": "1.0.13-1",
-    "loaded_resources": [
-      {
-        "resource_type": "skill",
-        "name": "dotnet-webapi",
-        "plugin_name": null,
-        "content_length": 20546,
-        "timestamp": "2026-03-29T08:18:45.225Z"
-      }
-    ],
-    "resource_comparison": {
-      "expected_skills": [
-        "dotnet-webapi"
-      ],
-      "actual_skills": [
-        "dotnet-webapi"
-      ],
-      "unexpected_skills": [],
-      "missing_skills": [],
-      "expected_plugins": [],
-      "actual_plugins": [],
-      "unexpected_plugins": [],
-      "missing_plugins": [],
-      "match": true
-    }
-  },
-  {
-    "api_calls": 37,
-    "input_tokens": 2892879,
-    "output_tokens": 53840,
-    "cache_read_tokens": 2668707,
-    "api_duration_ms": 588101,
-    "wall_time_seconds": 701.6,
-    "config": "dotnet-webapi",
-    "run_id": 2,
-    "scenario": "LibraryApi",
-    "session_id": "efb889b1-2391-41c3-9d4e-ed82039d7d02",
-    "model": "claude-opus-4.6-1m",
-    "copilot_version": "1.0.13-1",
-    "loaded_resources": [
-      {
-        "resource_type": "skill",
-        "name": "dotnet-webapi",
-        "plugin_name": null,
-        "content_length": 20546,
-        "timestamp": "2026-03-29T08:44:32.608Z"
-      }
-    ],
-    "resource_comparison": {
-      "expected_skills": [
-        "dotnet-webapi"
-      ],
-      "actual_skills": [
-        "dotnet-webapi"
-      ],
-      "unexpected_skills": [],
-      "missing_skills": [],
-      "expected_plugins": [],
-      "actual_plugins": [],
-      "unexpected_plugins": [],
-      "missing_plugins": [],
+      "contaminated": [],
       "match": true
     }
   },
   {
     "api_calls": 40,
-    "input_tokens": 5419569,
-    "output_tokens": 60058,
-    "cache_read_tokens": 5144243,
-    "api_duration_ms": 711111,
-    "wall_time_seconds": 831.8,
+    "input_tokens": 3346855,
+    "output_tokens": 59069,
+    "cache_read_tokens": 3184149,
+    "api_duration_ms": 689322,
+    "wall_time_seconds": 819.6,
+    "config": "dotnet-webapi",
+    "run_id": 1,
+    "scenario": "FitnessStudioApi",
+    "session_id": "20a62f02-4912-4984-82c2-2e837b0794d8",
+    "model": "claude-opus-4.6-1m",
+    "copilot_version": "1.0.13-1",
+    "loaded_resources": [
+      {
+        "resource_type": "skill",
+        "name": "dotnet-webapi",
+        "plugin_name": null,
+        "content_length": 20546,
+        "timestamp": "2026-03-29T15:05:43.280Z"
+      }
+    ],
+    "resource_comparison": {
+      "expected_skills": [
+        "dotnet-webapi"
+      ],
+      "actual_skills": [
+        "dotnet-webapi"
+      ],
+      "unexpected_skills": [],
+      "missing_skills": [],
+      "expected_plugins": [],
+      "actual_plugins": [],
+      "unexpected_plugins": [],
+      "missing_plugins": [],
+      "contaminated": [],
+      "match": true
+    }
+  },
+  {
+    "api_calls": 38,
+    "input_tokens": 4481568,
+    "output_tokens": 54349,
+    "cache_read_tokens": 4236037,
+    "api_duration_ms": 627037,
+    "wall_time_seconds": 753.3,
     "config": "dotnet-artisan",
     "run_id": 1,
     "scenario": "FitnessStudioApi",
-    "session_id": "13af5dce-cb12-44c0-9ac9-2beb10e2dc65",
+    "session_id": "beb4965f-b6a9-4c46-a96e-39ed1914ee9c",
     "model": "claude-opus-4.6-1m",
     "copilot_version": "1.0.13-1",
     "loaded_resources": [
@@ -146,35 +84,28 @@
         "name": "using-dotnet",
         "plugin_name": "dotnet-artisan",
         "content_length": 8226,
-        "timestamp": "2026-03-29T08:56:21.659Z"
+        "timestamp": "2026-03-29T15:19:53.327Z"
       },
       {
         "resource_type": "skill",
         "name": "dotnet-advisor",
         "plugin_name": "dotnet-artisan",
         "content_length": 9198,
-        "timestamp": "2026-03-29T08:56:24.530Z"
-      },
-      {
-        "resource_type": "skill",
-        "name": "dotnet-api",
-        "plugin_name": "dotnet-artisan",
-        "content_length": 6694,
-        "timestamp": "2026-03-29T08:56:28.608Z"
+        "timestamp": "2026-03-29T15:19:55.757Z"
       },
       {
         "resource_type": "skill",
         "name": "dotnet-csharp",
         "plugin_name": "dotnet-artisan",
         "content_length": 6750,
-        "timestamp": "2026-03-29T08:56:28.620Z"
+        "timestamp": "2026-03-29T15:19:58.396Z"
       },
       {
         "resource_type": "skill",
-        "name": "dotnet-webapi",
-        "plugin_name": null,
-        "content_length": 20546,
-        "timestamp": "2026-03-29T08:57:00.858Z"
+        "name": "dotnet-api",
+        "plugin_name": "dotnet-artisan",
+        "content_length": 6694,
+        "timestamp": "2026-03-29T15:19:58.405Z"
       }
     ],
     "resource_comparison": {
@@ -182,15 +113,13 @@
       "actual_skills": [
         "using-dotnet",
         "dotnet-advisor",
-        "dotnet-api",
         "dotnet-csharp",
-        "dotnet-webapi"
+        "dotnet-api"
       ],
       "unexpected_skills": [
         "dotnet-advisor",
         "dotnet-api",
         "dotnet-csharp",
-        "dotnet-webapi",
         "using-dotnet"
       ],
       "missing_skills": [],
@@ -202,50 +131,21 @@
       ],
       "unexpected_plugins": [],
       "missing_plugins": [],
-      "match": false
+      "contaminated": [],
+      "match": true
     }
   },
   {
-    "api_calls": 55,
-    "input_tokens": 5979599,
-    "output_tokens": 59714,
-    "cache_read_tokens": 5696525,
-    "api_duration_ms": 749164,
-    "wall_time_seconds": 935.2,
-    "config": "dotnet-artisan",
-    "run_id": 2,
-    "scenario": "LibraryApi",
-    "session_id": "5389d405-e1a9-4dc2-8141-8064722e7735",
-    "model": null,
-    "copilot_version": "1.0.13-1",
-    "loaded_resources": [],
-    "resource_comparison": {
-      "expected_skills": [],
-      "actual_skills": [],
-      "unexpected_skills": [],
-      "missing_skills": [],
-      "expected_plugins": [
-        "dotnet-artisan"
-      ],
-      "actual_plugins": [],
-      "unexpected_plugins": [],
-      "missing_plugins": [
-        "dotnet-artisan"
-      ],
-      "match": false
-    }
-  },
-  {
-    "api_calls": 37,
-    "input_tokens": 3349482,
-    "output_tokens": 58191,
-    "cache_read_tokens": 3152003,
-    "api_duration_ms": 676249,
-    "wall_time_seconds": 796.4,
+    "api_calls": 54,
+    "input_tokens": 4227487,
+    "output_tokens": 104228,
+    "cache_read_tokens": 3804109,
+    "api_duration_ms": 1102330,
+    "wall_time_seconds": 870.5,
     "config": "managedcode-dotnet-skills",
     "run_id": 1,
     "scenario": "FitnessStudioApi",
-    "session_id": "06c15e75-d2e4-4db1-927d-0f4c60f5e9f6",
+    "session_id": "11281ead-9db2-44c4-84b6-7d1099caaffc",
     "model": "claude-opus-4.6-1m",
     "copilot_version": "1.0.13-1",
     "loaded_resources": [
@@ -254,49 +154,42 @@
         "name": "dotnet",
         "plugin_name": null,
         "content_length": 4423,
-        "timestamp": "2026-03-29T09:25:49.238Z"
-      },
-      {
-        "resource_type": "skill",
-        "name": "dotnet-project-setup",
-        "plugin_name": null,
-        "content_length": 2165,
-        "timestamp": "2026-03-29T09:25:55.746Z"
-      },
-      {
-        "resource_type": "skill",
-        "name": "dotnet-webapi",
-        "plugin_name": null,
-        "content_length": 20546,
-        "timestamp": "2026-03-29T09:25:59.484Z"
-      },
-      {
-        "resource_type": "skill",
-        "name": "dotnet-modern-csharp",
-        "plugin_name": null,
-        "content_length": 5347,
-        "timestamp": "2026-03-29T09:25:59.494Z"
+        "timestamp": "2026-03-29T15:32:03.291Z"
       },
       {
         "resource_type": "skill",
         "name": "dotnet-aspnet-core",
         "plugin_name": null,
         "content_length": 7565,
-        "timestamp": "2026-03-29T09:25:59.502Z"
+        "timestamp": "2026-03-29T15:32:17.804Z"
       },
       {
         "resource_type": "skill",
         "name": "dotnet-entity-framework-core",
         "plugin_name": null,
         "content_length": 8535,
-        "timestamp": "2026-03-29T09:25:59.510Z"
+        "timestamp": "2026-03-29T15:32:22.319Z"
+      },
+      {
+        "resource_type": "skill",
+        "name": "dotnet-project-setup",
+        "plugin_name": null,
+        "content_length": 2165,
+        "timestamp": "2026-03-29T15:32:25.120Z"
       },
       {
         "resource_type": "skill",
         "name": "dotnet-microsoft-extensions",
         "plugin_name": null,
         "content_length": 2126,
-        "timestamp": "2026-03-29T09:25:59.521Z"
+        "timestamp": "2026-03-29T15:32:29.085Z"
+      },
+      {
+        "resource_type": "skill",
+        "name": "dotnet-modern-csharp",
+        "plugin_name": null,
+        "content_length": 5347,
+        "timestamp": "2026-03-29T15:32:31.708Z"
       }
     ],
     "resource_comparison": {
@@ -305,12 +198,11 @@
       ],
       "actual_skills": [
         "dotnet",
-        "dotnet-project-setup",
-        "dotnet-webapi",
-        "dotnet-modern-csharp",
         "dotnet-aspnet-core",
         "dotnet-entity-framework-core",
-        "dotnet-microsoft-extensions"
+        "dotnet-project-setup",
+        "dotnet-microsoft-extensions",
+        "dotnet-modern-csharp"
       ],
       "unexpected_skills": [
         "dotnet",
@@ -318,8 +210,7 @@
         "dotnet-entity-framework-core",
         "dotnet-microsoft-extensions",
         "dotnet-modern-csharp",
-        "dotnet-project-setup",
-        "dotnet-webapi"
+        "dotnet-project-setup"
       ],
       "missing_skills": [
         "managedcode-dotnet-skills"
@@ -328,179 +219,21 @@
       "actual_plugins": [],
       "unexpected_plugins": [],
       "missing_plugins": [],
+      "contaminated": [],
       "match": false
     }
   },
   {
-    "api_calls": 39,
-    "input_tokens": 3452326,
-    "output_tokens": 59383,
-    "cache_read_tokens": 3230879,
-    "api_duration_ms": 703985,
-    "wall_time_seconds": 854.6,
-    "config": "managedcode-dotnet-skills",
-    "run_id": 2,
-    "scenario": "LibraryApi",
-    "session_id": "adf04800-2d8c-4b11-8620-5b2199f76d13",
-    "model": "claude-opus-4.6-1m",
-    "copilot_version": "1.0.13-1",
-    "loaded_resources": [
-      {
-        "resource_type": "skill",
-        "name": "dotnet",
-        "plugin_name": null,
-        "content_length": 4423,
-        "timestamp": "2026-03-29T09:38:58.625Z"
-      },
-      {
-        "resource_type": "skill",
-        "name": "dotnet-webapi",
-        "plugin_name": null,
-        "content_length": 20546,
-        "timestamp": "2026-03-29T09:39:22.446Z"
-      },
-      {
-        "resource_type": "skill",
-        "name": "dotnet-project-setup",
-        "plugin_name": null,
-        "content_length": 2165,
-        "timestamp": "2026-03-29T09:39:22.458Z"
-      },
-      {
-        "resource_type": "skill",
-        "name": "dotnet-modern-csharp",
-        "plugin_name": null,
-        "content_length": 5347,
-        "timestamp": "2026-03-29T09:39:22.470Z"
-      },
-      {
-        "resource_type": "skill",
-        "name": "dotnet-aspnet-core",
-        "plugin_name": null,
-        "content_length": 7565,
-        "timestamp": "2026-03-29T09:39:22.482Z"
-      },
-      {
-        "resource_type": "skill",
-        "name": "dotnet-entity-framework-core",
-        "plugin_name": null,
-        "content_length": 8535,
-        "timestamp": "2026-03-29T09:39:22.495Z"
-      }
-    ],
-    "resource_comparison": {
-      "expected_skills": [
-        "managedcode-dotnet-skills"
-      ],
-      "actual_skills": [
-        "dotnet",
-        "dotnet-webapi",
-        "dotnet-project-setup",
-        "dotnet-modern-csharp",
-        "dotnet-aspnet-core",
-        "dotnet-entity-framework-core"
-      ],
-      "unexpected_skills": [
-        "dotnet",
-        "dotnet-aspnet-core",
-        "dotnet-entity-framework-core",
-        "dotnet-modern-csharp",
-        "dotnet-project-setup",
-        "dotnet-webapi"
-      ],
-      "missing_skills": [
-        "managedcode-dotnet-skills"
-      ],
-      "expected_plugins": [],
-      "actual_plugins": [],
-      "unexpected_plugins": [],
-      "missing_plugins": [],
-      "match": false
-    }
-  },
-  {
-    "api_calls": 70,
-    "input_tokens": 6109841,
-    "output_tokens": 76870,
-    "cache_read_tokens": 5858180,
-    "api_duration_ms": 868366,
-    "wall_time_seconds": 1064.3,
+    "api_calls": 42,
+    "input_tokens": 3976571,
+    "output_tokens": 62793,
+    "cache_read_tokens": 3795728,
+    "api_duration_ms": 728173,
+    "wall_time_seconds": 857.0,
     "config": "dotnet-skills",
     "run_id": 1,
     "scenario": "FitnessStudioApi",
-    "session_id": "1628067c-bf9c-4278-a155-86ff6e751052",
-    "model": "claude-opus-4.6-1m",
-    "copilot_version": "1.0.13-1",
-    "loaded_resources": [
-      {
-        "resource_type": "skill",
-        "name": "analyzing-dotnet-performance",
-        "plugin_name": "dotnet-diag",
-        "content_length": 11494,
-        "timestamp": "2026-03-29T10:04:30.522Z"
-      },
-      {
-        "resource_type": "skill",
-        "name": "optimizing-ef-core-queries",
-        "plugin_name": "dotnet-data",
-        "content_length": 5921,
-        "timestamp": "2026-03-29T10:07:20.014Z"
-      }
-    ],
-    "resource_comparison": {
-      "expected_skills": [],
-      "actual_skills": [
-        "analyzing-dotnet-performance",
-        "optimizing-ef-core-queries"
-      ],
-      "unexpected_skills": [
-        "analyzing-dotnet-performance",
-        "optimizing-ef-core-queries"
-      ],
-      "missing_skills": [],
-      "expected_plugins": [
-        "dotnet",
-        "dotnet-ai",
-        "dotnet-data",
-        "dotnet-diag",
-        "dotnet-experimental",
-        "dotnet-maui",
-        "dotnet-msbuild",
-        "dotnet-nuget",
-        "dotnet-template-engine",
-        "dotnet-test",
-        "dotnet-upgrade"
-      ],
-      "actual_plugins": [
-        "dotnet-diag",
-        "dotnet-data"
-      ],
-      "unexpected_plugins": [],
-      "missing_plugins": [
-        "dotnet",
-        "dotnet-ai",
-        "dotnet-experimental",
-        "dotnet-maui",
-        "dotnet-msbuild",
-        "dotnet-nuget",
-        "dotnet-template-engine",
-        "dotnet-test",
-        "dotnet-upgrade"
-      ],
-      "match": false
-    }
-  },
-  {
-    "api_calls": 45,
-    "input_tokens": 3426712,
-    "output_tokens": 52437,
-    "cache_read_tokens": 3204368,
-    "api_duration_ms": 601765,
-    "wall_time_seconds": 731.3,
-    "config": "dotnet-skills",
-    "run_id": 2,
-    "scenario": "LibraryApi",
-    "session_id": "72739fd0-47c9-4228-9270-a0d1b930fa85",
+    "session_id": "787f18b5-7fd4-41cf-b49d-8aca12257aa4",
     "model": "claude-opus-4.6-1m",
     "copilot_version": "1.0.13-1",
     "loaded_resources": [
@@ -509,14 +242,14 @@
         "name": "optimizing-ef-core-queries",
         "plugin_name": "dotnet-data",
         "content_length": 5921,
-        "timestamp": "2026-03-29T10:19:12.379Z"
+        "timestamp": "2026-03-29T15:47:24.699Z"
       },
       {
         "resource_type": "skill",
         "name": "analyzing-dotnet-performance",
         "plugin_name": "dotnet-diag",
         "content_length": 11494,
-        "timestamp": "2026-03-29T10:19:28.613Z"
+        "timestamp": "2026-03-29T15:58:48.187Z"
       }
     ],
     "resource_comparison": {
@@ -559,6 +292,7 @@
         "dotnet-test",
         "dotnet-upgrade"
       ],
+      "contaminated": [],
       "match": false
     }
   }

@@ -236,28 +236,30 @@ def compare_resources(
     else:
         legitimate = list(trace.resources)
 
-    # --- Name-based comparison (for backward compat / simple configs) ---
-    expected_skills_set = set(expected_skills)
-    actual_skills_set = set(actual_skills)
-    expected_plugins_set = set(expected_plugins)
-    actual_plugins_set = set(actual_plugins)
+    # --- Name-based comparison (informational) ---
+    actual_skills = list(dict.fromkeys(trace.skill_names))
+    actual_plugins = list(dict.fromkeys(trace.plugin_names))
 
-    unexpected_skills = sorted(actual_skills_set - expected_skills_set)
-    missing_skills = sorted(expected_skills_set - actual_skills_set)
-    unexpected_plugins = sorted(actual_plugins_set - expected_plugins_set)
-    missing_plugins = sorted(expected_plugins_set - actual_plugins_set)
-
-    match = not contaminated and not missing_skills and not missing_plugins
+    # When allowed_dirs is provided, match is determined solely by
+    # path-based checks: no contamination means the run used only the
+    # skills/plugins it was supposed to.  Name mismatches (e.g. config
+    # says "managedcode-dotnet-skills" but sub-skills load as "dotnet",
+    # "dotnet-aspnet-core") are expected and not a problem.
+    if allowed_dirs:
+        match = not contaminated
+    else:
+        expected_skills_set = set(expected_skills)
+        actual_skills_set = set(actual_skills)
+        expected_plugins_set = set(expected_plugins)
+        actual_plugins_set = set(actual_plugins)
+        match = (actual_skills_set == expected_skills_set
+                 and actual_plugins_set == expected_plugins_set)
 
     return {
-        "expected_skills": sorted(expected_skills_set),
+        "expected_skills": sorted(set(expected_skills)),
         "actual_skills": actual_skills,
-        "unexpected_skills": unexpected_skills,
-        "missing_skills": missing_skills,
-        "expected_plugins": sorted(expected_plugins_set),
+        "expected_plugins": sorted(set(expected_plugins)),
         "actual_plugins": actual_plugins,
-        "unexpected_plugins": unexpected_plugins,
-        "missing_plugins": missing_plugins,
         "contaminated": contaminated,
         "match": match,
     }

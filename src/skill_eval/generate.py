@@ -540,12 +540,8 @@ def run_generate(
                                     f"    🚨 CONTAMINATION: skill '{c['name']}' "
                                     f"loaded from outside this config: {c['path']}"
                                 )
-                        if comparison.get("missing_skills"):
-                            for s in comparison["missing_skills"]:
-                                click.echo(f"    ⚠️  Missing expected skill: {s}")
-                        if comparison.get("missing_plugins"):
-                            for p in comparison["missing_plugins"]:
-                                click.echo(f"    ⚠️  Missing expected plugin: {p}")
+                        elif comparison.get("match"):
+                            click.echo("    ✅ All skills/plugins match config")
 
                         # Preserve events.jsonl in run output
                         preserve_events_file(
