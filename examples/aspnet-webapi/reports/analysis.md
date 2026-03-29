@@ -1,7 +1,7 @@
 # Aggregated Analysis: ASP.NET Core Web API Skill Evaluation
 
 **Runs:** 2 | **Configurations:** 5 | **Scenarios:** 3 | **Dimensions:** 24
-**Date:** 2026-03-29 10:52 UTC
+**Date:** 2026-03-29 14:22 UTC
 
 ---
 
@@ -9,30 +9,30 @@
 
 | Dimension [Tier] | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
 |---|---|---|---|---|---|
-| Build & Run Success [CRITICAL] | 5.0 | 5.0 | 5.0 | 5.0 | — |
-| Security Vulnerability Scan [CRITICAL] | 4.0 ± 1.4 | 5.0 | 4.5 ± 0.7 | 5.0 | — |
-| Minimal API Architecture [CRITICAL] | 1.0 | 5.0 | 3.5 ± 2.1 | 3.0 ± 2.8 | — |
-| Input Validation & Guard Clauses [CRITICAL] | 3.0 ± 1.4 | 4.5 ± 0.7 | 4.0 ± 1.4 | 4.5 ± 0.7 | — |
-| NuGet & Package Discipline [CRITICAL] | 2.5 ± 0.7 | 4.5 ± 0.7 | 3.5 ± 2.1 | 5.0 | — |
-| EF Migration Usage [CRITICAL] | 1.0 | 5.0 | 1.0 | 3.0 ± 2.8 | — |
-| Business Logic Correctness [HIGH] | 5.0 | 5.0 | 5.0 | 5.0 | — |
-| Prefer Built-in over 3rd Party [HIGH] | 3.0 ± 1.4 | 5.0 | 4.5 ± 0.7 | 5.0 | — |
-| Modern C# Adoption [HIGH] | 2.0 | 4.5 ± 0.7 | 5.0 | 5.0 | — |
-| Error Handling & Middleware [HIGH] | 3.0 | 5.0 | 4.0 ± 1.4 | 5.0 | — |
-| Async Patterns & Cancellation [HIGH] | 2.5 ± 0.7 | 5.0 | 4.0 ± 1.4 | 5.0 | — |
-| EF Core Best Practices [HIGH] | 2.5 ± 0.7 | 4.5 ± 0.7 | 4.5 ± 0.7 | 5.0 | — |
-| Service Abstraction & DI [HIGH] | 4.0 ± 1.4 | 5.0 | 5.0 | 5.0 | — |
-| Security Configuration [HIGH] | 1.5 ± 0.7 | 1.5 ± 0.7 | 1.5 ± 0.7 | 2.0 ± 1.4 | — |
-| DTO Design [MEDIUM] | 2.0 | 5.0 | 5.0 | 5.0 | — |
-| Sealed Types [MEDIUM] | 1.0 | 5.0 | 5.0 | 5.0 | — |
-| Data Seeder Design [MEDIUM] | 4.0 ± 1.4 | 4.5 ± 0.7 | 4.0 ± 1.4 | 5.0 | — |
-| Structured Logging [MEDIUM] | 3.0 | 4.0 | 4.0 | 4.0 | — |
-| Nullable Reference Types [MEDIUM] | 4.0 | 4.5 ± 0.7 | 4.5 ± 0.7 | 4.5 ± 0.7 | — |
-| API Documentation [MEDIUM] | 2.5 ± 0.7 | 5.0 | 4.0 ± 1.4 | 4.0 ± 1.4 | — |
-| File Organization [MEDIUM] | 4.0 ± 1.4 | 5.0 | 4.5 ± 0.7 | 4.5 ± 0.7 | — |
-| HTTP Test File Quality [MEDIUM] | 4.5 ± 0.7 | 4.5 ± 0.7 | 4.5 ± 0.7 | 4.5 ± 0.7 | — |
-| Type Design & Resource Management [MEDIUM] | 4.0 ± 1.4 | 5.0 | 5.0 | 5.0 | — |
-| Code Standards Compliance [LOW] | 3.5 ± 0.7 | 5.0 | 5.0 | 5.0 | — |
+| Build & Run Success [CRITICAL] | 5.0 | 5.0 | 5.0 | 5.0 | 5.0 |
+| Security Vulnerability Scan [CRITICAL] | 4.0 ± 1.4 | 5.0 | 4.5 ± 0.7 | 5.0 | 4.5 ± 0.7 |
+| Minimal API Architecture [CRITICAL] | 1.0 | 5.0 | 3.5 ± 2.1 | 3.0 ± 2.8 | 1.5 ± 0.7 |
+| Input Validation & Guard Clauses [CRITICAL] | 3.0 ± 1.4 | 4.5 ± 0.7 | 4.0 ± 1.4 | 4.5 ± 0.7 | 4.5 ± 0.7 |
+| NuGet & Package Discipline [CRITICAL] | 2.5 ± 0.7 | 4.5 ± 0.7 | 3.5 ± 2.1 | 5.0 | 2.5 ± 0.7 |
+| EF Migration Usage [CRITICAL] | 1.0 | 5.0 | 1.0 | 3.0 ± 2.8 | 1.0 |
+| Business Logic Correctness [HIGH] | 5.0 | 5.0 | 5.0 | 5.0 | 5.0 |
+| Prefer Built-in over 3rd Party [HIGH] | 3.0 ± 1.4 | 5.0 | 4.5 ± 0.7 | 5.0 | 2.5 ± 0.7 |
+| Modern C# Adoption [HIGH] | 2.0 | 4.5 ± 0.7 | 5.0 | 5.0 | 3.0 |
+| Error Handling & Middleware [HIGH] | 3.0 | 5.0 | 4.0 ± 1.4 | 5.0 | 4.0 ± 1.4 |
+| Async Patterns & Cancellation [HIGH] | 2.5 ± 0.7 | 5.0 | 4.0 ± 1.4 | 5.0 | 3.0 |
+| EF Core Best Practices [HIGH] | 2.5 ± 0.7 | 4.5 ± 0.7 | 4.5 ± 0.7 | 5.0 | 4.5 ± 0.7 |
+| Service Abstraction & DI [HIGH] | 4.0 ± 1.4 | 5.0 | 5.0 | 5.0 | 4.5 ± 0.7 |
+| Security Configuration [HIGH] | 1.5 ± 0.7 | 1.5 ± 0.7 | 1.5 ± 0.7 | 2.0 ± 1.4 | 1.5 ± 0.7 |
+| DTO Design [MEDIUM] | 2.0 | 5.0 | 5.0 | 5.0 | 3.0 ± 1.4 |
+| Sealed Types [MEDIUM] | 1.0 | 5.0 | 5.0 | 5.0 | 3.5 ± 2.1 |
+| Data Seeder Design [MEDIUM] | 4.0 ± 1.4 | 4.5 ± 0.7 | 4.0 ± 1.4 | 5.0 | 4.0 ± 1.4 |
+| Structured Logging [MEDIUM] | 3.0 | 4.0 | 4.0 | 4.0 | 4.0 |
+| Nullable Reference Types [MEDIUM] | 4.0 | 4.5 ± 0.7 | 4.5 ± 0.7 | 4.5 ± 0.7 | 4.5 ± 0.7 |
+| API Documentation [MEDIUM] | 2.5 ± 0.7 | 5.0 | 4.0 ± 1.4 | 4.0 ± 1.4 | 3.0 |
+| File Organization [MEDIUM] | 4.0 ± 1.4 | 5.0 | 4.5 ± 0.7 | 4.5 ± 0.7 | 4.0 |
+| HTTP Test File Quality [MEDIUM] | 4.5 ± 0.7 | 4.5 ± 0.7 | 4.5 ± 0.7 | 4.5 ± 0.7 | 4.0 |
+| Type Design & Resource Management [MEDIUM] | 4.0 ± 1.4 | 5.0 | 5.0 | 5.0 | 4.5 ± 0.7 |
+| Code Standards Compliance [LOW] | 3.5 ± 0.7 | 5.0 | 5.0 | 5.0 | 4.0 |
 
 ---
 
@@ -43,8 +43,8 @@
 | 🥇 | dotnet-webapi | 203.0 | 6.4 | 198.5 | 207.5 |
 | 🥈 | managedcode-dotnet-skills | 194.5 | 12.7 | 185.5 | 203.5 |
 | 🥉 | dotnet-artisan | 174.5 | 14.1 | 164.5 | 184.5 |
-| 4th | no-skills | 127.2 | 13.8 | 117.5 | 137.0 |
-| 5th | dotnet-skills | 0.0 | 0.0 | 0.0 | 0.0 |
+| 4th | dotnet-skills | 149.5 | 14.8 | 139.0 | 160.0 |
+| 5th | no-skills | 127.2 | 13.8 | 117.5 | 137.0 |
 
 ---
 
@@ -52,9 +52,9 @@
 
 | Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
 |---|---|---|---|---|---|
-| 1 | 137.0 | 207.5 | 184.5 | 185.5 | 0.0 |
-| 2 | 117.5 | 198.5 | 164.5 | 203.5 | 0.0 |
-| **Mean** | **127.2** | **203.0** | **174.5** | **194.5** | **0.0** |
+| 1 | 137.0 | 207.5 | 184.5 | 185.5 | 160.0 |
+| 2 | 117.5 | 198.5 | 164.5 | 203.5 | 139.0 |
+| **Mean** | **127.2** | **203.0** | **174.5** | **194.5** | **149.5** |
 
 ---
 
@@ -99,7 +99,7 @@ One or more runs loaded skills/plugins that did not match the expected configura
 | dotnet-webapi | 6.4 | Build & Run Success (0.0) | Input Validation & Guard Clauses (0.7) |
 | dotnet-artisan | 14.1 | Build & Run Success (0.0) | Minimal API Architecture (2.1) |
 | managedcode-dotnet-skills | 12.7 | Build & Run Success (0.0) | Minimal API Architecture (2.8) |
-| dotnet-skills | 0.0 |  (inf) |  (0.0) |
+| dotnet-skills | 14.8 | Build & Run Success (0.0) | Sealed Types (2.1) |
 
 ---
 
@@ -111,9 +111,9 @@ One or more runs loaded skills/plugins that did not match the expected configura
 
 | Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
 |---|---|---|---|---|---|
-| 1 | 5 | 5 | 5 | 5 | — |
-| 2 | 5 | 5 | 5 | 5 | — |
-| **Mean** | **5.0** | **5.0** | **5.0** | **5.0** | — |
+| 1 | 5 | 5 | 5 | 5 | 5 |
+| 2 | 5 | 5 | 5 | 5 | 5 |
+| **Mean** | **5.0** | **5.0** | **5.0** | **5.0** | **5.0** |
 
 #### Analysis
 
@@ -147,9 +147,9 @@ No configurations have missing references, circular dependencies, or broken proj
 
 | Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
 |---|---|---|---|---|---|
-| 1 | 3 | 5 | 4 | 5 | — |
-| 2 | 5 | 5 | 5 | 5 | — |
-| **Mean** | **4.0** | **5.0** | **4.5** | **5.0** | — |
+| 1 | 3 | 5 | 4 | 5 | 4 |
+| 2 | 5 | 5 | 5 | 5 | 5 |
+| **Mean** | **4.0** | **5.0** | **4.5** | **5.0** | **4.5** |
 
 #### Analysis
 
@@ -202,9 +202,9 @@ This dimension evaluates NuGet package security — known CVEs, deprecated packa
 
 | Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
 |---|---|---|---|---|---|
-| 1 | 1 | 5 | 5 | 1 | — |
-| 2 | 1 | 5 | 2 | 5 | — |
-| **Mean** | **1.0** | **5.0** | **3.5** | **3.0** | — |
+| 1 | 1 | 5 | 5 | 1 | 1 |
+| 2 | 1 | 5 | 2 | 5 | 2 |
+| **Mean** | **1.0** | **5.0** | **3.5** | **3.0** | **1.5** |
 
 #### Analysis
 
@@ -276,9 +276,9 @@ public class BookingsController : ControllerBase
 
 | Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
 |---|---|---|---|---|---|
-| 1 | 4 | 5 | 5 | 5 | — |
-| 2 | 2 | 4 | 3 | 4 | — |
-| **Mean** | **3.0** | **4.5** | **4.0** | **4.5** | — |
+| 1 | 4 | 5 | 5 | 5 | 5 |
+| 2 | 2 | 4 | 3 | 4 | 4 |
+| **Mean** | **3.0** | **4.5** | **4.0** | **4.5** | **4.5** |
 
 #### Analysis
 
@@ -344,9 +344,9 @@ if (classSchedule.ClassType.IsPremium && !activeMembership.MembershipPlan.Allows
 
 | Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
 |---|---|---|---|---|---|
-| 1 | 2 | 4 | 2 | 5 | — |
-| 2 | 3 | 5 | 5 | 5 | — |
-| **Mean** | **2.5** | **4.5** | **3.5** | **5.0** | — |
+| 1 | 2 | 4 | 2 | 5 | 3 |
+| 2 | 3 | 5 | 5 | 5 | 2 |
+| **Mean** | **2.5** | **4.5** | **3.5** | **5.0** | **2.5** |
 
 #### Analysis
 
@@ -391,9 +391,9 @@ Version pinning discipline varies dramatically across configurations.
 
 | Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
 |---|---|---|---|---|---|
-| 1 | 1 | 5 | 1 | 1 | — |
-| 2 | 1 | 5 | 1 | 5 | — |
-| **Mean** | **1.0** | **5.0** | **1.0** | **3.0** | — |
+| 1 | 1 | 5 | 1 | 1 | 1 |
+| 2 | 1 | 5 | 1 | 5 | 1 |
+| **Mean** | **1.0** | **5.0** | **1.0** | **3.0** | **1.0** |
 
 #### Analysis
 
@@ -439,9 +439,9 @@ using (var scope = app.Services.CreateScope())
 
 | Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
 |---|---|---|---|---|---|
-| 1 | 5 | 5 | 5 | 5 | — |
-| 2 | 5 | 5 | 5 | 5 | — |
-| **Mean** | **5.0** | **5.0** | **5.0** | **5.0** | — |
+| 1 | 5 | 5 | 5 | 5 | 5 |
+| 2 | 5 | 5 | 5 | 5 | 5 |
+| **Mean** | **5.0** | **5.0** | **5.0** | **5.0** | **5.0** |
 
 #### Analysis
 
@@ -496,9 +496,9 @@ if (maxPerWeek != -1)
 
 | Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
 |---|---|---|---|---|---|
-| 1 | 4 | 5 | 4 | 5 | — |
-| 2 | 2 | 5 | 5 | 5 | — |
-| **Mean** | **3.0** | **5.0** | **4.5** | **5.0** | — |
+| 1 | 4 | 5 | 4 | 5 | 3 |
+| 2 | 2 | 5 | 5 | 5 | 2 |
+| **Mean** | **3.0** | **5.0** | **4.5** | **5.0** | **2.5** |
 
 #### Analysis
 
@@ -555,9 +555,9 @@ All configurations use System.Text.Json (not Newtonsoft.Json) and built-in ILogg
 
 | Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
 |---|---|---|---|---|---|
-| 1 | 2 | 5 | 5 | 5 | — |
-| 2 | 2 | 4 | 5 | 5 | — |
-| **Mean** | **2.0** | **4.5** | **5.0** | **5.0** | — |
+| 1 | 2 | 5 | 5 | 5 | 3 |
+| 2 | 2 | 4 | 5 | 5 | 3 |
+| **Mean** | **2.0** | **4.5** | **5.0** | **5.0** | **3.0** |
 
 #### Analysis
 
@@ -615,9 +615,9 @@ public ICollection<Membership> Memberships { get; set; } = new List<Membership>(
 
 | Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
 |---|---|---|---|---|---|
-| 1 | 3 | 5 | 5 | 5 | — |
-| 2 | 3 | 5 | 3 | 5 | — |
-| **Mean** | **3.0** | **5.0** | **4.0** | **5.0** | — |
+| 1 | 3 | 5 | 5 | 5 | 5 |
+| 2 | 3 | 5 | 3 | 5 | 3 |
+| **Mean** | **3.0** | **5.0** | **4.0** | **5.0** | **4.0** |
 
 #### Analysis
 
@@ -675,9 +675,9 @@ public class GlobalExceptionHandlerMiddleware
 
 | Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
 |---|---|---|---|---|---|
-| 1 | 3 | 5 | 5 | 5 | — |
-| 2 | 2 | 5 | 3 | 5 | — |
-| **Mean** | **2.5** | **5.0** | **4.0** | **5.0** | — |
+| 1 | 3 | 5 | 5 | 5 | 3 |
+| 2 | 2 | 5 | 3 | 5 | 3 |
+| **Mean** | **2.5** | **5.0** | **4.0** | **5.0** | **3.0** |
 
 #### Analysis
 
@@ -732,9 +732,9 @@ public async Task<BookingDto> CreateAsync(CreateBookingDto dto)  // ❌ No Cance
 
 | Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
 |---|---|---|---|---|---|
-| 1 | 3 | 5 | 5 | 5 | — |
-| 2 | 2 | 4 | 4 | 5 | — |
-| **Mean** | **2.5** | **4.5** | **4.5** | **5.0** | — |
+| 1 | 3 | 5 | 5 | 5 | 5 |
+| 2 | 2 | 4 | 4 | 5 | 4 |
+| **Mean** | **2.5** | **4.5** | **4.5** | **5.0** | **4.5** |
 
 #### Analysis
 
@@ -783,9 +783,9 @@ modelBuilder.Entity<Booking>(e =>
 
 | Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
 |---|---|---|---|---|---|
-| 1 | 5 | 5 | 5 | 5 | — |
-| 2 | 3 | 5 | 5 | 5 | — |
-| **Mean** | **4.0** | **5.0** | **5.0** | **5.0** | — |
+| 1 | 5 | 5 | 5 | 5 | 5 |
+| 2 | 3 | 5 | 5 | 5 | 4 |
+| **Mean** | **4.0** | **5.0** | **5.0** | **5.0** | **4.5** |
 
 #### Analysis
 
@@ -818,9 +818,9 @@ All configurations have 7 service interface/implementation pairs. DbContext is n
 
 | Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
 |---|---|---|---|---|---|
-| 1 | 2 | 2 | 2 | 3 | — |
-| 2 | 1 | 1 | 1 | 1 | — |
-| **Mean** | **1.5** | **1.5** | **1.5** | **2.0** | — |
+| 1 | 2 | 2 | 2 | 3 | 2 |
+| 2 | 1 | 1 | 1 | 1 | 1 |
+| **Mean** | **1.5** | **1.5** | **1.5** | **2.0** | **1.5** |
 
 #### Analysis
 
@@ -861,9 +861,9 @@ app.UseStatusCodePages();
 
 | Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
 |---|---|---|---|---|---|
-| 1 | 2 | 5 | 5 | 5 | — |
-| 2 | 2 | 5 | 5 | 5 | — |
-| **Mean** | **2.0** | **5.0** | **5.0** | **5.0** | — |
+| 1 | 2 | 5 | 5 | 5 | 4 |
+| 2 | 2 | 5 | 5 | 5 | 2 |
+| **Mean** | **2.0** | **5.0** | **5.0** | **5.0** | **3.0** |
 
 #### Analysis
 
@@ -929,9 +929,9 @@ public class MemberDto
 
 | Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
 |---|---|---|---|---|---|
-| 1 | 1 | 5 | 5 | 5 | — |
-| 2 | 1 | 5 | 5 | 5 | — |
-| **Mean** | **1.0** | **5.0** | **5.0** | **5.0** | — |
+| 1 | 1 | 5 | 5 | 5 | 5 |
+| 2 | 1 | 5 | 5 | 5 | 2 |
+| **Mean** | **1.0** | **5.0** | **5.0** | **5.0** | **3.5** |
 
 #### Analysis
 
@@ -971,9 +971,9 @@ public class GlobalExceptionHandlerMiddleware { }
 
 | Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
 |---|---|---|---|---|---|
-| 1 | 5 | 5 | 5 | 5 | — |
-| 2 | 3 | 4 | 3 | 5 | — |
-| **Mean** | **4.0** | **4.5** | **4.0** | **5.0** | — |
+| 1 | 5 | 5 | 5 | 5 | 5 |
+| 2 | 3 | 4 | 3 | 5 | 3 |
+| **Mean** | **4.0** | **4.5** | **4.0** | **5.0** | **4.0** |
 
 #### Analysis
 
@@ -1004,9 +1004,9 @@ All include edge cases: full classes with waitlists, cancelled classes, expired/
 
 | Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
 |---|---|---|---|---|---|
-| 1 | 3 | 4 | 4 | 4 | — |
-| 2 | 3 | 4 | 4 | 4 | — |
-| **Mean** | **3.0** | **4.0** | **4.0** | **4.0** | — |
+| 1 | 3 | 4 | 4 | 4 | 4 |
+| 2 | 3 | 4 | 4 | 4 | 4 |
+| **Mean** | **3.0** | **4.0** | **4.0** | **4.0** | **4.0** |
 
 #### Analysis
 
@@ -1047,9 +1047,9 @@ _logger.LogInformation("Booking created: Member {MemberId} for class {ClassId} -
 
 | Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
 |---|---|---|---|---|---|
-| 1 | 4 | 5 | 5 | 5 | — |
-| 2 | 4 | 4 | 4 | 4 | — |
-| **Mean** | **4.0** | **4.5** | **4.5** | **4.5** | — |
+| 1 | 4 | 5 | 5 | 5 | 5 |
+| 2 | 4 | 4 | 4 | 4 | 4 |
+| **Mean** | **4.0** | **4.5** | **4.5** | **4.5** | **4.5** |
 
 #### Analysis
 
@@ -1081,9 +1081,9 @@ public Member Member { get; set; } = null!;         // EF navigation
 
 | Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
 |---|---|---|---|---|---|
-| 1 | 3 | 5 | 5 | 3 | — |
-| 2 | 2 | 5 | 3 | 5 | — |
-| **Mean** | **2.5** | **5.0** | **4.0** | **4.0** | — |
+| 1 | 3 | 5 | 5 | 3 | 3 |
+| 2 | 2 | 5 | 3 | 5 | 3 |
+| **Mean** | **2.5** | **5.0** | **4.0** | **4.0** | **3.0** |
 
 #### Analysis
 
@@ -1124,9 +1124,9 @@ public async Task<IActionResult> Create([FromBody] CreateBookingRequest request,
 
 | Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
 |---|---|---|---|---|---|
-| 1 | 5 | 5 | 5 | 4 | — |
-| 2 | 3 | 5 | 4 | 5 | — |
-| **Mean** | **4.0** | **5.0** | **4.5** | **4.5** | — |
+| 1 | 5 | 5 | 5 | 4 | 4 |
+| 2 | 3 | 5 | 4 | 5 | 4 |
+| **Mean** | **4.0** | **5.0** | **4.5** | **4.5** | **4.0** |
 
 #### Analysis
 
@@ -1181,9 +1181,9 @@ no-skills/
 
 | Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
 |---|---|---|---|---|---|
-| 1 | 5 | 5 | 5 | 5 | — |
-| 2 | 4 | 4 | 4 | 4 | — |
-| **Mean** | **4.5** | **4.5** | **4.5** | **4.5** | — |
+| 1 | 5 | 5 | 5 | 5 | 4 |
+| 2 | 4 | 4 | 4 | 4 | 4 |
+| **Mean** | **4.5** | **4.5** | **4.5** | **4.5** | **4.0** |
 
 #### Analysis
 
@@ -1229,9 +1229,9 @@ Content-Type: application/json
 
 | Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
 |---|---|---|---|---|---|
-| 1 | 5 | 5 | 5 | 5 | — |
-| 2 | 3 | 5 | 5 | 5 | — |
-| **Mean** | **4.0** | **5.0** | **5.0** | **5.0** | — |
+| 1 | 5 | 5 | 5 | 5 | 5 |
+| 2 | 3 | 5 | 5 | 5 | 4 |
+| **Mean** | **4.0** | **5.0** | **5.0** | **5.0** | **4.5** |
 
 #### Analysis
 
@@ -1266,9 +1266,9 @@ All use `DateOnly` for dates, `decimal` for monetary values, and nullable types 
 
 | Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
 |---|---|---|---|---|---|
-| 1 | 4 | 5 | 5 | 5 | — |
-| 2 | 3 | 5 | 5 | 5 | — |
-| **Mean** | **3.5** | **5.0** | **5.0** | **5.0** | — |
+| 1 | 4 | 5 | 5 | 5 | 4 |
+| 2 | 3 | 5 | 5 | 5 | 4 |
+| **Mean** | **3.5** | **5.0** | **5.0** | **5.0** | **4.0** |
 
 #### Analysis
 

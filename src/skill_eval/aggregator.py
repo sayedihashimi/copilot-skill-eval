@@ -52,13 +52,34 @@ def parse_run_scores(
 
     # Map config names to column indices
     col_map: dict[str, int] = {}
+
+    # Pass 1: exact matches
     for i, cell in enumerate(header_cells):
         cell_lower = cell.lower().strip()
         for cfg_name in config_names:
-            # Flexible matching: full name, partial, or abbreviation
-            if cfg_name.lower() in cell_lower or cell_lower in cfg_name.lower():
+            if cfg_name.lower() == cell_lower:
                 col_map[cfg_name] = i
                 break
+
+    # Pass 2: substring matches for configs not yet matched, preferring
+    # the longest matching config name to avoid "dotnet-skills" stealing
+    # the column that belongs to "managedcode-dotnet-skills".
+    unmatched = [c for c in config_names if c not in col_map]
+    for i, cell in enumerate(header_cells):
+        if i in col_map.values():
+            continue  # column already claimed
+        cell_lower = cell.lower().strip()
+        best_name: str | None = None
+        best_len = 0
+        for cfg_name in unmatched:
+            if cfg_name.lower() in cell_lower or cell_lower in cfg_name.lower():
+                # Prefer the longest matching name to avoid substring collisions
+                if len(cfg_name) > best_len:
+                    best_name = cfg_name
+                    best_len = len(cfg_name)
+        if best_name is not None:
+            col_map[best_name] = i
+            unmatched.remove(best_name)
 
     if not col_map:
         return None
