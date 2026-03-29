@@ -150,12 +150,13 @@ def _run_copilot(
     project_root: Path | None = None,
     idle_timeout: int = _IDLE_TIMEOUT,
     max_retries: int = 1,
-) -> None:
+) -> dict | None:
     """Invoke the Copilot CLI with a watchdog that kills hung processes.
 
-    Monitors the Copilot process CPU usage. If the process is idle
-    (no CPU consumption) for *idle_timeout* seconds, it is killed and
-    retried up to *max_retries* times.
+    Monitors the Copilot process CPU and network activity. If idle for
+    *idle_timeout* seconds, it is killed and retried up to *max_retries*.
+
+    Returns a dict with usage stats (tokens, duration) or None on failure.
     """
     cmd = ["copilot", "-p", prompt, "--yolo"]
 
@@ -177,8 +178,10 @@ def _run_copilot(
         if attempt > 0:
             click.echo(f"  ⚠️  Retry {attempt}/{max_retries} after idle timeout")
 
+        start_time = time.monotonic()
         proc = subprocess.Popen(cmd, cwd=cwd)
         timed_out = _watchdog_wait(proc, idle_timeout)
+        elapsed = time.monotonic() - start_time
 
         if timed_out:
             click.echo(f"  ⚠️  Copilot idle for {idle_timeout}s — killing (PID {proc.pid})")
@@ -195,7 +198,18 @@ def _run_copilot(
                 f"Copilot CLI exited with code {proc.returncode} "
                 f"for configuration '{configuration.name}'"
             )
-        return  # success
+
+        # Parse usage from Copilot CLI log
+        usage = _parse_copilot_log_usage(proc.pid)
+        if usage:
+            usage["wall_time_seconds"] = round(elapsed, 1)
+            mins, secs = divmod(int(elapsed), 60)
+            click.echo(
+                f"    📊 {usage.get('input_tokens', 0):,} in / "
+                f"{usage.get('output_tokens', 0):,} out / "
+                f"{usage.get('api_calls', 0)} calls / {mins}m {secs}s"
+            )
+        return usage
 
 
 def _watchdog_wait(proc: subprocess.Popen, idle_timeout: int) -> bool:
@@ -313,6 +327,52 @@ def _kill_process_tree(proc: subprocess.Popen) -> None:
         pass
 
 
+def _parse_copilot_log_usage(pid: int) -> dict | None:
+    """Parse token usage from the most recent Copilot CLI log file.
+
+    Copilot CLI writes detailed logs to ~/.copilot/logs/ with per-request
+    token counts. This function finds the log matching the given PID and
+    extracts aggregate usage.
+    """
+    import re as _re
+
+    log_dir = Path.home() / ".copilot" / "logs"
+    if not log_dir.exists():
+        return None
+
+    # Find log file matching this PID
+    matching = [f for f in log_dir.glob(f"process-*-{pid}.log")]
+    if not matching:
+        # Fall back to most recent log
+        logs = sorted(log_dir.glob("process-*.log"), key=lambda f: f.stat().st_mtime)
+        if not logs:
+            return None
+        matching = [logs[-1]]
+
+    log_file = matching[0]
+    try:
+        content = log_file.read_text(encoding="utf-8", errors="replace")
+    except Exception:
+        return None
+
+    # Extract all token usage entries
+    input_tokens = [int(m) for m in _re.findall(r'"input_tokens": (\d+)', content)]
+    output_tokens = [int(m) for m in _re.findall(r'"output_tokens": (\d+)', content)]
+    durations = [int(m) for m in _re.findall(r'"duration": (\d+),', content)]
+    cache_read = [int(m) for m in _re.findall(r'"cache_read_tokens": (\d+)', content)]
+
+    if not input_tokens:
+        return None
+
+    return {
+        "api_calls": len(input_tokens),
+        "input_tokens": sum(input_tokens),
+        "output_tokens": sum(output_tokens),
+        "cache_read_tokens": sum(cache_read) if cache_read else 0,
+        "api_duration_ms": sum(durations) if durations else 0,
+    }
+
+
 def run_generate(
     config: EvalConfig,
     project_root: Path,
@@ -349,6 +409,7 @@ def run_generate(
     output_base = project_root / config.output.directory
     total_scenarios = len(config.scenarios)
     num_runs = config.runs
+    all_usage: list[dict] = []
 
     for cfg in configs_to_run:
         label = cfg.label or cfg.name
@@ -400,9 +461,14 @@ def run_generate(
                     scenario=scenario, run_id=run_id,
                 )
                 try:
-                    _run_copilot(
+                    usage = _run_copilot(
                         prompt, cfg, cwd=staging_dir, project_root=project_root,
                     )
+                    if usage:
+                        usage["config"] = cfg.name
+                        usage["run_id"] = run_id
+                        usage["scenario"] = scenario.name
+                        all_usage.append(usage)
                     click.echo(f"    ✅ {scenario.name} done")
                 except RuntimeError as e:
                     click.echo(f"    ❌ {scenario.name} failed: {e}")
@@ -420,3 +486,32 @@ def run_generate(
     click.echo(f"\n{'=' * 60}")
     click.echo(f"Generation complete: {len(configs_to_run)} configuration(s) × {num_runs} run(s)")
     click.echo(f"{'=' * 60}")
+
+    # Write usage data and print summary
+    if all_usage:
+        import json
+        usage_path = project_root / config.output.reports_directory / "generation-usage.json"
+        usage_path.parent.mkdir(parents=True, exist_ok=True)
+        usage_path.write_text(json.dumps(all_usage, indent=2), encoding="utf-8")
+        click.echo(f"\n📊 Generation usage written to: {usage_path}")
+
+        # Per-config summary
+        click.echo(f"\n{'=' * 60}")
+        click.echo("Generation Usage Summary")
+        click.echo(f"{'=' * 60}")
+        config_usage: dict[str, dict] = {}
+        for u in all_usage:
+            cn = u["config"]
+            if cn not in config_usage:
+                config_usage[cn] = {"input": 0, "output": 0, "calls": 0, "time": 0.0}
+            config_usage[cn]["input"] += u.get("input_tokens", 0)
+            config_usage[cn]["output"] += u.get("output_tokens", 0)
+            config_usage[cn]["calls"] += u.get("api_calls", 0)
+            config_usage[cn]["time"] += u.get("wall_time_seconds", 0)
+
+        for cn, cu in config_usage.items():
+            mins, secs = divmod(int(cu["time"]), 60)
+            click.echo(
+                f"  {cn:30s}: {cu['input']:>10,} in / {cu['output']:>8,} out / "
+                f"{cu['calls']:>3} calls / {mins}m {secs}s"
+            )

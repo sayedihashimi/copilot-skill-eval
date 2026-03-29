@@ -21,8 +21,8 @@ def _analyze_single_run(
     run_id: int,
     project_root: Path,
     idle_timeout: int = 300,
-) -> tuple[int, bool]:
-    """Analyze a single run. Returns (run_id, success).
+) -> tuple[int, bool, dict | None]:
+    """Analyze a single run. Returns (run_id, success, usage_stats).
 
     Includes a watchdog that kills the Copilot process if idle.
     """
@@ -39,17 +39,24 @@ def _analyze_single_run(
     prompt = render_analyze_prompt(shuffled_config, project_root, run_id=run_id)
 
     cmd = ["copilot", "-p", prompt, "--yolo"]
+    start_time = time.time()
     proc = subprocess.Popen(cmd)
 
-    # Watchdog: kill if idle
-    from skill_eval.generate import _watchdog_wait, _kill_process_tree
+    from skill_eval.generate import _watchdog_wait, _kill_process_tree, _parse_copilot_log_usage
     timed_out = _watchdog_wait(proc, idle_timeout)
+    elapsed = time.time() - start_time
 
     if timed_out:
         _kill_process_tree(proc)
-        return run_id, False
+        return run_id, False, None
 
-    return run_id, proc.returncode == 0 and run_analysis_path.exists()
+    success = proc.returncode == 0 and run_analysis_path.exists()
+    usage = _parse_copilot_log_usage(proc.pid)
+    if usage:
+        usage["wall_time_seconds"] = round(elapsed, 1)
+        usage["run_id"] = run_id
+        usage["step"] = "analysis"
+    return run_id, success, usage
 
 
 def run_analyze(config: EvalConfig, project_root: Path, parallel: int = 2) -> None:
@@ -94,6 +101,7 @@ def run_analyze(config: EvalConfig, project_root: Path, parallel: int = 2) -> No
     # Phase 1: Per-run analysis (parallel)
     click.echo(f"\n  Analyzing {len(runs_to_analyze)} runs (parallel={parallel})...")
 
+    analysis_usage: list[dict] = []
     with ThreadPoolExecutor(max_workers=parallel) as executor:
         futures = {
             executor.submit(_analyze_single_run, config, run_id, project_root): run_id
@@ -102,9 +110,20 @@ def run_analyze(config: EvalConfig, project_root: Path, parallel: int = 2) -> No
         for future in as_completed(futures):
             run_id = futures[future]
             try:
-                _, success = future.result()
+                _, success, usage = future.result()
                 if success:
-                    click.echo(f"  ✅ Run {run_id} analysis complete")
+                    status = "✅"
+                    if usage:
+                        mins, secs = divmod(int(usage.get("wall_time_seconds", 0)), 60)
+                        click.echo(
+                            f"  {status} Run {run_id}: "
+                            f"{usage.get('input_tokens', 0):,} in / "
+                            f"{usage.get('output_tokens', 0):,} out / "
+                            f"{mins}m {secs}s"
+                        )
+                        analysis_usage.append(usage)
+                    else:
+                        click.echo(f"  {status} Run {run_id} analysis complete")
                 else:
                     click.echo(f"  ⚠️  Run {run_id} analysis failed or timed out")
             except Exception as e:
