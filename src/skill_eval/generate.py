@@ -199,17 +199,22 @@ def _run_copilot(
 
 
 def _watchdog_wait(proc: subprocess.Popen, idle_timeout: int) -> bool:
-    """Wait for *proc* to finish, killing it if idle too long.
+    """Wait for *proc* to finish, killing it if truly idle.
 
     Returns True if the process was killed due to idle timeout.
-    A process is considered idle if its CPU usage is below 0.5s per
-    check interval — this catches processes that trickle tiny amounts
-    of CPU (heartbeats, polling) without doing real work.
+
+    A process is considered **active** if ANY of these are true:
+    - CPU usage increased by ≥0.5s since last check
+    - It has active TCP connections (waiting on API responses)
+
+    Only triggers the timeout when NEITHER condition is met for
+    *idle_timeout* consecutive seconds. This avoids false positives
+    for I/O-bound processes waiting on large LLM API responses.
     """
     idle_since = time.monotonic()
     last_cpu = _get_process_cpu(proc.pid)
-    poll_interval = 15  # seconds between CPU checks
-    min_cpu_delta = 0.5  # minimum CPU seconds per interval to count as active
+    poll_interval = 15  # seconds between checks
+    min_cpu_delta = 0.5  # minimum CPU seconds per interval
 
     while proc.poll() is None:
         time.sleep(poll_interval)
@@ -223,10 +228,13 @@ def _watchdog_wait(proc: subprocess.Popen, idle_timeout: int) -> bool:
         cpu_delta = current_cpu - (last_cpu or 0)
         last_cpu = current_cpu
 
-        if cpu_delta >= min_cpu_delta:
+        has_cpu = cpu_delta >= min_cpu_delta
+        has_network = _has_active_connections(proc.pid)
+
+        if has_cpu or has_network:
             idle_since = time.monotonic()
         elif time.monotonic() - idle_since > idle_timeout:
-            return True  # timed out
+            return True  # truly idle: no CPU AND no network
 
     return False
 
@@ -252,6 +260,35 @@ def _get_process_cpu(pid: int) -> float | None:
             return None
     except Exception:
         return None
+
+
+def _has_active_connections(pid: int) -> bool:
+    """Check if a process has active TCP connections (ESTABLISHED state).
+
+    Returns True if the process is connected to a remote server,
+    indicating it's waiting on an API response — not truly idle.
+    """
+    try:
+        if sys.platform == "win32":
+            result = subprocess.run(
+                ["powershell", "-NoProfile", "-Command",
+                 f"Get-NetTCPConnection -OwningProcess {pid} -State Established "
+                 f"-ErrorAction SilentlyContinue | Measure-Object | "
+                 f"Select-Object -ExpandProperty Count"],
+                capture_output=True, text=True, timeout=10,
+            )
+            val = result.stdout.strip()
+            return int(val) > 0 if val else False
+        else:
+            # On Linux, check /proc/net/tcp for the pid
+            result = subprocess.run(
+                ["sh", "-c", f"ss -tnp state established | grep -c 'pid={pid},'"],
+                capture_output=True, text=True, timeout=10,
+            )
+            val = result.stdout.strip()
+            return int(val) > 0 if val else False
+    except Exception:
+        return False
 
 
 def _kill_process_tree(proc: subprocess.Popen) -> None:
