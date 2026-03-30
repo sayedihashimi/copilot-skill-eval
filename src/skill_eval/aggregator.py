@@ -179,13 +179,25 @@ def aggregate_results(config: EvalConfig, project_root: Path) -> None:
             all_run_scores.append(scores)
             parsed_run_ids.append(run_id)
 
-    # Filter config_names to only configs that have actual score data.
+    # Filter config_names to only configs that have actual output on disk.
     # This handles the case where a config was excluded from the run via -c flags.
-    configs_with_data = set()
+    # The AI judge may still score excluded configs (it sees eval.yaml), so we
+    # filter based on output directories rather than score data alone.
+    output_dir = project_root / config.output.directory
+    configs_with_output = set()
+    for c in config_names:
+        cfg_dir = output_dir / c
+        if cfg_dir.exists() and any(cfg_dir.iterdir()):
+            configs_with_output.add(c)
+    config_names = [c for c in config_names if c in configs_with_output]
+
+    # Also strip excluded configs from the parsed scores
     for run_scores in all_run_scores:
-        for dim_scores in run_scores.values():
-            configs_with_data.update(dim_scores.keys())
-    config_names = [c for c in config_names if c in configs_with_data]
+        for dim in run_scores:
+            run_scores[dim] = {
+                cfg: score for cfg, score in run_scores[dim].items()
+                if cfg in configs_with_output
+            }
 
     if not all_run_scores:
         # No scores parsed — write a minimal report
@@ -261,6 +273,18 @@ def aggregate_results(config: EvalConfig, project_root: Path) -> None:
 
     # Collect rich content from per-run analyses (pick the median-scoring run)
     rich_content = _select_best_run_content(reports_dir, config, parsed_run_ids, weighted_per_run, config_names)
+
+    # Strip references to excluded configs from rich content
+    excluded_configs = {c.name for c in config.configurations} - set(config_names)
+    if excluded_configs and rich_content:
+        for dim_key in list(rich_content.keys()):
+            content = rich_content[dim_key]
+            filtered_lines = []
+            for line in content.split("\n"):
+                if any(exc in line for exc in excluded_configs):
+                    continue
+                filtered_lines.append(line)
+            rich_content[dim_key] = "\n".join(filtered_lines)
 
     # Write aggregated analysis.md
     analysis_path = reports_dir / config.output.analysis_file

@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-03-30T05:12:43.573876+00:00",
+  "timestamp": "2026-03-30T08:34:40.862515+00:00",
   "results": [
     {
       "config": "no-skills",
@@ -8,101 +8,14 @@
       "build_success": true,
       "run_success": true,
       "build_warnings": {
-        "naming": 0,
-        "performance": 102,
-        "reliability": 0,
-        "security": 0,
-        "usage": 0,
-        "style": 0,
-        "other": 24,
-        "total": 126
-      },
-      "format_issues": 0,
-      "security_vulnerabilities": {
-        "Critical": 0,
-        "High": 0,
-        "Moderate": 0,
-        "Low": 1
-      },
-      "session_id": "6a98279d-c3cc-4817-a518-244eb19ddfcd",
-      "model": "claude-opus-4.6-1m",
-      "loaded_skills": [],
-      "loaded_plugins": [],
-      "asset_match": true
-    },
-    {
-      "config": "no-skills",
-      "run_id": 2,
-      "scenario": "LibraryApi",
-      "build_success": true,
-      "run_success": true,
-      "build_warnings": {
-        "naming": 0,
-        "performance": 88,
-        "reliability": 0,
-        "security": 0,
-        "usage": 0,
-        "style": 0,
-        "other": 60,
-        "total": 148
-      },
-      "format_issues": 0,
-      "security_vulnerabilities": {
-        "Critical": 0,
-        "High": 0,
-        "Moderate": 0,
-        "Low": 1
-      },
-      "session_id": "c5d6d655-9417-4211-8b4d-4ba08547f0d6",
-      "model": "claude-opus-4.6-1m",
-      "loaded_skills": [],
-      "loaded_plugins": [],
-      "asset_match": true
-    },
-    {
-      "config": "no-skills",
-      "run_id": 3,
-      "scenario": "VetClinicApi",
-      "build_success": true,
-      "run_success": true,
-      "build_warnings": {
-        "naming": 2,
-        "performance": 74,
-        "reliability": 0,
-        "security": 0,
-        "usage": 0,
-        "style": 0,
-        "other": 40,
-        "total": 116
-      },
-      "format_issues": 0,
-      "security_vulnerabilities": {
-        "Critical": 0,
-        "High": 0,
-        "Moderate": 0,
-        "Low": 1
-      },
-      "session_id": "abd996f5-f083-46e5-9876-421f346e6359",
-      "model": "claude-opus-4.6-1m",
-      "loaded_skills": [],
-      "loaded_plugins": [],
-      "asset_match": true
-    },
-    {
-      "config": "dotnet-artisan",
-      "run_id": 1,
-      "scenario": "FitnessStudioApi",
-      "build_success": true,
-      "run_success": true,
-      "build_warnings": {
         "naming": 6,
-        "performance": 60,
+        "performance": 64,
         "reliability": 0,
         "security": 0,
         "usage": 0,
         "style": 0,
         "other": 24,
-        "total": 90
+        "total": 94
       },
       "format_issues": 0,
       "security_vulnerabilities": {
@@ -111,143 +24,27 @@
         "Moderate": 0,
         "Low": 1
       },
-      "session_id": "5ee8fd93-a616-44a1-a2a0-a94086617950",
+      "session_id": "0379df85-f38c-4357-ab0c-9aa321942d34",
       "model": "claude-opus-4.6-1m",
-      "loaded_skills": [
-        "using-dotnet",
-        "dotnet-advisor",
-        "dotnet-csharp",
-        "dotnet-api"
-      ],
-      "loaded_plugins": [
-        "dotnet-artisan"
-      ],
-      "asset_match": true
-    },
-    {
-      "config": "dotnet-artisan",
-      "run_id": 2,
-      "scenario": "LibraryApi",
-      "build_success": true,
-      "run_success": true,
-      "build_warnings": {
-        "naming": 0,
-        "performance": 74,
-        "reliability": 0,
-        "security": 0,
-        "usage": 0,
-        "style": 0,
-        "other": 64,
-        "total": 138
-      },
-      "format_issues": 0,
-      "security_vulnerabilities": {
-        "Critical": 0,
-        "High": 0,
-        "Moderate": 0,
-        "Low": 1
-      },
-      "session_id": "e7ed9d47-48c3-4ee8-997d-835acfc92379",
-      "model": "claude-opus-4.6-1m",
-      "loaded_skills": [
-        "using-dotnet",
-        "dotnet-advisor",
-        "dotnet-api",
-        "dotnet-csharp"
-      ],
-      "loaded_plugins": [
-        "dotnet-artisan"
-      ],
-      "asset_match": true
-    },
-    {
-      "config": "dotnet-artisan",
-      "run_id": 3,
-      "scenario": "VetClinicApi",
-      "build_success": true,
-      "run_success": true,
-      "build_warnings": {
-        "naming": 2,
-        "performance": 74,
-        "reliability": 0,
-        "security": 0,
-        "usage": 0,
-        "style": 0,
-        "other": 40,
-        "total": 116
-      },
-      "format_issues": 0,
-      "security_vulnerabilities": {
-        "Critical": 0,
-        "High": 1,
-        "Moderate": 0,
-        "Low": 1
-      },
-      "session_id": "894060c3-b0e6-4218-9eea-7cec5cf030d6",
-      "model": "claude-opus-4.6-1m",
-      "loaded_skills": [
-        "using-dotnet",
-        "dotnet-advisor",
-        "dotnet-api",
-        "dotnet-csharp"
-      ],
-      "loaded_plugins": [
-        "dotnet-artisan"
-      ],
-      "asset_match": true
-    },
-    {
-      "config": "managedcode-dotnet-skills",
-      "run_id": 1,
-      "scenario": "FitnessStudioApi",
-      "build_success": true,
-      "run_success": true,
-      "build_warnings": {
-        "naming": 0,
-        "performance": 104,
-        "reliability": 0,
-        "security": 0,
-        "usage": 0,
-        "style": 0,
-        "other": 24,
-        "total": 128
-      },
-      "format_issues": 0,
-      "security_vulnerabilities": {
-        "Critical": 0,
-        "High": 0,
-        "Moderate": 0,
-        "Low": 1
-      },
-      "session_id": "86dfb05b-702b-43fd-ae79-e21a69357c29",
-      "model": "claude-opus-4.6-1m",
-      "loaded_skills": [
-        "dotnet",
-        "dotnet-aspnet-core",
-        "dotnet-project-setup",
-        "dotnet-modern-csharp",
-        "dotnet-entity-framework-core",
-        "dotnet-minimal-apis",
-        "dotnet-microsoft-extensions"
-      ],
+      "loaded_skills": [],
       "loaded_plugins": [],
       "asset_match": true
     },
     {
-      "config": "managedcode-dotnet-skills",
+      "config": "no-skills",
       "run_id": 2,
       "scenario": "LibraryApi",
       "build_success": true,
       "run_success": true,
       "build_warnings": {
         "naming": 0,
-        "performance": 98,
+        "performance": 90,
         "reliability": 0,
         "security": 0,
         "usage": 0,
         "style": 0,
         "other": 60,
-        "total": 158
+        "total": 150
       },
       "format_issues": 0,
       "security_vulnerabilities": {
@@ -256,121 +53,14 @@
         "Moderate": 0,
         "Low": 1
       },
-      "session_id": "e140e302-7e3c-43a0-ae9a-354fb8b053d4",
+      "session_id": "69d851ec-e0ee-4d0f-9e63-d6b0f944050d",
       "model": "claude-opus-4.6-1m",
-      "loaded_skills": [
-        "dotnet",
-        "dotnet-aspnet-core",
-        "dotnet-entity-framework-core",
-        "dotnet-modern-csharp",
-        "dotnet-project-setup"
-      ],
+      "loaded_skills": [],
       "loaded_plugins": [],
       "asset_match": true
     },
     {
-      "config": "managedcode-dotnet-skills",
-      "run_id": 3,
-      "scenario": "VetClinicApi",
-      "build_success": true,
-      "run_success": true,
-      "build_warnings": {
-        "naming": 2,
-        "performance": 54,
-        "reliability": 0,
-        "security": 0,
-        "usage": 0,
-        "style": 0,
-        "other": 40,
-        "total": 96
-      },
-      "format_issues": 0,
-      "security_vulnerabilities": {
-        "Critical": 0,
-        "High": 0,
-        "Moderate": 0,
-        "Low": 1
-      },
-      "session_id": "f163762c-7482-45c8-a1bc-3b0689edd1ca",
-      "model": "claude-opus-4.6-1m",
-      "loaded_skills": [
-        "dotnet-aspnet-core"
-      ],
-      "loaded_plugins": [],
-      "asset_match": true
-    },
-    {
-      "config": "dotnet-skills",
-      "run_id": 1,
-      "scenario": "FitnessStudioApi",
-      "build_success": true,
-      "run_success": true,
-      "build_warnings": {
-        "naming": 0,
-        "performance": 50,
-        "reliability": 0,
-        "security": 0,
-        "usage": 0,
-        "style": 0,
-        "other": 0,
-        "total": 50
-      },
-      "format_issues": 0,
-      "security_vulnerabilities": {
-        "Critical": 0,
-        "High": 0,
-        "Moderate": 0,
-        "Low": 1
-      },
-      "session_id": "00d36ed0-6e6d-48ad-88ea-5b31c05faadd",
-      "model": "claude-opus-4.6-1m",
-      "loaded_skills": [
-        "analyzing-dotnet-performance",
-        "optimizing-ef-core-queries"
-      ],
-      "loaded_plugins": [
-        "dotnet-diag",
-        "dotnet-data"
-      ],
-      "asset_match": true
-    },
-    {
-      "config": "dotnet-skills",
-      "run_id": 2,
-      "scenario": "LibraryApi",
-      "build_success": true,
-      "run_success": true,
-      "build_warnings": {
-        "naming": 0,
-        "performance": 80,
-        "reliability": 0,
-        "security": 0,
-        "usage": 0,
-        "style": 0,
-        "other": 52,
-        "total": 132
-      },
-      "format_issues": 0,
-      "security_vulnerabilities": {
-        "Critical": 0,
-        "High": 0,
-        "Moderate": 0,
-        "Low": 1
-      },
-      "session_id": "ee48f009-53ba-4e2a-84d0-c81db0ca90dd",
-      "model": "claude-opus-4.6-1m",
-      "loaded_skills": [
-        "analyzing-dotnet-performance",
-        "optimizing-ef-core-queries"
-      ],
-      "loaded_plugins": [
-        "dotnet-diag",
-        "dotnet-data"
-      ],
-      "asset_match": true
-    },
-    {
-      "config": "dotnet-skills",
+      "config": "no-skills",
       "run_id": 3,
       "scenario": "VetClinicApi",
       "build_success": true,
@@ -392,15 +82,334 @@
         "Moderate": 0,
         "Low": 1
       },
-      "session_id": "52aa5393-cf97-4ae4-8976-3ed9d537f78f",
+      "session_id": "2de28baf-f801-4125-851a-015e1b1157aa",
+      "model": "claude-opus-4.6-1m",
+      "loaded_skills": [],
+      "loaded_plugins": [],
+      "asset_match": true
+    },
+    {
+      "config": "dotnet-artisan",
+      "run_id": 1,
+      "scenario": "FitnessStudioApi",
+      "build_success": true,
+      "run_success": true,
+      "build_warnings": {
+        "naming": 0,
+        "performance": 76,
+        "reliability": 0,
+        "security": 0,
+        "usage": 0,
+        "style": 0,
+        "other": 16,
+        "total": 92
+      },
+      "format_issues": 0,
+      "security_vulnerabilities": {
+        "Critical": 0,
+        "High": 0,
+        "Moderate": 0,
+        "Low": 1
+      },
+      "session_id": "4fb2147b-c443-475f-b930-ba3c06d15391",
       "model": "claude-opus-4.6-1m",
       "loaded_skills": [
-        "optimizing-ef-core-queries",
-        "analyzing-dotnet-performance"
+        "using-dotnet",
+        "dotnet-advisor",
+        "dotnet-api",
+        "dotnet-csharp"
       ],
       "loaded_plugins": [
-        "dotnet-data",
-        "dotnet-diag"
+        "dotnet-artisan"
+      ],
+      "asset_match": true
+    },
+    {
+      "config": "dotnet-artisan",
+      "run_id": 2,
+      "scenario": "LibraryApi",
+      "build_success": true,
+      "run_success": true,
+      "build_warnings": {
+        "naming": 0,
+        "performance": 78,
+        "reliability": 0,
+        "security": 0,
+        "usage": 0,
+        "style": 0,
+        "other": 0,
+        "total": 78
+      },
+      "format_issues": 0,
+      "security_vulnerabilities": {
+        "Critical": 0,
+        "High": 0,
+        "Moderate": 0,
+        "Low": 1
+      },
+      "session_id": "71bade27-d38d-49d5-bccd-b92830b20a8f",
+      "model": "claude-opus-4.6-1m",
+      "loaded_skills": [
+        "using-dotnet",
+        "dotnet-advisor",
+        "dotnet-csharp",
+        "dotnet-api",
+        "dotnet-tooling"
+      ],
+      "loaded_plugins": [
+        "dotnet-artisan"
+      ],
+      "asset_match": true
+    },
+    {
+      "config": "dotnet-artisan",
+      "run_id": 3,
+      "scenario": "VetClinicApi",
+      "build_success": true,
+      "run_success": true,
+      "build_warnings": {
+        "naming": 2,
+        "performance": 54,
+        "reliability": 0,
+        "security": 0,
+        "usage": 0,
+        "style": 0,
+        "other": 40,
+        "total": 96
+      },
+      "format_issues": 0,
+      "security_vulnerabilities": {
+        "Critical": 0,
+        "High": 0,
+        "Moderate": 0,
+        "Low": 1
+      },
+      "session_id": "19f2d38a-4549-4a04-8ca3-eb9ec688036c",
+      "model": "claude-opus-4.6-1m",
+      "loaded_skills": [
+        "using-dotnet",
+        "dotnet-advisor",
+        "dotnet-csharp",
+        "dotnet-api",
+        "dotnet-tooling"
+      ],
+      "loaded_plugins": [
+        "dotnet-artisan"
+      ],
+      "asset_match": true
+    },
+    {
+      "config": "managedcode-dotnet-skills",
+      "run_id": 1,
+      "scenario": "FitnessStudioApi",
+      "build_success": true,
+      "run_success": true,
+      "build_warnings": {
+        "naming": 0,
+        "performance": 102,
+        "reliability": 0,
+        "security": 0,
+        "usage": 0,
+        "style": 0,
+        "other": 24,
+        "total": 126
+      },
+      "format_issues": 0,
+      "security_vulnerabilities": {
+        "Critical": 0,
+        "High": 0,
+        "Moderate": 0,
+        "Low": 1
+      },
+      "session_id": "4e90ce72-a4c7-4883-899d-8724d51dca1f",
+      "model": "claude-opus-4.6-1m",
+      "loaded_skills": [
+        "dotnet",
+        "dotnet-project-setup",
+        "dotnet-entity-framework-core",
+        "dotnet-minimal-apis",
+        "dotnet-aspnet-core",
+        "dotnet-microsoft-extensions",
+        "dotnet-modern-csharp"
+      ],
+      "loaded_plugins": [],
+      "asset_match": true
+    },
+    {
+      "config": "managedcode-dotnet-skills",
+      "run_id": 2,
+      "scenario": "LibraryApi",
+      "build_success": true,
+      "run_success": true,
+      "build_warnings": {
+        "naming": 0,
+        "performance": 90,
+        "reliability": 0,
+        "security": 0,
+        "usage": 0,
+        "style": 0,
+        "other": 56,
+        "total": 146
+      },
+      "format_issues": 0,
+      "security_vulnerabilities": {
+        "Critical": 0,
+        "High": 0,
+        "Moderate": 0,
+        "Low": 1
+      },
+      "session_id": "0e8a5b3f-ba86-461d-92ae-c104921378c0",
+      "model": "claude-opus-4.6-1m",
+      "loaded_skills": [
+        "dotnet",
+        "dotnet-aspnet-core",
+        "dotnet-project-setup",
+        "dotnet-microsoft-extensions",
+        "dotnet-entity-framework-core",
+        "dotnet-modern-csharp"
+      ],
+      "loaded_plugins": [],
+      "asset_match": true
+    },
+    {
+      "config": "managedcode-dotnet-skills",
+      "run_id": 3,
+      "scenario": "VetClinicApi",
+      "build_success": true,
+      "run_success": true,
+      "build_warnings": {
+        "naming": 2,
+        "performance": 74,
+        "reliability": 0,
+        "security": 0,
+        "usage": 0,
+        "style": 0,
+        "other": 40,
+        "total": 116
+      },
+      "format_issues": 0,
+      "security_vulnerabilities": {
+        "Critical": 0,
+        "High": 0,
+        "Moderate": 0,
+        "Low": 1
+      },
+      "session_id": "04ba91ac-2e6a-4e15-bf5c-4c5795d1bb25",
+      "model": "claude-opus-4.6-1m",
+      "loaded_skills": [
+        "dotnet",
+        "dotnet-aspnet-core",
+        "dotnet-entity-framework-core",
+        "dotnet-project-setup",
+        "dotnet-modern-csharp",
+        "dotnet-minimal-apis",
+        "dotnet-microsoft-extensions"
+      ],
+      "loaded_plugins": [],
+      "asset_match": true
+    },
+    {
+      "config": "dotnet-skills",
+      "run_id": 1,
+      "scenario": "FitnessStudioApi",
+      "build_success": true,
+      "run_success": true,
+      "build_warnings": {
+        "naming": 6,
+        "performance": 82,
+        "reliability": 0,
+        "security": 0,
+        "usage": 0,
+        "style": 0,
+        "other": 24,
+        "total": 112
+      },
+      "format_issues": 0,
+      "security_vulnerabilities": {
+        "Critical": 0,
+        "High": 0,
+        "Moderate": 0,
+        "Low": 1
+      },
+      "session_id": "5756516f-91ff-4032-b898-be4267e6f454",
+      "model": "claude-opus-4.6-1m",
+      "loaded_skills": [
+        "analyzing-dotnet-performance",
+        "optimizing-ef-core-queries"
+      ],
+      "loaded_plugins": [
+        "dotnet-diag",
+        "dotnet-data"
+      ],
+      "asset_match": true
+    },
+    {
+      "config": "dotnet-skills",
+      "run_id": 2,
+      "scenario": "LibraryApi",
+      "build_success": true,
+      "run_success": true,
+      "build_warnings": {
+        "naming": 0,
+        "performance": 70,
+        "reliability": 0,
+        "security": 0,
+        "usage": 0,
+        "style": 0,
+        "other": 56,
+        "total": 126
+      },
+      "format_issues": 0,
+      "security_vulnerabilities": {
+        "Critical": 0,
+        "High": 0,
+        "Moderate": 0,
+        "Low": 1
+      },
+      "session_id": "aeafeccc-b76a-4ca6-905d-49a16b16f55c",
+      "model": "claude-opus-4.6-1m",
+      "loaded_skills": [
+        "analyzing-dotnet-performance",
+        "optimizing-ef-core-queries"
+      ],
+      "loaded_plugins": [
+        "dotnet-diag",
+        "dotnet-data"
+      ],
+      "asset_match": true
+    },
+    {
+      "config": "dotnet-skills",
+      "run_id": 3,
+      "scenario": "VetClinicApi",
+      "build_success": true,
+      "run_success": true,
+      "build_warnings": {
+        "naming": 2,
+        "performance": 74,
+        "reliability": 0,
+        "security": 0,
+        "usage": 0,
+        "style": 0,
+        "other": 40,
+        "total": 116
+      },
+      "format_issues": 0,
+      "security_vulnerabilities": {
+        "Critical": 0,
+        "High": 0,
+        "Moderate": 0,
+        "Low": 1
+      },
+      "session_id": "726c8812-9a98-428e-b134-917602247ed7",
+      "model": "claude-opus-4.6-1m",
+      "loaded_skills": [
+        "analyzing-dotnet-performance",
+        "optimizing-ef-core-queries"
+      ],
+      "loaded_plugins": [
+        "dotnet-diag",
+        "dotnet-data"
       ],
       "asset_match": true
     }
