@@ -1,50 +1,26 @@
 # Build & Run Verification Report
 
 **Evaluation:** ASP.NET Core Web API Skill Evaluation
-**Date:** 2026-03-30 02:06 UTC
+**Date:** 2026-03-30 04:33 UTC
 **Configurations:** 5
 **Scenarios:** 3
-**Total projects:** 15
+**Total projects:** 12
 
 ## Results
 
 | Configuration | Run | Scenario | Build | Run | Format | Security | Notes |
 |---|---|---|---|---|---|---|---|
 | no-skills | 1 | FitnessStudioApi | ✅ Pass | ✅ Pass | ❌ 0 issues | ⚠️ 1 vulns |  |
-| no-skills | 1 | LibraryApi | ⚠️ Not found | ⚠️ Not found | ⏭️ Skipped | ⏭️ Skipped | Project directory not found |
-| no-skills | 1 | VetClinicApi | ⚠️ Not found | ⚠️ Not found | ⏭️ Skipped | ⏭️ Skipped | Project directory not found |
-| no-skills | 2 | FitnessStudioApi | ⚠️ Not found | ⚠️ Not found | ⏭️ Skipped | ⏭️ Skipped | Project directory not found |
 | no-skills | 2 | LibraryApi | ✅ Pass | ✅ Pass | ❌ 0 issues | ⚠️ 1 vulns |  |
-| no-skills | 2 | VetClinicApi | ⚠️ Not found | ⚠️ Not found | ⏭️ Skipped | ⏭️ Skipped | Project directory not found |
-| no-skills | 3 | FitnessStudioApi | ⚠️ Not found | ⚠️ Not found | ⏭️ Skipped | ⏭️ Skipped | Project directory not found |
-| no-skills | 3 | LibraryApi | ⚠️ Not found | ⚠️ Not found | ⏭️ Skipped | ⏭️ Skipped | Project directory not found |
 | no-skills | 3 | VetClinicApi | ✅ Pass | ✅ Pass | ❌ 0 issues | ⚠️ 1 vulns |  |
 | dotnet-artisan | 1 | FitnessStudioApi | ✅ Pass | ✅ Pass | ❌ 0 issues | ⚠️ 1 vulns |  |
-| dotnet-artisan | 1 | LibraryApi | ⚠️ Not found | ⚠️ Not found | ⏭️ Skipped | ⏭️ Skipped | Project directory not found |
-| dotnet-artisan | 1 | VetClinicApi | ⚠️ Not found | ⚠️ Not found | ⏭️ Skipped | ⏭️ Skipped | Project directory not found |
-| dotnet-artisan | 2 | FitnessStudioApi | ⚠️ Not found | ⚠️ Not found | ⏭️ Skipped | ⏭️ Skipped | Project directory not found |
 | dotnet-artisan | 2 | LibraryApi | ✅ Pass | ✅ Pass | ❌ 0 issues | ⚠️ 1 vulns |  |
-| dotnet-artisan | 2 | VetClinicApi | ⚠️ Not found | ⚠️ Not found | ⏭️ Skipped | ⏭️ Skipped | Project directory not found |
-| dotnet-artisan | 3 | FitnessStudioApi | ⚠️ Not found | ⚠️ Not found | ⏭️ Skipped | ⏭️ Skipped | Project directory not found |
-| dotnet-artisan | 3 | LibraryApi | ⚠️ Not found | ⚠️ Not found | ⏭️ Skipped | ⏭️ Skipped | Project directory not found |
 | dotnet-artisan | 3 | VetClinicApi | ✅ Pass | ✅ Pass | ❌ 0 issues | ⚠️ 2 vulns |  |
 | managedcode-dotnet-skills | 1 | FitnessStudioApi | ✅ Pass | ✅ Pass | ❌ 0 issues | ⚠️ 1 vulns |  |
-| managedcode-dotnet-skills | 1 | LibraryApi | ⚠️ Not found | ⚠️ Not found | ⏭️ Skipped | ⏭️ Skipped | Project directory not found |
-| managedcode-dotnet-skills | 1 | VetClinicApi | ⚠️ Not found | ⚠️ Not found | ⏭️ Skipped | ⏭️ Skipped | Project directory not found |
-| managedcode-dotnet-skills | 2 | FitnessStudioApi | ⚠️ Not found | ⚠️ Not found | ⏭️ Skipped | ⏭️ Skipped | Project directory not found |
 | managedcode-dotnet-skills | 2 | LibraryApi | ✅ Pass | ✅ Pass | ❌ 0 issues | ⚠️ 1 vulns |  |
-| managedcode-dotnet-skills | 2 | VetClinicApi | ⚠️ Not found | ⚠️ Not found | ⏭️ Skipped | ⏭️ Skipped | Project directory not found |
-| managedcode-dotnet-skills | 3 | FitnessStudioApi | ⚠️ Not found | ⚠️ Not found | ⏭️ Skipped | ⏭️ Skipped | Project directory not found |
-| managedcode-dotnet-skills | 3 | LibraryApi | ⚠️ Not found | ⚠️ Not found | ⏭️ Skipped | ⏭️ Skipped | Project directory not found |
 | managedcode-dotnet-skills | 3 | VetClinicApi | ✅ Pass | ✅ Pass | ❌ 0 issues | ⚠️ 1 vulns |  |
 | dotnet-skills | 1 | FitnessStudioApi | ✅ Pass | ✅ Pass | ❌ 0 issues | ⚠️ 1 vulns |  |
-| dotnet-skills | 1 | LibraryApi | ⚠️ Not found | ⚠️ Not found | ⏭️ Skipped | ⏭️ Skipped | Project directory not found |
-| dotnet-skills | 1 | VetClinicApi | ⚠️ Not found | ⚠️ Not found | ⏭️ Skipped | ⏭️ Skipped | Project directory not found |
-| dotnet-skills | 2 | FitnessStudioApi | ⚠️ Not found | ⚠️ Not found | ⏭️ Skipped | ⏭️ Skipped | Project directory not found |
 | dotnet-skills | 2 | LibraryApi | ✅ Pass | ✅ Pass | ❌ 0 issues | ⚠️ 1 vulns |  |
-| dotnet-skills | 2 | VetClinicApi | ⚠️ Not found | ⚠️ Not found | ⏭️ Skipped | ⏭️ Skipped | Project directory not found |
-| dotnet-skills | 3 | FitnessStudioApi | ⚠️ Not found | ⚠️ Not found | ⏭️ Skipped | ⏭️ Skipped | Project directory not found |
-| dotnet-skills | 3 | LibraryApi | ⚠️ Not found | ⚠️ Not found | ⏭️ Skipped | ⏭️ Skipped | Project directory not found |
 | dotnet-skills | 3 | VetClinicApi | ✅ Pass | ✅ Pass | ❌ 0 issues | ⚠️ 1 vulns |  |
 
 ## Automated Metrics
