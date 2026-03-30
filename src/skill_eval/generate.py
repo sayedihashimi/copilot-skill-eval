@@ -13,14 +13,30 @@ import os
 import platform
 import shutil
 import subprocess
+import sys
 import tempfile
+import threading
+import time
 from pathlib import Path
 
 import click
 
 from skill_eval.config import Configuration, EvalConfig
 from skill_eval.prompt_renderer import render_generate_prompt
-from skill_eval.skill_manager import add_skill_directories, remove_skill_directories
+from skill_eval.session_tracer import (
+    compare_resources,
+    preserve_events_file,
+    trace_session,
+)
+from skill_eval.skill_manager import (
+    add_skill_directories,
+    get_skill_directories,
+    remove_skill_directories,
+    set_skill_directories,
+)
+
+# Default: kill Copilot if no CPU activity for this many seconds
+_IDLE_TIMEOUT = 300  # 5 minutes
 
 
 # ---------------------------------------------------------------------------
@@ -142,11 +158,18 @@ def _run_copilot(
     *,
     cwd: Path | None = None,
     project_root: Path | None = None,
-) -> None:
-    """Invoke the Copilot CLI with the given prompt and configuration."""
+    idle_timeout: int = _IDLE_TIMEOUT,
+    max_retries: int = 1,
+) -> dict | None:
+    """Invoke the Copilot CLI with a watchdog that kills hung processes.
+
+    Monitors the Copilot process CPU and network activity. If idle for
+    *idle_timeout* seconds, it is killed and retried up to *max_retries*.
+
+    Returns a dict with usage stats (tokens, duration) or None on failure.
+    """
     cmd = ["copilot", "-p", prompt, "--yolo"]
 
-    # Resolve plugin paths to absolute so they work from the staging dir
     for plugin in configuration.plugins:
         if project_root:
             abs_plugin = str((project_root / plugin).resolve())
@@ -161,18 +184,210 @@ def _run_copilot(
     if cwd:
         click.echo(f"  Working directory: {cwd}")
 
-    result = subprocess.run(cmd, cwd=cwd)
-    if result.returncode != 0:
-        raise RuntimeError(
-            f"Copilot CLI exited with code {result.returncode} "
-            f"for configuration '{configuration.name}'"
-        )
+    for attempt in range(1 + max_retries):
+        if attempt > 0:
+            click.echo(f"  ⚠️  Retry {attempt}/{max_retries} after idle timeout")
+
+        start_time = time.monotonic()
+        proc = subprocess.Popen(cmd, cwd=cwd)
+        timed_out = _watchdog_wait(proc, idle_timeout)
+        elapsed = time.monotonic() - start_time
+
+        if timed_out:
+            click.echo(f"  ⚠️  Copilot idle for {idle_timeout}s — killing (PID {proc.pid})")
+            _kill_process_tree(proc)
+            if attempt < max_retries:
+                continue
+            raise RuntimeError(
+                f"Copilot CLI hung after {max_retries + 1} attempts "
+                f"for configuration '{configuration.name}'"
+            )
+
+        if proc.returncode != 0:
+            raise RuntimeError(
+                f"Copilot CLI exited with code {proc.returncode} "
+                f"for configuration '{configuration.name}'"
+            )
+
+        # Parse usage from Copilot CLI log
+        usage = _parse_copilot_log_usage(proc.pid)
+        if usage:
+            usage["wall_time_seconds"] = round(elapsed, 1)
+            mins, secs = divmod(int(elapsed), 60)
+            click.echo(
+                f"    📊 {usage.get('input_tokens', 0):,} in / "
+                f"{usage.get('output_tokens', 0):,} out / "
+                f"{usage.get('api_calls', 0)} calls / {mins}m {secs}s"
+            )
+        return usage
+
+
+def _watchdog_wait(proc: subprocess.Popen, idle_timeout: int) -> bool:
+    """Wait for *proc* to finish, killing it if truly idle.
+
+    Returns True if the process was killed due to idle timeout.
+
+    A process is considered **active** if ANY of these are true:
+    - CPU usage increased by ≥0.5s since last check
+    - It has active TCP connections (waiting on API responses)
+
+    Only triggers the timeout when NEITHER condition is met for
+    *idle_timeout* consecutive seconds. This avoids false positives
+    for I/O-bound processes waiting on large LLM API responses.
+    """
+    idle_since = time.monotonic()
+    last_cpu = _get_process_cpu(proc.pid)
+    poll_interval = 15  # seconds between checks
+    min_cpu_delta = 0.5  # minimum CPU seconds per interval
+
+    while proc.poll() is None:
+        time.sleep(poll_interval)
+        if proc.poll() is not None:
+            break
+
+        current_cpu = _get_process_cpu(proc.pid)
+        if current_cpu is None:
+            break  # process gone
+
+        cpu_delta = current_cpu - (last_cpu or 0)
+        last_cpu = current_cpu
+
+        has_cpu = cpu_delta >= min_cpu_delta
+        has_network = _has_active_connections(proc.pid)
+
+        if has_cpu or has_network:
+            idle_since = time.monotonic()
+        elif time.monotonic() - idle_since > idle_timeout:
+            return True  # truly idle: no CPU AND no network
+
+    return False
+
+
+def _get_process_cpu(pid: int) -> float | None:
+    """Get cumulative CPU time for a process. Returns None if process not found."""
+    try:
+        if sys.platform == "win32":
+            result = subprocess.run(
+                ["powershell", "-NoProfile", "-Command",
+                 f"(Get-Process -Id {pid} -ErrorAction SilentlyContinue).CPU"],
+                capture_output=True, text=True, timeout=10,
+            )
+            val = result.stdout.strip()
+            return float(val) if val else None
+        else:
+            stat = Path(f"/proc/{pid}/stat")
+            if stat.exists():
+                fields = stat.read_text().split()
+                utime = int(fields[13])
+                stime = int(fields[14])
+                return float(utime + stime)
+            return None
+    except Exception:
+        return None
+
+
+def _has_active_connections(pid: int) -> bool:
+    """Check if a process has active TCP connections (ESTABLISHED state).
+
+    Returns True if the process is connected to a remote server,
+    indicating it's waiting on an API response — not truly idle.
+    """
+    try:
+        if sys.platform == "win32":
+            result = subprocess.run(
+                ["powershell", "-NoProfile", "-Command",
+                 f"Get-NetTCPConnection -OwningProcess {pid} -State Established "
+                 f"-ErrorAction SilentlyContinue | Measure-Object | "
+                 f"Select-Object -ExpandProperty Count"],
+                capture_output=True, text=True, timeout=10,
+            )
+            val = result.stdout.strip()
+            return int(val) > 0 if val else False
+        else:
+            # On Linux, check /proc/net/tcp for the pid
+            result = subprocess.run(
+                ["sh", "-c", f"ss -tnp state established | grep -c 'pid={pid},'"],
+                capture_output=True, text=True, timeout=10,
+            )
+            val = result.stdout.strip()
+            return int(val) > 0 if val else False
+    except Exception:
+        return False
+
+
+def _kill_process_tree(proc: subprocess.Popen) -> None:
+    """Kill a process and its children."""
+    if sys.platform == "win32":
+        try:
+            subprocess.run(
+                f"taskkill /F /T /PID {proc.pid}",
+                shell=True, capture_output=True, timeout=10,
+            )
+        except Exception:
+            pass
+    else:
+        import signal as _signal
+        try:
+            os.killpg(os.getpgid(proc.pid), _signal.SIGKILL)
+        except (ProcessLookupError, OSError):
+            pass
+    try:
+        proc.wait(timeout=10)
+    except Exception:
+        pass
+
+
+def _parse_copilot_log_usage(pid: int) -> dict | None:
+    """Parse token usage from the most recent Copilot CLI log file.
+
+    Copilot CLI writes detailed logs to ~/.copilot/logs/ with per-request
+    token counts. This function finds the log matching the given PID and
+    extracts aggregate usage.
+    """
+    import re as _re
+
+    log_dir = Path.home() / ".copilot" / "logs"
+    if not log_dir.exists():
+        return None
+
+    # Find log file matching this PID
+    matching = [f for f in log_dir.glob(f"process-*-{pid}.log")]
+    if not matching:
+        # Fall back to most recent log
+        logs = sorted(log_dir.glob("process-*.log"), key=lambda f: f.stat().st_mtime)
+        if not logs:
+            return None
+        matching = [logs[-1]]
+
+    log_file = matching[0]
+    try:
+        content = log_file.read_text(encoding="utf-8", errors="replace")
+    except Exception:
+        return None
+
+    # Extract all token usage entries
+    input_tokens = [int(m) for m in _re.findall(r'"input_tokens": (\d+)', content)]
+    output_tokens = [int(m) for m in _re.findall(r'"output_tokens": (\d+)', content)]
+    durations = [int(m) for m in _re.findall(r'"duration": (\d+),', content)]
+    cache_read = [int(m) for m in _re.findall(r'"cache_read_tokens": (\d+)', content)]
+
+    if not input_tokens:
+        return None
+
+    return {
+        "api_calls": len(input_tokens),
+        "input_tokens": sum(input_tokens),
+        "output_tokens": sum(output_tokens),
+        "cache_read_tokens": sum(cache_read) if cache_read else 0,
+        "api_duration_ms": sum(durations) if durations else 0,
+    }
 
 
 def run_generate(
     config: EvalConfig,
     project_root: Path,
     configurations: list[str] | None = None,
+    resume: bool = False,
 ) -> None:
     """Generate code for each configuration defined in the config.
 
@@ -180,11 +395,15 @@ def run_generate(
     large skills/plugins don't exhaust the context window before later
     scenarios can be built.
 
+    When ``config.runs > 1``, each configuration is generated N times with
+    output stored under ``output/{config}/run-{N}/{scenario}/``.
+
     Args:
         config: The parsed evaluation configuration.
         project_root: Root directory of the evaluation project.
         configurations: Optional list of configuration names to run.
                         If None, runs all configurations.
+        resume: If True, skip runs where output already exists.
     """
     configs_to_run = config.configurations
     if configurations:
@@ -199,61 +418,182 @@ def run_generate(
 
     output_base = project_root / config.output.directory
     total_scenarios = len(config.scenarios)
+    num_runs = config.runs
+    all_usage: list[dict] = []
 
     for cfg in configs_to_run:
-        config_output = output_base / cfg.name
         label = cfg.label or cfg.name
 
         click.echo(f"\n{'=' * 60}")
         click.echo(f"Generating: {label}")
-        click.echo(f"Output:     {config_output}")
-        click.echo(f"Scenarios:  {total_scenarios} (one Copilot invocation each)")
+        click.echo(f"Runs:       {num_runs}")
+        click.echo(f"Scenarios:  {total_scenarios} available (1 randomly selected per run)")
         click.echo(f"{'=' * 60}")
 
-        # Clean previous output for this configuration
-        if config_output.exists():
-            click.echo(f"  Removing previous output: {config_output}")
-            _rmtree(config_output)
-        config_output.mkdir(parents=True, exist_ok=True)
+        # Snapshot the global skill_directories so we can restore later.
+        # Then replace with ONLY the skills for this configuration to
+        # prevent contamination from previous configs or manual registrations.
+        saved_skill_dirs = get_skill_directories()
 
-        # Create staging dir once per config and register skills
         staging_dir, staging_links = _create_staging_dir(project_root, cfg)
         added_skills: list[Path] = []
         try:
+            # Clear all global skill_directories, then add only this config's
             if cfg.skills:
                 skill_paths = [project_root / s for s in cfg.skills]
-                added_skills = add_skill_directories(skill_paths)
-                if added_skills:
-                    click.echo(
-                        f"  Registered skills: "
-                        f"{', '.join(str(p) for p in added_skills)}"
-                    )
+                skill_abs = [str(p.resolve()) for p in skill_paths]
+                set_skill_directories(skill_abs)
+                added_skills = skill_paths
+                click.echo(
+                    f"  Registered skills: "
+                    f"{', '.join(cfg.skills)}"
+                )
+            else:
+                set_skill_directories([])
+                click.echo("  Skill directories cleared (no skills for this config)")
 
-            # Generate each scenario in its own Copilot invocation
-            for i, scenario in enumerate(config.scenarios, 1):
-                scenario_output = config_output / scenario.name
+            for run_id in range(1, num_runs + 1):
+                run_output = output_base / cfg.name / f"run-{run_id}"
+
+                # Resume support: skip if output exists
+                if resume and run_output.exists() and any(run_output.iterdir()):
+                    click.echo(f"\n  ⏭️  Run {run_id}/{num_runs} — skipping (output exists)")
+                    continue
+
+                # Select one scenario for this run (round-robin for coverage)
+                scenario = config.scenarios[(run_id - 1) % total_scenarios]
+
+                click.echo(f"\n  --- Run {run_id}/{num_runs} → {scenario.name} ---")
+
+                # Clean previous output for this run
+                if run_output.exists():
+                    _rmtree(run_output)
+                run_output.mkdir(parents=True, exist_ok=True)
+
+                scenario_output = run_output / scenario.name
                 scenario_output.mkdir(parents=True, exist_ok=True)
 
-                click.echo(f"\n  [{i}/{total_scenarios}] {scenario.name}")
                 click.echo(f"    {scenario.description}")
 
                 prompt = render_generate_prompt(
-                    config, cfg.name, project_root, scenario=scenario,
+                    config, cfg.name, project_root,
+                    scenario=scenario, run_id=run_id,
                 )
-                _run_copilot(
-                    prompt, cfg, cwd=staging_dir, project_root=project_root,
-                )
-                click.echo(f"    ✅ {scenario.name} done")
+                # Record timestamp so we can find the right events.jsonl
+                trace_timestamp = time.time()
+                try:
+                    usage = _run_copilot(
+                        prompt, cfg, cwd=staging_dir, project_root=project_root,
+                    )
+                    if usage is None:
+                        usage = {}
+                    usage["config"] = cfg.name
+                    usage["run_id"] = run_id
+                    usage["scenario"] = scenario.name
+
+                    # --- Session tracing ---
+                    # Find the events.jsonl created after our timestamp
+                    trace = trace_session(created_after=trace_timestamp)
+                    if trace is not None:
+                        usage["session_id"] = trace.session_id
+                        usage["model"] = trace.model
+                        usage["copilot_version"] = trace.copilot_version
+                        usage["loaded_resources"] = [
+                            {
+                                "resource_type": r.resource_type,
+                                "name": r.name,
+                                "plugin_name": r.plugin_name,
+                                "content_length": r.content_length,
+                                "timestamp": r.timestamp,
+                            }
+                            for r in trace.resources
+                        ]
+                        expected_skills = [Path(s).name for s in cfg.skills]
+                        expected_plugins = [Path(p).name for p in cfg.plugins]
+                        # Build allowed directories (absolute) for path-based check
+                        allowed_dirs = (
+                            [str((project_root / s).resolve()) for s in cfg.skills]
+                            + [str((project_root / p).resolve()) for p in cfg.plugins]
+                        )
+                        comparison = compare_resources(
+                            trace, expected_skills, expected_plugins,
+                            allowed_dirs=allowed_dirs,
+                        )
+                        usage["resource_comparison"] = comparison
+
+                        # Console summary
+                        click.echo(
+                            f"    📋 Session: {trace.session_id or '?'}"
+                        )
+                        if trace.resources:
+                            names = ", ".join(trace.skill_names)
+                            click.echo(
+                                f"    📋 Skills loaded: {names} "
+                                f"({len(trace.resources)})"
+                            )
+                        else:
+                            click.echo("    📋 No skills loaded")
+
+                        if comparison.get("contaminated"):
+                            for c in comparison["contaminated"]:
+                                click.echo(
+                                    f"    🚨 CONTAMINATION: skill '{c['name']}' "
+                                    f"loaded from outside this config: {c['path']}"
+                                )
+                        elif comparison.get("match"):
+                            click.echo("    ✅ All skills/plugins match config")
+
+                        # Preserve events.jsonl in run output
+                        preserve_events_file(
+                            Path.home() / ".copilot",
+                            run_output / "events.jsonl",
+                            created_after=trace_timestamp,
+                        )
+
+                    all_usage.append(usage)
+                    click.echo(f"    ✅ {scenario.name} done")
+                except RuntimeError as e:
+                    click.echo(f"    ❌ {scenario.name} failed: {e}")
+                    continue
 
         finally:
-            if added_skills:
-                remove_skill_directories(added_skills)
-                click.echo("  Unregistered skills")
+            # Restore the original skill_directories
+            set_skill_directories(saved_skill_dirs)
+            click.echo("  Restored global skill_directories")
             _cleanup_staging_dir(staging_dir, staging_links)
             click.echo(f"  Cleaned up staging directory")
 
         click.echo(f"  ✅ Done: {label}")
 
     click.echo(f"\n{'=' * 60}")
-    click.echo(f"Generation complete: {len(configs_to_run)} configuration(s)")
+    click.echo(f"Generation complete: {len(configs_to_run)} configuration(s) × {num_runs} run(s)")
     click.echo(f"{'=' * 60}")
+
+    # Write usage data and print summary
+    if all_usage:
+        import json
+        usage_path = project_root / config.output.reports_directory / "generation-usage.json"
+        usage_path.parent.mkdir(parents=True, exist_ok=True)
+        usage_path.write_text(json.dumps(all_usage, indent=2), encoding="utf-8")
+        click.echo(f"\n📊 Generation usage written to: {usage_path}")
+
+        # Per-config summary
+        click.echo(f"\n{'=' * 60}")
+        click.echo("Generation Usage Summary")
+        click.echo(f"{'=' * 60}")
+        config_usage: dict[str, dict] = {}
+        for u in all_usage:
+            cn = u["config"]
+            if cn not in config_usage:
+                config_usage[cn] = {"input": 0, "output": 0, "calls": 0, "time": 0.0}
+            config_usage[cn]["input"] += u.get("input_tokens", 0)
+            config_usage[cn]["output"] += u.get("output_tokens", 0)
+            config_usage[cn]["calls"] += u.get("api_calls", 0)
+            config_usage[cn]["time"] += u.get("wall_time_seconds", 0)
+
+        for cn, cu in config_usage.items():
+            mins, secs = divmod(int(cu["time"]), 60)
+            click.echo(
+                f"  {cn:30s}: {cu['input']:>10,} in / {cu['output']:>8,} out / "
+                f"{cu['calls']:>3} calls / {mins}m {secs}s"
+            )

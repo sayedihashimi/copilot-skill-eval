@@ -23,6 +23,18 @@ def _write_config(config: dict) -> None:
     )
 
 
+def get_skill_directories() -> list[str]:
+    """Return the current ``skill_directories`` list (absolute paths)."""
+    return list(_read_config().get("skill_directories", []))
+
+
+def set_skill_directories(paths: list[str]) -> None:
+    """Replace ``skill_directories`` with exactly *paths* (absolute strings)."""
+    config = _read_config()
+    config["skill_directories"] = list(paths)
+    _write_config(config)
+
+
 def add_skill_directories(paths: list[Path]) -> list[Path]:
     """Register skill directories in Copilot config.
 
