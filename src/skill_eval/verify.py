@@ -382,6 +382,8 @@ def run_verify(config: EvalConfig, project_root: Path) -> None:
 
             for scenario in config.scenarios:
                 project_dir = run_dir / scenario.name
+                if not project_dir.exists():
+                    continue
                 label = f"{cfg.name}/run-{run_id}/{scenario.name}"
                 click.echo(f"  Verifying: {label}")
 
@@ -417,7 +419,7 @@ def _write_build_notes(
         f"**Date:** {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}",
         f"**Configurations:** {len(config.configurations)}",
         f"**Scenarios:** {len(config.scenarios)}",
-        f"**Total projects:** {len(config.configurations) * len(config.scenarios)}",
+        f"**Total projects:** {len(results)}",
         f"",
         f"## Results",
         f"",
