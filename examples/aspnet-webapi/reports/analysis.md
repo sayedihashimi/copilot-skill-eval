@@ -1,38 +1,38 @@
 # Aggregated Analysis: ASP.NET Core Web API Skill Evaluation
 
-**Runs:** 3 | **Configurations:** 5 | **Scenarios:** 3 | **Dimensions:** 24
-**Date:** 2026-03-30 03:13 UTC
+**Runs:** 3 | **Configurations:** 4 | **Scenarios:** 3 | **Dimensions:** 24
+**Date:** 2026-03-30 05:13 UTC
 
 ---
 
 ## Executive Summary
 
-| Dimension [Tier] | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
-|---|---|---|---|---|---|
-| Build & Run Success [CRITICAL] | 5.0 | — | 4.7 ± 0.6 | 5.0 | 5.0 |
-| Security Vulnerability Scan [CRITICAL] | 4.3 ± 0.6 | — | 4.0 ± 1.0 | 4.7 ± 0.6 | 4.7 ± 0.6 |
-| Minimal API Architecture [CRITICAL] | 1.0 | — | 5.0 | 1.0 | 1.7 ± 1.2 |
-| Input Validation & Guard Clauses [CRITICAL] | 3.0 | — | 4.0 | 3.3 ± 0.6 | 3.7 ± 0.6 |
-| NuGet & Package Discipline [CRITICAL] | 2.3 ± 0.6 | — | 4.0 ± 1.0 | 3.7 ± 0.6 | 3.7 ± 0.6 |
-| EF Migration Usage [CRITICAL] | 1.7 ± 0.6 | — | 1.7 ± 0.6 | 1.7 ± 0.6 | 1.7 ± 0.6 |
-| Business Logic Correctness [HIGH] | 5.0 | — | 5.0 | 5.0 | 5.0 |
-| Prefer Built-in over 3rd Party [HIGH] | 1.7 ± 0.6 | — | 4.3 ± 0.6 | 2.3 ± 0.6 | 2.3 ± 0.6 |
-| Modern C# Adoption [HIGH] | 1.7 ± 0.6 | — | 5.0 | 3.7 ± 0.6 | 2.3 ± 0.6 |
-| Error Handling & Middleware [HIGH] | 3.0 ± 1.0 | — | 4.3 ± 0.6 | 4.7 ± 0.6 | 3.7 ± 0.6 |
-| Async Patterns & Cancellation [HIGH] | 2.3 ± 0.6 | — | 5.0 | 3.3 ± 1.5 | 2.3 ± 0.6 |
-| EF Core Best Practices [HIGH] | 2.7 ± 0.6 | — | 4.7 ± 0.6 | 4.3 ± 1.2 | 4.3 ± 0.6 |
-| Service Abstraction & DI [HIGH] | 4.3 ± 0.6 | — | 5.0 | 4.3 ± 0.6 | 4.7 ± 0.6 |
-| Security Configuration [HIGH] | 2.0 | — | 2.0 | 2.0 | 2.0 |
-| DTO Design [MEDIUM] | 2.7 ± 1.2 | — | 5.0 | 3.0 ± 1.0 | 2.7 ± 1.2 |
-| Sealed Types [MEDIUM] | 1.0 | — | 5.0 | 1.0 | 3.7 ± 1.2 |
-| Data Seeder Design [MEDIUM] | 4.0 | — | 4.3 ± 0.6 | 4.0 | 4.0 |
-| Structured Logging [MEDIUM] | 4.0 | — | 4.0 | 4.0 | 4.0 |
-| Nullable Reference Types [MEDIUM] | 4.3 ± 0.6 | — | 4.3 ± 0.6 | 4.3 ± 0.6 | 4.3 ± 0.6 |
-| API Documentation [MEDIUM] | 3.3 ± 0.6 | — | 5.0 | 3.3 ± 0.6 | 3.3 ± 0.6 |
-| File Organization [MEDIUM] | 3.0 ± 1.0 | — | 5.0 | 4.0 ± 1.0 | 3.3 ± 1.2 |
-| HTTP Test File Quality [MEDIUM] | 4.0 | — | 4.7 ± 0.6 | 4.3 ± 0.6 | 4.0 |
-| Type Design & Resource Management [MEDIUM] | 3.3 ± 0.6 | — | 4.3 ± 0.6 | 3.7 ± 0.6 | 3.7 ± 0.6 |
-| Code Standards Compliance [LOW] | 3.7 ± 0.6 | — | 5.0 | 4.0 | 4.0 ± 1.0 |
+| Dimension [Tier] | no-skills | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
+|---|---|---|---|---|
+| Build & Run Success [CRITICAL] | 5.0 | 4.7 ± 0.6 | 5.0 | 5.0 |
+| Security Vulnerability Scan [CRITICAL] | 4.3 ± 0.6 | 4.0 ± 1.0 | 4.7 ± 0.6 | 4.7 ± 0.6 |
+| Minimal API Architecture [CRITICAL] | 1.0 | 5.0 | 1.0 | 1.7 ± 1.2 |
+| Input Validation & Guard Clauses [CRITICAL] | 3.0 | 4.0 | 3.3 ± 0.6 | 3.7 ± 0.6 |
+| NuGet & Package Discipline [CRITICAL] | 2.3 ± 0.6 | 4.0 ± 1.0 | 3.7 ± 0.6 | 3.7 ± 0.6 |
+| EF Migration Usage [CRITICAL] | 1.7 ± 0.6 | 1.7 ± 0.6 | 1.7 ± 0.6 | 1.7 ± 0.6 |
+| Business Logic Correctness [HIGH] | 5.0 | 5.0 | 5.0 | 5.0 |
+| Prefer Built-in over 3rd Party [HIGH] | 1.7 ± 0.6 | 4.3 ± 0.6 | 2.3 ± 0.6 | 2.3 ± 0.6 |
+| Modern C# Adoption [HIGH] | 1.7 ± 0.6 | 5.0 | 3.7 ± 0.6 | 2.3 ± 0.6 |
+| Error Handling & Middleware [HIGH] | 3.0 ± 1.0 | 4.3 ± 0.6 | 4.7 ± 0.6 | 3.7 ± 0.6 |
+| Async Patterns & Cancellation [HIGH] | 2.3 ± 0.6 | 5.0 | 3.3 ± 1.5 | 2.3 ± 0.6 |
+| EF Core Best Practices [HIGH] | 2.7 ± 0.6 | 4.7 ± 0.6 | 4.3 ± 1.2 | 4.3 ± 0.6 |
+| Service Abstraction & DI [HIGH] | 4.3 ± 0.6 | 5.0 | 4.3 ± 0.6 | 4.7 ± 0.6 |
+| Security Configuration [HIGH] | 2.0 | 2.0 | 2.0 | 2.0 |
+| DTO Design [MEDIUM] | 2.7 ± 1.2 | 5.0 | 3.0 ± 1.0 | 2.7 ± 1.2 |
+| Sealed Types [MEDIUM] | 1.0 | 5.0 | 1.0 | 3.7 ± 1.2 |
+| Data Seeder Design [MEDIUM] | 4.0 | 4.3 ± 0.6 | 4.0 | 4.0 |
+| Structured Logging [MEDIUM] | 4.0 | 4.0 | 4.0 | 4.0 |
+| Nullable Reference Types [MEDIUM] | 4.3 ± 0.6 | 4.3 ± 0.6 | 4.3 ± 0.6 | 4.3 ± 0.6 |
+| API Documentation [MEDIUM] | 3.3 ± 0.6 | 5.0 | 3.3 ± 0.6 | 3.3 ± 0.6 |
+| File Organization [MEDIUM] | 3.0 ± 1.0 | 5.0 | 4.0 ± 1.0 | 3.3 ± 1.2 |
+| HTTP Test File Quality [MEDIUM] | 4.0 | 4.7 ± 0.6 | 4.3 ± 0.6 | 4.0 |
+| Type Design & Resource Management [MEDIUM] | 3.3 ± 0.6 | 4.3 ± 0.6 | 3.7 ± 0.6 | 3.7 ± 0.6 |
+| Code Standards Compliance [LOW] | 3.7 ± 0.6 | 5.0 | 4.0 | 4.0 ± 1.0 |
 
 ---
 
@@ -44,18 +44,17 @@
 | 🥈 | managedcode-dotnet-skills | 151.0 | 7.0 | 143.0 | 156.0 |
 | 🥉 | dotnet-skills | 149.3 | 13.2 | 137.5 | 163.5 |
 | 4th | no-skills | 128.8 | 10.1 | 117.5 | 137.0 |
-| 5th | dotnet-webapi | 0.0 | 0.0 | 0.0 | 0.0 |
 
 ---
 
 ## Weighted Score per Run
 
-| Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
-|---|---|---|---|---|---|
-| 1 | 137.0 | 0.0 | 190.5 | 154.0 | 163.5 |
-| 2 | 117.5 | 0.0 | 179.5 | 156.0 | 137.5 |
-| 3 | 132.0 | 0.0 | 184.5 | 143.0 | 147.0 |
-| **Mean** | **128.8** | **0.0** | **184.8** | **151.0** | **149.3** |
+| Run | no-skills | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
+|---|---|---|---|---|
+| 1 | 137.0 | 190.5 | 154.0 | 163.5 |
+| 2 | 117.5 | 179.5 | 156.0 | 137.5 |
+| 3 | 132.0 | 184.5 | 143.0 | 147.0 |
+| **Mean** | **128.8** | **184.8** | **151.0** | **149.3** |
 
 ---
 
@@ -63,10 +62,10 @@
 
 | Configuration | Build Pass Rate | Run Pass Rate | Avg Warnings |
 |---|---|---|---|
-| no-skills | 3/9 (33%) | 3/9 (33%) | 43.3 |
-| dotnet-artisan | 3/9 (33%) | 3/9 (33%) | 38.2 |
-| managedcode-dotnet-skills | 3/9 (33%) | 3/9 (33%) | 42.4 |
-| dotnet-skills | 3/9 (33%) | 3/9 (33%) | 31.3 |
+| no-skills | 3/3 (100%) | 3/3 (100%) | 130.0 |
+| dotnet-artisan | 3/3 (100%) | 3/3 (100%) | 114.7 |
+| managedcode-dotnet-skills | 3/3 (100%) | 3/3 (100%) | 127.3 |
+| dotnet-skills | 3/3 (100%) | 3/3 (100%) | 94.0 |
 
 ---
 
@@ -94,7 +93,6 @@
 | Configuration | Score σ | Most Consistent Dim (σ) | Most Variable Dim (σ) |
 |---|---|---|---|
 | no-skills | 10.1 | Build & Run Success (0.0) | DTO Design (1.2) |
-| dotnet-webapi | 0.0 |  (inf) |  (0.0) |
 | dotnet-artisan | 5.5 | Minimal API Architecture (0.0) | Security Vulnerability Scan (1.0) |
 | managedcode-dotnet-skills | 7.0 | Build & Run Success (0.0) | Async Patterns & Cancellation (1.5) |
 | dotnet-skills | 13.2 | Build & Run Success (0.0) | Minimal API Architecture (1.2) |
@@ -107,12 +105,12 @@
 
 #### Scores Across Runs
 
-| Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
-|---|---|---|---|---|---|
-| 1 | 5 | — | 5 | 5 | 5 |
-| 2 | 5 | — | 5 | 5 | 5 |
-| 3 | 5 | — | 4 | 5 | 5 |
-| **Mean** | **5.0** | — | **4.7** | **5.0** | **5.0** |
+| Run | no-skills | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
+|---|---|---|---|---|
+| 1 | 5 | 5 | 5 | 5 |
+| 2 | 5 | 5 | 5 | 5 |
+| 3 | 5 | 4 | 5 | 5 |
+| **Mean** | **5.0** | **4.7** | **5.0** | **5.0** |
 
 #### Analysis
 
@@ -137,12 +135,12 @@ The dotnet-artisan build emits one warning due to a transitive dependency (`Micr
 
 #### Scores Across Runs
 
-| Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
-|---|---|---|---|---|---|
-| 1 | 5 | — | 5 | 5 | 5 |
-| 2 | 4 | — | 4 | 4 | 4 |
-| 3 | 4 | — | 3 | 5 | 5 |
-| **Mean** | **4.3** | — | **4.0** | **4.7** | **4.7** |
+| Run | no-skills | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
+|---|---|---|---|---|
+| 1 | 5 | 5 | 5 | 5 |
+| 2 | 4 | 4 | 4 | 4 |
+| 3 | 4 | 3 | 5 | 5 |
+| **Mean** | **4.3** | **4.0** | **4.7** | **4.7** |
 
 #### Analysis
 
@@ -174,12 +172,12 @@ The dotnet-artisan build emits one warning due to a transitive dependency (`Micr
 
 #### Scores Across Runs
 
-| Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
-|---|---|---|---|---|---|
-| 1 | 1 | — | 5 | 1 | 3 |
-| 2 | 1 | — | 5 | 1 | 1 |
-| 3 | 1 | — | 5 | 1 | 1 |
-| **Mean** | **1.0** | — | **5.0** | **1.0** | **1.7** |
+| Run | no-skills | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
+|---|---|---|---|---|
+| 1 | 1 | 5 | 1 | 3 |
+| 2 | 1 | 5 | 1 | 1 |
+| 3 | 1 | 5 | 1 | 1 |
+| **Mean** | **1.0** | **5.0** | **1.0** | **1.7** |
 
 #### Analysis
 
@@ -247,12 +245,12 @@ public class OwnersController : ControllerBase
 
 #### Scores Across Runs
 
-| Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
-|---|---|---|---|---|---|
-| 1 | 3 | — | 4 | 3 | 4 |
-| 2 | 3 | — | 4 | 4 | 3 |
-| 3 | 3 | — | 4 | 3 | 4 |
-| **Mean** | **3.0** | — | **4.0** | **3.3** | **3.7** |
+| Run | no-skills | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
+|---|---|---|---|---|
+| 1 | 3 | 4 | 3 | 4 |
+| 2 | 3 | 4 | 4 | 3 |
+| 3 | 3 | 4 | 3 | 4 |
+| **Mean** | **3.0** | **4.0** | **3.3** | **3.7** |
 
 #### Analysis
 
@@ -304,12 +302,12 @@ For guard clauses, only dotnet-artisan consistently validates at both endpoint a
 
 #### Scores Across Runs
 
-| Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
-|---|---|---|---|---|---|
-| 1 | 2 | — | 4 | 3 | 4 |
-| 2 | 3 | — | 3 | 4 | 4 |
-| 3 | 2 | — | 5 | 4 | 3 |
-| **Mean** | **2.3** | — | **4.0** | **3.7** | **3.7** |
+| Run | no-skills | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
+|---|---|---|---|---|
+| 1 | 2 | 4 | 3 | 4 |
+| 2 | 3 | 3 | 4 | 4 |
+| 3 | 2 | 5 | 4 | 3 |
+| **Mean** | **2.3** | **4.0** | **3.7** | **3.7** |
 
 #### Analysis
 
@@ -348,12 +346,12 @@ For guard clauses, only dotnet-artisan consistently validates at both endpoint a
 
 #### Scores Across Runs
 
-| Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
-|---|---|---|---|---|---|
-| 1 | 2 | — | 2 | 2 | 2 |
-| 2 | 1 | — | 1 | 1 | 1 |
-| 3 | 2 | — | 2 | 2 | 2 |
-| **Mean** | **1.7** | — | **1.7** | **1.7** | **1.7** |
+| Run | no-skills | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
+|---|---|---|---|---|
+| 1 | 2 | 2 | 2 | 2 |
+| 2 | 1 | 1 | 1 | 1 |
+| 3 | 2 | 2 | 2 | 2 |
+| **Mean** | **1.7** | **1.7** | **1.7** | **1.7** |
 
 #### Analysis
 
@@ -378,12 +376,12 @@ None call `db.Database.MigrateAsync()`. While all include `Microsoft.EntityFrame
 
 #### Scores Across Runs
 
-| Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
-|---|---|---|---|---|---|
-| 1 | 5 | — | 5 | 5 | 5 |
-| 2 | 5 | — | 5 | 5 | 5 |
-| 3 | 5 | — | 5 | 5 | 5 |
-| **Mean** | **5.0** | — | **5.0** | **5.0** | **5.0** |
+| Run | no-skills | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
+|---|---|---|---|---|
+| 1 | 5 | 5 | 5 | 5 |
+| 2 | 5 | 5 | 5 | 5 |
+| 3 | 5 | 5 | 5 | 5 |
+| **Mean** | **5.0** | **5.0** | **5.0** | **5.0** |
 
 #### Analysis
 
@@ -430,12 +428,12 @@ Completed, Cancelled, NoShow → [] (terminal)
 
 #### Scores Across Runs
 
-| Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
-|---|---|---|---|---|---|
-| 1 | 2 | — | 4 | 2 | 2 |
-| 2 | 1 | — | 4 | 3 | 3 |
-| 3 | 2 | — | 5 | 2 | 2 |
-| **Mean** | **1.7** | — | **4.3** | **2.3** | **2.3** |
+| Run | no-skills | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
+|---|---|---|---|---|
+| 1 | 2 | 4 | 2 | 2 |
+| 2 | 1 | 4 | 3 | 3 |
+| 3 | 2 | 5 | 2 | 2 |
+| **Mean** | **1.7** | **4.3** | **2.3** | **2.3** |
 
 #### Analysis
 
@@ -468,12 +466,12 @@ app.UseSwaggerUI();
 
 #### Scores Across Runs
 
-| Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
-|---|---|---|---|---|---|
-| 1 | 2 | — | 5 | 4 | 3 |
-| 2 | 1 | — | 5 | 4 | 2 |
-| 3 | 2 | — | 5 | 3 | 2 |
-| **Mean** | **1.7** | — | **5.0** | **3.7** | **2.3** |
+| Run | no-skills | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
+|---|---|---|---|---|
+| 1 | 2 | 5 | 4 | 3 |
+| 2 | 1 | 5 | 4 | 2 |
+| 3 | 2 | 5 | 3 | 2 |
+| **Mean** | **1.7** | **5.0** | **3.7** | **2.3** |
 
 #### Analysis
 
@@ -532,12 +530,12 @@ public ICollection<Pet> Pets { get; set; } = new List<Pet>();
 
 #### Scores Across Runs
 
-| Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
-|---|---|---|---|---|---|
-| 1 | 3 | — | 5 | 5 | 4 |
-| 2 | 2 | — | 4 | 5 | 4 |
-| 3 | 4 | — | 4 | 4 | 3 |
-| **Mean** | **3.0** | — | **4.3** | **4.7** | **3.7** |
+| Run | no-skills | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
+|---|---|---|---|---|
+| 1 | 3 | 5 | 5 | 4 |
+| 2 | 2 | 4 | 5 | 4 |
+| 3 | 4 | 4 | 4 | 3 |
+| **Mean** | **3.0** | **4.3** | **4.7** | **3.7** |
 
 #### Analysis
 
@@ -594,12 +592,12 @@ builder.Services.AddProblemDetails();
 
 #### Scores Across Runs
 
-| Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
-|---|---|---|---|---|---|
-| 1 | 2 | — | 5 | 2 | 2 |
-| 2 | 2 | — | 5 | 5 | 2 |
-| 3 | 3 | — | 5 | 3 | 3 |
-| **Mean** | **2.3** | — | **5.0** | **3.3** | **2.3** |
+| Run | no-skills | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
+|---|---|---|---|---|
+| 1 | 2 | 5 | 2 | 2 |
+| 2 | 2 | 5 | 5 | 2 |
+| 3 | 3 | 5 | 3 | 3 |
+| **Mean** | **2.3** | **5.0** | **3.3** | **2.3** |
 
 #### Analysis
 
@@ -649,12 +647,12 @@ public async Task<IActionResult> GetAll([FromQuery] string? search, ...)
 
 #### Scores Across Runs
 
-| Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
-|---|---|---|---|---|---|
-| 1 | 3 | — | 4 | 5 | 4 |
-| 2 | 2 | — | 5 | 5 | 4 |
-| 3 | 3 | — | 5 | 3 | 5 |
-| **Mean** | **2.7** | — | **4.7** | **4.3** | **4.3** |
+| Run | no-skills | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
+|---|---|---|---|---|
+| 1 | 3 | 4 | 5 | 4 |
+| 2 | 2 | 5 | 5 | 4 |
+| 3 | 3 | 5 | 3 | 5 |
+| **Mean** | **2.7** | **4.7** | **4.3** | **4.3** |
 
 #### Analysis
 
@@ -709,12 +707,12 @@ modelBuilder.Entity<Pet>(entity =>
 
 #### Scores Across Runs
 
-| Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
-|---|---|---|---|---|---|
-| 1 | 5 | — | 5 | 5 | 5 |
-| 2 | 4 | — | 5 | 4 | 4 |
-| 3 | 4 | — | 5 | 4 | 5 |
-| **Mean** | **4.3** | — | **5.0** | **4.3** | **4.7** |
+| Run | no-skills | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
+|---|---|---|---|---|
+| 1 | 5 | 5 | 5 | 5 |
+| 2 | 4 | 5 | 4 | 4 |
+| 3 | 4 | 5 | 4 | 5 |
+| **Mean** | **4.3** | **5.0** | **4.3** | **4.7** |
 
 #### Analysis
 
@@ -746,12 +744,12 @@ managedcode groups all interfaces into a single `IServices.cs` file, while other
 
 #### Scores Across Runs
 
-| Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
-|---|---|---|---|---|---|
-| 1 | 2 | — | 2 | 2 | 2 |
-| 2 | 2 | — | 2 | 2 | 2 |
-| 3 | 2 | — | 2 | 2 | 2 |
-| **Mean** | **2.0** | — | **2.0** | **2.0** | **2.0** |
+| Run | no-skills | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
+|---|---|---|---|---|
+| 1 | 2 | 2 | 2 | 2 |
+| 2 | 2 | 2 | 2 | 2 |
+| 3 | 2 | 2 | 2 | 2 |
+| **Mean** | **2.0** | **2.0** | **2.0** | **2.0** |
 
 #### Analysis
 
@@ -791,12 +789,12 @@ if (app.Environment.IsDevelopment())
 
 #### Scores Across Runs
 
-| Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
-|---|---|---|---|---|---|
-| 1 | 4 | — | 5 | 3 | 4 |
-| 2 | 2 | — | 5 | 4 | 2 |
-| 3 | 2 | — | 5 | 2 | 2 |
-| **Mean** | **2.7** | — | **5.0** | **3.0** | **2.7** |
+| Run | no-skills | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
+|---|---|---|---|---|
+| 1 | 4 | 5 | 3 | 4 |
+| 2 | 2 | 5 | 4 | 2 |
+| 3 | 2 | 5 | 2 | 2 |
+| **Mean** | **2.7** | **5.0** | **3.0** | **2.7** |
 
 #### Analysis
 
@@ -840,12 +838,12 @@ public class OwnerDto
 
 #### Scores Across Runs
 
-| Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
-|---|---|---|---|---|---|
-| 1 | 1 | — | 5 | 1 | 5 |
-| 2 | 1 | — | 5 | 1 | 3 |
-| 3 | 1 | — | 5 | 1 | 3 |
-| **Mean** | **1.0** | — | **5.0** | **1.0** | **3.7** |
+| Run | no-skills | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
+|---|---|---|---|---|
+| 1 | 1 | 5 | 1 | 5 |
+| 2 | 1 | 5 | 1 | 3 |
+| 3 | 1 | 5 | 1 | 3 |
+| **Mean** | **1.0** | **5.0** | **1.0** | **3.7** |
 
 #### Analysis
 
@@ -878,12 +876,12 @@ public class VetClinicDbContext : DbContext { /* ... */ }
 
 #### Scores Across Runs
 
-| Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
-|---|---|---|---|---|---|
-| 1 | 4 | — | 4 | 4 | 4 |
-| 2 | 4 | — | 5 | 4 | 4 |
-| 3 | 4 | — | 4 | 4 | 4 |
-| **Mean** | **4.0** | — | **4.3** | **4.0** | **4.0** |
+| Run | no-skills | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
+|---|---|---|---|---|
+| 1 | 4 | 4 | 4 | 4 |
+| 2 | 4 | 5 | 4 | 4 |
+| 3 | 4 | 4 | 4 | 4 |
+| **Mean** | **4.0** | **4.3** | **4.0** | **4.0** |
 
 #### Analysis
 
@@ -913,12 +911,12 @@ All seed realistic, varied data covering different entity states (active/inactiv
 
 #### Scores Across Runs
 
-| Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
-|---|---|---|---|---|---|
-| 1 | 4 | — | 4 | 4 | 4 |
-| 2 | 4 | — | 4 | 4 | 4 |
-| 3 | 4 | — | 4 | 4 | 4 |
-| **Mean** | **4.0** | — | **4.0** | **4.0** | **4.0** |
+| Run | no-skills | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
+|---|---|---|---|---|
+| 1 | 4 | 4 | 4 | 4 |
+| 2 | 4 | 4 | 4 | 4 |
+| 3 | 4 | 4 | 4 | 4 |
+| **Mean** | **4.0** | **4.0** | **4.0** | **4.0** |
 
 #### Analysis
 
@@ -943,12 +941,12 @@ No config uses string interpolation for logging. None use `[LoggerMessage]` sour
 
 #### Scores Across Runs
 
-| Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
-|---|---|---|---|---|---|
-| 1 | 5 | — | 5 | 5 | 5 |
-| 2 | 4 | — | 4 | 4 | 4 |
-| 3 | 4 | — | 4 | 4 | 4 |
-| **Mean** | **4.3** | — | **4.3** | **4.3** | **4.3** |
+| Run | no-skills | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
+|---|---|---|---|---|
+| 1 | 5 | 5 | 5 | 5 |
+| 2 | 4 | 4 | 4 | 4 |
+| 3 | 4 | 4 | 4 | 4 |
+| **Mean** | **4.3** | **4.3** | **4.3** | **4.3** |
 
 #### Analysis
 
@@ -976,12 +974,12 @@ public Owner Owner { get; set; } = null!;     // Required FK navigation
 
 #### Scores Across Runs
 
-| Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
-|---|---|---|---|---|---|
-| 1 | 4 | — | 5 | 4 | 4 |
-| 2 | 3 | — | 5 | 3 | 3 |
-| 3 | 3 | — | 5 | 3 | 3 |
-| **Mean** | **3.3** | — | **5.0** | **3.3** | **3.3** |
+| Run | no-skills | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
+|---|---|---|---|---|
+| 1 | 4 | 5 | 4 | 4 |
+| 2 | 3 | 5 | 3 | 3 |
+| 3 | 3 | 5 | 3 | 3 |
+| **Mean** | **3.3** | **5.0** | **3.3** | **3.3** |
 
 #### Analysis
 
@@ -1011,12 +1009,12 @@ dotnet-artisan's `Results<Created<T>, BadRequest<ProblemDetails>, Conflict<Probl
 
 #### Scores Across Runs
 
-| Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
-|---|---|---|---|---|---|
-| 1 | 3 | — | 5 | 5 | 4 |
-| 2 | 2 | — | 5 | 3 | 2 |
-| 3 | 4 | — | 5 | 4 | 4 |
-| **Mean** | **3.0** | — | **5.0** | **4.0** | **3.3** |
+| Run | no-skills | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
+|---|---|---|---|---|
+| 1 | 3 | 5 | 5 | 4 |
+| 2 | 2 | 5 | 3 | 2 |
+| 3 | 4 | 5 | 4 | 4 |
+| **Mean** | **3.0** | **5.0** | **4.0** | **3.3** |
 
 #### Analysis
 
@@ -1057,12 +1055,12 @@ src/VetClinicApi/
 
 #### Scores Across Runs
 
-| Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
-|---|---|---|---|---|---|
-| 1 | 4 | — | 5 | 5 | 4 |
-| 2 | 4 | — | 4 | 4 | 4 |
-| 3 | 4 | — | 5 | 4 | 4 |
-| **Mean** | **4.0** | — | **4.7** | **4.3** | **4.0** |
+| Run | no-skills | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
+|---|---|---|---|---|
+| 1 | 4 | 5 | 5 | 4 |
+| 2 | 4 | 4 | 4 | 4 |
+| 3 | 4 | 5 | 4 | 4 |
+| **Mean** | **4.0** | **4.7** | **4.3** | **4.0** |
 
 #### Analysis
 
@@ -1085,12 +1083,12 @@ dotnet-artisan's `.http` file (327 lines) is the most thorough, explicitly testi
 
 #### Scores Across Runs
 
-| Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
-|---|---|---|---|---|---|
-| 1 | 4 | — | 5 | 4 | 4 |
-| 2 | 3 | — | 4 | 4 | 4 |
-| 3 | 3 | — | 4 | 3 | 3 |
-| **Mean** | **3.3** | — | **4.3** | **3.7** | **3.7** |
+| Run | no-skills | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
+|---|---|---|---|---|
+| 1 | 4 | 5 | 4 | 4 |
+| 2 | 3 | 4 | 4 | 4 |
+| 3 | 3 | 4 | 3 | 3 |
+| **Mean** | **3.3** | **4.3** | **3.7** | **3.7** |
 
 #### Analysis
 
@@ -1123,12 +1121,12 @@ dotnet-artisan uses `IReadOnlyList<T>` for read-only returns and `static readonl
 
 #### Scores Across Runs
 
-| Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
-|---|---|---|---|---|---|
-| 1 | 4 | — | 5 | 4 | 5 |
-| 2 | 3 | — | 5 | 4 | 3 |
-| 3 | 4 | — | 5 | 4 | 4 |
-| **Mean** | **3.7** | — | **5.0** | **4.0** | **4.0** |
+| Run | no-skills | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
+|---|---|---|---|---|
+| 1 | 4 | 5 | 4 | 5 |
+| 2 | 3 | 5 | 4 | 3 |
+| 3 | 4 | 5 | 4 | 4 |
+| **Mean** | **3.7** | **5.0** | **4.0** | **4.0** |
 
 #### Analysis
 

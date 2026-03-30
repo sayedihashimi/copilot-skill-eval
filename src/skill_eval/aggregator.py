@@ -179,6 +179,14 @@ def aggregate_results(config: EvalConfig, project_root: Path) -> None:
             all_run_scores.append(scores)
             parsed_run_ids.append(run_id)
 
+    # Filter config_names to only configs that have actual score data.
+    # This handles the case where a config was excluded from the run via -c flags.
+    configs_with_data = set()
+    for run_scores in all_run_scores:
+        for dim_scores in run_scores.values():
+            configs_with_data.update(dim_scores.keys())
+    config_names = [c for c in config_names if c in configs_with_data]
+
     if not all_run_scores:
         # No scores parsed — write a minimal report
         analysis_path = reports_dir / config.output.analysis_file

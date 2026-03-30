@@ -417,7 +417,7 @@ def _write_build_notes(
         f"",
         f"**Evaluation:** {config.name}",
         f"**Date:** {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}",
-        f"**Configurations:** {len(config.configurations)}",
+        f"**Configurations:** {len({r['config'] for r in results})}",
         f"**Scenarios:** {len(config.scenarios)}",
         f"**Total projects:** {len(results)}",
         f"",
@@ -518,7 +518,8 @@ def _write_build_notes(
                         )
                 lines.append("")
 
-    # Skill configuration summary
+    # Skill configuration summary (only configs that have results)
+    configs_with_results = {r["config"] for r in results}
     lines.extend([
         "## Skill Configurations",
         "",
@@ -526,6 +527,8 @@ def _write_build_notes(
         "|---|---|---|---|",
     ])
     for cfg in config.configurations:
+        if cfg.name not in configs_with_results:
+            continue
         skills = ", ".join(cfg.skills) if cfg.skills else "None"
         plugins = ", ".join(cfg.plugins) if cfg.plugins else "None"
         lines.append(f"| {cfg.name} | {cfg.label} | {skills} | {plugins} |")

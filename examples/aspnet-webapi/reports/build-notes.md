@@ -1,8 +1,8 @@
 # Build & Run Verification Report
 
 **Evaluation:** ASP.NET Core Web API Skill Evaluation
-**Date:** 2026-03-30 04:33 UTC
-**Configurations:** 5
+**Date:** 2026-03-30 05:12 UTC
+**Configurations:** 4
 **Scenarios:** 3
 **Total projects:** 12
 
@@ -64,7 +64,6 @@
 | Configuration | Label | Skills | Plugins |
 |---|---|---|---|
 | no-skills | Baseline (default Copilot) | None | None |
-| dotnet-webapi | dotnet-webapi skill | skills/dotnet-webapi | None |
 | dotnet-artisan | dotnet-artisan plugin chain | None | plugins/dotnet-artisan |
 | managedcode-dotnet-skills | Community managed-code skills | skills/managedcode-dotnet-skills | None |
 | dotnet-skills | Official .NET Skills (dotnet/skills) | None | plugins/dotnet-skills/dotnet, plugins/dotnet-skills/dotnet-ai, plugins/dotnet-skills/dotnet-data, plugins/dotnet-skills/dotnet-diag, plugins/dotnet-skills/dotnet-experimental, plugins/dotnet-skills/dotnet-maui, plugins/dotnet-skills/dotnet-msbuild, plugins/dotnet-skills/dotnet-nuget, plugins/dotnet-skills/dotnet-template-engine, plugins/dotnet-skills/dotnet-test, plugins/dotnet-skills/dotnet-upgrade |

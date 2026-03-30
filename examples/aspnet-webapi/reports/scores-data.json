@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-03-30T03:13:18.649281+00:00",
+  "timestamp": "2026-03-30T05:13:40.043806+00:00",
   "runs": [
     {
       "run_id": 1,
@@ -151,7 +151,6 @@
       },
       "weighted_totals": {
         "no-skills": 137.0,
-        "dotnet-webapi": 0.0,
         "dotnet-artisan": 190.5,
         "managedcode-dotnet-skills": 154.0,
         "dotnet-skills": 163.5
@@ -307,7 +306,6 @@
       },
       "weighted_totals": {
         "no-skills": 117.5,
-        "dotnet-webapi": 0.0,
         "dotnet-artisan": 179.5,
         "managedcode-dotnet-skills": 156.0,
         "dotnet-skills": 137.5
@@ -463,7 +461,6 @@
       },
       "weighted_totals": {
         "no-skills": 132.0,
-        "dotnet-webapi": 0.0,
         "dotnet-artisan": 184.5,
         "managedcode-dotnet-skills": 143.0,
         "dotnet-skills": 147.0
