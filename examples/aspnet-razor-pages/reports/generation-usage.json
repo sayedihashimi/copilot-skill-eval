@@ -1,0 +1,371 @@
+[
+  {
+    "api_calls": 194,
+    "input_tokens": 6748495,
+    "output_tokens": 207654,
+    "cache_read_tokens": 6019321,
+    "api_duration_ms": 2072372,
+    "wall_time_seconds": 1009.8,
+    "config": "no-skills",
+    "run_id": 1,
+    "scenario": "SparkEvents",
+    "session_id": "90e289fa-b67b-40d7-9281-6718a461b1e0",
+    "model": "claude-opus-4.6-1m",
+    "copilot_version": "1.0.13-1",
+    "loaded_resources": [],
+    "resource_comparison": {
+      "expected_skills": [],
+      "actual_skills": [],
+      "expected_plugins": [],
+      "actual_plugins": [],
+      "contaminated": [],
+      "match": true
+    }
+  },
+  {
+    "api_calls": 231,
+    "input_tokens": 11354068,
+    "output_tokens": 176426,
+    "cache_read_tokens": 10272395,
+    "api_duration_ms": 2025626,
+    "wall_time_seconds": 1085.0,
+    "config": "dotnet-artisan",
+    "run_id": 1,
+    "scenario": "SparkEvents",
+    "session_id": "ae756689-8527-4bee-a68a-97c17f31e036",
+    "model": "claude-opus-4.6-1m",
+    "copilot_version": "1.0.13-1",
+    "loaded_resources": [
+      {
+        "resource_type": "skill",
+        "name": "using-dotnet",
+        "plugin_name": "dotnet-artisan",
+        "content_length": 8226,
+        "timestamp": "2026-03-30T14:51:21.992Z"
+      },
+      {
+        "resource_type": "skill",
+        "name": "dotnet-advisor",
+        "plugin_name": "dotnet-artisan",
+        "content_length": 9198,
+        "timestamp": "2026-03-30T14:51:26.102Z"
+      },
+      {
+        "resource_type": "skill",
+        "name": "dotnet-csharp",
+        "plugin_name": "dotnet-artisan",
+        "content_length": 6750,
+        "timestamp": "2026-03-30T14:51:31.461Z"
+      },
+      {
+        "resource_type": "skill",
+        "name": "dotnet-api",
+        "plugin_name": "dotnet-artisan",
+        "content_length": 6694,
+        "timestamp": "2026-03-30T14:51:31.469Z"
+      },
+      {
+        "resource_type": "skill",
+        "name": "dotnet-tooling",
+        "plugin_name": "dotnet-artisan",
+        "content_length": 7274,
+        "timestamp": "2026-03-30T14:51:31.479Z"
+      },
+      {
+        "resource_type": "skill",
+        "name": "using-dotnet",
+        "plugin_name": "dotnet-artisan",
+        "content_length": 8226,
+        "timestamp": "2026-03-30T14:58:19.320Z"
+      },
+      {
+        "resource_type": "skill",
+        "name": "using-dotnet",
+        "plugin_name": "dotnet-artisan",
+        "content_length": 8226,
+        "timestamp": "2026-03-30T14:58:19.709Z"
+      },
+      {
+        "resource_type": "skill",
+        "name": "using-dotnet",
+        "plugin_name": "dotnet-artisan",
+        "content_length": 8226,
+        "timestamp": "2026-03-30T14:58:20.079Z"
+      },
+      {
+        "resource_type": "skill",
+        "name": "using-dotnet",
+        "plugin_name": "dotnet-artisan",
+        "content_length": 8226,
+        "timestamp": "2026-03-30T14:58:20.450Z"
+      },
+      {
+        "resource_type": "skill",
+        "name": "using-dotnet",
+        "plugin_name": "dotnet-artisan",
+        "content_length": 8226,
+        "timestamp": "2026-03-30T14:58:20.741Z"
+      },
+      {
+        "resource_type": "skill",
+        "name": "dotnet-advisor",
+        "plugin_name": "dotnet-artisan",
+        "content_length": 9198,
+        "timestamp": "2026-03-30T14:58:21.862Z"
+      },
+      {
+        "resource_type": "skill",
+        "name": "using-dotnet",
+        "plugin_name": "dotnet-artisan",
+        "content_length": 8226,
+        "timestamp": "2026-03-30T14:58:22.178Z"
+      },
+      {
+        "resource_type": "skill",
+        "name": "dotnet-advisor",
+        "plugin_name": "dotnet-artisan",
+        "content_length": 9198,
+        "timestamp": "2026-03-30T14:58:22.790Z"
+      },
+      {
+        "resource_type": "skill",
+        "name": "dotnet-advisor",
+        "plugin_name": "dotnet-artisan",
+        "content_length": 9198,
+        "timestamp": "2026-03-30T14:58:23.107Z"
+      },
+      {
+        "resource_type": "skill",
+        "name": "dotnet-advisor",
+        "plugin_name": "dotnet-artisan",
+        "content_length": 9198,
+        "timestamp": "2026-03-30T14:58:23.405Z"
+      },
+      {
+        "resource_type": "skill",
+        "name": "dotnet-advisor",
+        "plugin_name": "dotnet-artisan",
+        "content_length": 9198,
+        "timestamp": "2026-03-30T14:58:24.067Z"
+      },
+      {
+        "resource_type": "skill",
+        "name": "dotnet-api",
+        "plugin_name": "dotnet-artisan",
+        "content_length": 6694,
+        "timestamp": "2026-03-30T14:58:24.787Z"
+      },
+      {
+        "resource_type": "skill",
+        "name": "dotnet-csharp",
+        "plugin_name": "dotnet-artisan",
+        "content_length": 6750,
+        "timestamp": "2026-03-30T14:58:24.792Z"
+      },
+      {
+        "resource_type": "skill",
+        "name": "dotnet-advisor",
+        "plugin_name": "dotnet-artisan",
+        "content_length": 9198,
+        "timestamp": "2026-03-30T14:58:25.168Z"
+      },
+      {
+        "resource_type": "skill",
+        "name": "dotnet-csharp",
+        "plugin_name": "dotnet-artisan",
+        "content_length": 6750,
+        "timestamp": "2026-03-30T14:58:26.501Z"
+      },
+      {
+        "resource_type": "skill",
+        "name": "dotnet-api",
+        "plugin_name": "dotnet-artisan",
+        "content_length": 6694,
+        "timestamp": "2026-03-30T14:58:26.504Z"
+      },
+      {
+        "resource_type": "skill",
+        "name": "dotnet-csharp",
+        "plugin_name": "dotnet-artisan",
+        "content_length": 6750,
+        "timestamp": "2026-03-30T14:58:27.156Z"
+      },
+      {
+        "resource_type": "skill",
+        "name": "dotnet-api",
+        "plugin_name": "dotnet-artisan",
+        "content_length": 6694,
+        "timestamp": "2026-03-30T14:58:27.161Z"
+      },
+      {
+        "resource_type": "skill",
+        "name": "dotnet-api",
+        "plugin_name": "dotnet-artisan",
+        "content_length": 6694,
+        "timestamp": "2026-03-30T14:58:27.845Z"
+      },
+      {
+        "resource_type": "skill",
+        "name": "dotnet-csharp",
+        "plugin_name": "dotnet-artisan",
+        "content_length": 6750,
+        "timestamp": "2026-03-30T14:58:27.850Z"
+      },
+      {
+        "resource_type": "skill",
+        "name": "dotnet-csharp",
+        "plugin_name": "dotnet-artisan",
+        "content_length": 6750,
+        "timestamp": "2026-03-30T14:58:33.063Z"
+      },
+      {
+        "resource_type": "skill",
+        "name": "dotnet-csharp",
+        "plugin_name": "dotnet-artisan",
+        "content_length": 6750,
+        "timestamp": "2026-03-30T14:58:33.293Z"
+      }
+    ],
+    "resource_comparison": {
+      "expected_skills": [],
+      "actual_skills": [
+        "using-dotnet",
+        "dotnet-advisor",
+        "dotnet-csharp",
+        "dotnet-api",
+        "dotnet-tooling"
+      ],
+      "expected_plugins": [
+        "dotnet-artisan"
+      ],
+      "actual_plugins": [
+        "dotnet-artisan"
+      ],
+      "contaminated": [],
+      "match": true
+    }
+  },
+  {
+    "api_calls": 35,
+    "input_tokens": 3030100,
+    "output_tokens": 74575,
+    "cache_read_tokens": 2712416,
+    "api_duration_ms": 823126,
+    "wall_time_seconds": 901.9,
+    "config": "managedcode-dotnet-skills",
+    "run_id": 1,
+    "scenario": "SparkEvents",
+    "session_id": "fb19e67d-162e-4f39-a67a-fdb610dc4511",
+    "model": "claude-opus-4.6-1m",
+    "copilot_version": "1.0.13-1",
+    "loaded_resources": [
+      {
+        "resource_type": "skill",
+        "name": "dotnet",
+        "plugin_name": null,
+        "content_length": 4423,
+        "timestamp": "2026-03-30T15:08:49.073Z"
+      },
+      {
+        "resource_type": "skill",
+        "name": "dotnet-aspnet-core",
+        "plugin_name": null,
+        "content_length": 7565,
+        "timestamp": "2026-03-30T15:09:00.769Z"
+      },
+      {
+        "resource_type": "skill",
+        "name": "dotnet-modern-csharp",
+        "plugin_name": null,
+        "content_length": 5347,
+        "timestamp": "2026-03-30T15:09:03.735Z"
+      },
+      {
+        "resource_type": "skill",
+        "name": "dotnet-project-setup",
+        "plugin_name": null,
+        "content_length": 2165,
+        "timestamp": "2026-03-30T15:09:03.742Z"
+      },
+      {
+        "resource_type": "skill",
+        "name": "dotnet-entity-framework-core",
+        "plugin_name": null,
+        "content_length": 8535,
+        "timestamp": "2026-03-30T15:09:03.749Z"
+      }
+    ],
+    "resource_comparison": {
+      "expected_skills": [
+        "managedcode-dotnet-skills"
+      ],
+      "actual_skills": [
+        "dotnet",
+        "dotnet-aspnet-core",
+        "dotnet-modern-csharp",
+        "dotnet-project-setup",
+        "dotnet-entity-framework-core"
+      ],
+      "expected_plugins": [],
+      "actual_plugins": [],
+      "contaminated": [],
+      "match": true
+    }
+  },
+  {
+    "api_calls": 53,
+    "input_tokens": 5381899,
+    "output_tokens": 83395,
+    "cache_read_tokens": 5044356,
+    "api_duration_ms": 891198,
+    "wall_time_seconds": 1008.1,
+    "config": "dotnet-skills",
+    "run_id": 1,
+    "scenario": "SparkEvents",
+    "session_id": "5743e20e-bbbe-47c1-9f53-4a13fd9be25f",
+    "model": "claude-opus-4.6-1m",
+    "copilot_version": "1.0.13-2",
+    "loaded_resources": [
+      {
+        "resource_type": "skill",
+        "name": "analyzing-dotnet-performance",
+        "plugin_name": "dotnet-diag",
+        "content_length": 11494,
+        "timestamp": "2026-03-30T15:37:30.325Z"
+      },
+      {
+        "resource_type": "skill",
+        "name": "optimizing-ef-core-queries",
+        "plugin_name": "dotnet-data",
+        "content_length": 5921,
+        "timestamp": "2026-03-30T15:38:02.851Z"
+      }
+    ],
+    "resource_comparison": {
+      "expected_skills": [],
+      "actual_skills": [
+        "analyzing-dotnet-performance",
+        "optimizing-ef-core-queries"
+      ],
+      "expected_plugins": [
+        "dotnet",
+        "dotnet-ai",
+        "dotnet-data",
+        "dotnet-diag",
+        "dotnet-experimental",
+        "dotnet-maui",
+        "dotnet-msbuild",
+        "dotnet-nuget",
+        "dotnet-template-engine",
+        "dotnet-test",
+        "dotnet-upgrade"
+      ],
+      "actual_plugins": [
+        "dotnet-diag",
+        "dotnet-data"
+      ],
+      "contaminated": [],
+      "match": true
+    }
+  }
+]
