@@ -1,394 +1,469 @@
 # Comparative Analysis: no-skills, dotnet-artisan, managedcode-dotnet-skills, dotnet-skills, dotnet-webapi
 
-This analysis compares **5 expected Copilot configurations** under `output/{config}/run-3`. In the actual filesystem, only `no-skills`, `dotnet-artisan`, `managedcode-dotnet-skills`, and `dotnet-skills` exist, and each contains only `VetClinicApi` (the expected `FitnessStudioApi` and `LibraryApi` are missing). `dotnet-webapi` is not present at all, so it is scored as missing baseline (1) across dimensions.
+This run contains **5 configuration directories** under `output/*/run-3`, but only the `VetClinicApi` scenario is present in each (`FitnessStudioApi` and `LibraryApi` are missing in all five). Configuration identity was confirmed via each `run-3/VetClinicApi/gen-notes.md` and directory names: `no-skills`, `dotnet-artisan`, `managedcode-dotnet-skills`, `dotnet-skills`, `dotnet-webapi`.
 
 ## Executive Summary
 
 | Dimension [Tier] | no-skills | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills | dotnet-webapi |
 |---|---:|---:|---:|---:|---:|
-| Build & Run Success [CRITICAL] | 5 | 5 | 5 | 5 | 1 |
-| Security Vulnerability Scan [CRITICAL] | 5 | 5 | 5 | 5 | 1 |
-| Minimal API Architecture [CRITICAL] | 1 | 5 | 1 | 1 | 1 |
-| Input Validation & Guard Clauses [CRITICAL] | 3 | 4 | 4 | 4 | 1 |
-| NuGet & Package Discipline [CRITICAL] | 1 | 4 | 2 | 4 | 1 |
+| Build & Run Success [CRITICAL] | 5 | 5 | 5 | 5 | 5 |
+| Security Vulnerability Scan [CRITICAL] | 5 | 5 | 5 | 5 | 5 |
+| Minimal API Architecture [CRITICAL] | 1 | 4 | 2 | 1 | 5 |
+| Input Validation & Guard Clauses [CRITICAL] | 3 | 4 | 3 | 3 | 4 |
+| NuGet & Package Discipline [CRITICAL] | 4 | 4 | 1 | 4 | 1 |
 | EF Migration Usage [CRITICAL] | 1 | 1 | 1 | 1 | 1 |
-| Business Logic Correctness [HIGH] | 2 | 2 | 2 | 2 | 1 |
-| Prefer Built-in over 3rd Party [HIGH] | 2 | 3 | 2 | 2 | 1 |
-| Modern C# Adoption [HIGH] | 3 | 5 | 4 | 3 | 1 |
-| Error Handling & Middleware [HIGH] | 3 | 4 | 4 | 4 | 1 |
-| Async Patterns & Cancellation [HIGH] | 2 | 3 | 3 | 3 | 1 |
-| EF Core Best Practices [HIGH] | 2 | 5 | 4 | 4 | 1 |
-| Service Abstraction & DI [HIGH] | 4 | 5 | 4 | 4 | 1 |
-| Security Configuration [HIGH] | 1 | 2 | 3 | 1 | 1 |
-| DTO Design [MEDIUM] | 3 | 5 | 3 | 3 | 1 |
-| Sealed Types [MEDIUM] | 2 | 5 | 2 | 5 | 1 |
-| Data Seeder Design [MEDIUM] | 4 | 4 | 4 | 4 | 1 |
-| Structured Logging [MEDIUM] | 3 | 4 | 4 | 4 | 1 |
-| Nullable Reference Types [MEDIUM] | 4 | 4 | 4 | 4 | 1 |
-| API Documentation [MEDIUM] | 3 | 5 | 3 | 3 | 1 |
-| File Organization [MEDIUM] | 4 | 5 | 4 | 4 | 1 |
-| HTTP Test File Quality [MEDIUM] | 3 | 4 | 3 | 3 | 1 |
-| Type Design & Resource Management [MEDIUM] | 3 | 4 | 3 | 3 | 1 |
-| Code Standards Compliance [LOW] | 4 | 5 | 4 | 4 | 1 |
+| Business Logic Correctness [HIGH] | 4 | 4 | 4 | 4 | 5 |
+| Prefer Built-in over 3rd Party [HIGH] | 2 | 2 | 2 | 4 | 5 |
+| Modern C# Adoption [HIGH] | 3 | 5 | 3 | 4 | 5 |
+| Error Handling & Middleware [HIGH] | 3 | 3 | 4 | 3 | 4 |
+| Async Patterns & Cancellation [HIGH] | 2 | 5 | 2 | 2 | 5 |
+| EF Core Best Practices [HIGH] | 3 | 5 | 4 | 4 | 5 |
+| Service Abstraction & DI [HIGH] | 4 | 3 | 4 | 4 | 4 |
+| Security Configuration [HIGH] | 1 | 1 | 1 | 1 | 1 |
+| DTO Design [MEDIUM] | 3 | 5 | 4 | 4 | 5 |
+| Sealed Types [MEDIUM] | 1 | 5 | 1 | 2 | 4 |
+| Data Seeder Design [MEDIUM] | 3 | 4 | 4 | 4 | 4 |
+| Structured Logging [MEDIUM] | 4 | 4 | 4 | 4 | 4 |
+| Nullable Reference Types [MEDIUM] | 4 | 4 | 4 | 4 | 4 |
+| API Documentation [MEDIUM] | 3 | 4 | 3 | 3 | 5 |
+| File Organization [MEDIUM] | 4 | 5 | 4 | 4 | 5 |
+| HTTP Test File Quality [MEDIUM] | 4 | 4 | 4 | 4 | 5 |
+| Type Design & Resource Management [MEDIUM] | 3 | 4 | 4 | 4 | 5 |
+| Code Standards Compliance [LOW] | 3 | 4 | 4 | 4 | 5 |
+| Scenario Coverage (all 3 apps) [CRITICAL] | 1 | 1 | 1 | 1 | 1 |
 
 ## 1. Build & Run Success [CRITICAL]
 
-All 4 available configs built successfully (`Build succeeded`) and ran long enough for a smoke window (~12s).
+```text
+# All configs (build)
+Build succeeded.
+0 Warning(s)
+0 Error(s)
 
-```bash
-# all available run-3 projects
-BuildSucceeded=true, Warnings=0, Errors=0, RunStarted=true, RunStayedAlive12s=true
+# All configs (run)
+RUN_SUMMARY|StillRunningAfter10s=True
 ```
 
-Scores: no-skills **5**, dotnet-artisan **5**, managedcode-dotnet-skills **5**, dotnet-skills **5**, dotnet-webapi **1** (missing).
+Scores: no-skills 5, dotnet-artisan 5, managedcode-dotnet-skills 5, dotnet-skills 5, dotnet-webapi 5. All build and stay running for the timeout.
 
-**Verdict:** Tie among available configs; missing `dotnet-webapi` fails baseline availability.
+**Verdict:** Tie. Baseline operability is strong across all five.
 
 ## 2. Security Vulnerability Scan [CRITICAL]
 
-`dotnet list package --vulnerable --include-transitive` reported no vulnerable packages for all present projects.
+```text
+# all configs
+The given project `VetClinicApi` has no vulnerable packages given the current sources.
+```
 
-Scores: no-skills **5**, dotnet-artisan **5**, managedcode-dotnet-skills **5**, dotnet-skills **5**, dotnet-webapi **1**.
+Scores: all 5. No vulnerable packages detected by `dotnet list package --vulnerable`.
 
-**Verdict:** Tie on known vulnerability surface for available outputs.
+**Verdict:** Tie. Dependency vulnerability posture is clean for this snapshot.
 
 ## 3. Minimal API Architecture [CRITICAL]
 
-Only `dotnet-artisan` uses modern Minimal API route groups + TypedResults.
-
 ```csharp
-// dotnet-artisan: Endpoints/OwnerEndpoints.cs
-var group = routes.MapGroup("/api/owners").WithTags("Owners");
-group.MapGet("/{id:int}", async Task<Results<Ok<OwnerDetailResponse>, NotFound>> (...) => ...
-    ? TypedResults.Ok(owner)
-    : TypedResults.NotFound());
-```
+// no-skills (Program.cs)
+builder.Services.AddControllers();
+app.MapControllers();
 
-```csharp
-// no-skills / managedcode / dotnet-skills: Controllers
+// dotnet-artisan (Endpoints/AppointmentEndpoints.cs)
+var group = routes.MapGroup("/api/appointments").WithTags("Appointments");
+return Results.Ok(result);
+
+// managedcode-dotnet-skills (Controllers/AppointmentsController.cs)
 [ApiController]
-[Route("api/[controller]")]
+public class AppointmentsController(...) : ControllerBase
+
+// dotnet-skills (Controllers/AppointmentsController.cs)
+[ApiController]
 public class AppointmentsController : ControllerBase
+
+// dotnet-webapi (Endpoints/AppointmentEndpoints.cs)
+group.MapGet("/{id:int}", async Task<Results<Ok<AppointmentDetailResponse>, NotFound>> (...) =>
+    appointment is null ? TypedResults.NotFound() : TypedResults.Ok(appointment));
 ```
 
-Scores: no-skills **1**, dotnet-artisan **5**, managedcode-dotnet-skills **1**, dotnet-skills **1**, dotnet-webapi **1**.
+Scores: 1, 4, 2, 1, 5 respectively.
 
-**Verdict:** `dotnet-artisan` clearly best; it matches current .NET Minimal API guidance.
+**Verdict:** `dotnet-webapi` is best: route groups + endpoint extension style + `TypedResults` + union return types.
 
 ## 4. Input Validation & Guard Clauses [CRITICAL]
 
-All available versions validate request models; style differs.
-
 ```csharp
-// dotnet-artisan DTOs (DataAnnotations)
+// no-skills DTOs
 [Required, MaxLength(500)]
 public required string Reason { get; init; }
+
+// dotnet-artisan endpoints
+var validation = await validator.ValidateAsync(request, ct);
+if (!validation.IsValid) return Results.ValidationProblem(validation.ToDictionary());
+
+// managedcode-dotnet-skills service
+if (request.AppointmentDate <= DateTime.UtcNow)
+    throw new InvalidOperationException("Appointment date must be in the future.");
+
+// dotnet-skills validators (FluentValidation)
+RuleFor(x => x.AppointmentDate).GreaterThan(DateTime.UtcNow);
+
+// dotnet-webapi DTOs
 [Range(15, 120)]
 public int DurationMinutes { get; init; } = 30;
 ```
 
-```csharp
-// managedcode / dotnet-skills Validators.cs
-public class CreateAppointmentRequestValidator : AbstractValidator<CreateAppointmentRequest>
-{
-    RuleFor(x => x.AppointmentDate).GreaterThan(DateTime.UtcNow);
-}
-```
+Scores: 3, 4, 3, 3, 4. Validation is present everywhere, but explicit guard-clause APIs (`ThrowIfNull`, etc.) are largely absent.
 
-Guard-clause primitives (`ArgumentNullException.ThrowIfNull`) are generally absent.
-
-Scores: no-skills **3**, dotnet-artisan **4**, managedcode-dotnet-skills **4**, dotnet-skills **4**, dotnet-webapi **1**.
-
-**Verdict:** FluentValidation variants and artisan are stronger than baseline, but all miss consistent guard-API usage.
+**Verdict:** `dotnet-artisan` and `dotnet-webapi` lead due to stronger endpoint/service validation flow.
 
 ## 5. NuGet & Package Discipline [CRITICAL]
 
-`no-skills` and `managedcode` use floating versions; others mostly pin exact versions.
-
 ```xml
-<!-- no-skills -->
-<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.*-*" />
+<!-- managedcode-dotnet-skills: VetClinicApi.csproj -->
+<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="*" />
+
+<!-- dotnet-webapi: VetClinicApi.csproj -->
 <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.*-*" />
-```
 
-```xml
-<!-- dotnet-artisan -->
+<!-- no-skills: pinned -->
 <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.5" />
 ```
 
-Scores: no-skills **1**, dotnet-artisan **4**, managedcode-dotnet-skills **2**, dotnet-skills **4**, dotnet-webapi **1**.
+Scores: 4, 4, 1, 4, 1. Wildcards/floating versions strongly reduce reproducibility for managedcode and dotnet-webapi.
 
-**Verdict:** `dotnet-artisan` and `dotnet-skills` are materially better on reproducibility.
+**Verdict:** `no-skills`, `dotnet-artisan`, and `dotnet-skills` are materially better here.
 
 ## 6. EF Migration Usage [CRITICAL]
 
-All present configurations use `EnsureCreated(Async)` instead of migrations.
-
 ```csharp
-// all available configs, Program.cs pattern
+// all configs (Program.cs variants)
 await context.Database.EnsureCreatedAsync();
+// or
+context.Database.EnsureCreated();
 ```
 
-Scores: no-skills **1**, dotnet-artisan **1**, managedcode-dotnet-skills **1**, dotnet-skills **1**, dotnet-webapi **1**.
+Scores: all 1. No configuration uses `Database.Migrate()` with migrations.
 
-**Verdict:** Universal critical weakness; production-safe migration workflow is missing.
+**Verdict:** Universal weakness. This is the largest shared production-readiness gap.
 
 ## 7. Business Logic Correctness [HIGH]
 
-Within `VetClinicApi`, business logic is substantial (status transitions, scheduling conflicts, cancellation constraints). But expected run-3 app set is incomplete (missing `FitnessStudioApi` and `LibraryApi` in every available config).
-
 ```csharp
-// dotnet-artisan AppointmentService
-if (!_validTransitions.TryGetValue(appointment.Status, out var validNext) || !validNext.Contains(newStatus))
-    throw new InvalidOperationException(...);
+// dotnet-webapi AppointmentService
+if (request.Status == AppointmentStatus.Cancelled)
+{
+    if (string.IsNullOrWhiteSpace(request.CancellationReason)) throw new ArgumentException(...);
+    if (appointment.AppointmentDate < DateTime.UtcNow) throw new ArgumentException(...);
+}
 ```
 
-Scores: no-skills **2**, dotnet-artisan **2**, managedcode-dotnet-skills **2**, dotnet-skills **2**, dotnet-webapi **1**.
+All five implement the key clinic rules (conflict detection, status transitions, cancellation constraints, medical-record constraints, soft delete).
 
-**Verdict:** Functional depth exists in VetClinic, but scenario completeness penalty dominates.
+Scores: 4, 4, 4, 4, 5.
+
+**Verdict:** `dotnet-webapi` is most consistent in endpoint semantics + business-rule surfacing.
 
 ## 8. Prefer Built-in over 3rd Party [HIGH]
 
-All available versions include Swashbuckle; two also include FluentValidation packages.
+```csharp
+// no-skills Program.cs
+builder.Services.AddSwaggerGen();
+app.UseSwagger();
 
-```xml
-<PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.7" />
-<PackageReference Include="FluentValidation.AspNetCore" Version="11.3.1" />
+// dotnet-skills Program.cs
+builder.Services.AddOpenApi();
+app.UseSwaggerUI(...); // no Swashbuckle package, uses Scalar.AspNetCore package
+
+// dotnet-webapi Program.cs
+builder.Services.AddOpenApi();
+app.MapOpenApi();
 ```
 
-Scores: no-skills **2**, dotnet-artisan **3**, managedcode-dotnet-skills **2**, dotnet-skills **2**, dotnet-webapi **1**.
+Scores: 2, 2, 2, 4, 5.
 
-**Verdict:** `dotnet-artisan` slightly better package minimalism, but none fully prefer built-ins.
+**Verdict:** `dotnet-webapi` best aligns with built-in OpenAPI-first guidance.
 
 ## 9. Modern C# Adoption [HIGH]
-
-`dotnet-artisan` uses primary constructors, sealed records, collection expressions broadly.
 
 ```csharp
 // dotnet-artisan
 public sealed class AppointmentService(VetClinicDbContext db, ILogger<AppointmentService> logger) : IAppointmentService
-private static readonly Dictionary<AppointmentStatus, AppointmentStatus[]> _validTransitions = new() { ... };
+
+// dotnet-webapi
+public sealed record CreateAppointmentRequest { public required int PetId { get; init; } }
+
+// no-skills
+public class AppointmentService : IAppointmentService
 ```
 
-Scores: no-skills **3**, dotnet-artisan **5**, managedcode-dotnet-skills **4**, dotnet-skills **3**, dotnet-webapi **1**.
+Scores: 3, 5, 3, 4, 5.
 
-**Verdict:** `dotnet-artisan` is strongest and most idiomatic for current C#.
+**Verdict:** `dotnet-artisan` and `dotnet-webapi` consistently apply modern C# patterns.
 
 ## 10. Error Handling & Middleware [HIGH]
 
-`dotnet-artisan`, `managedcode`, and `dotnet-skills` use `IExceptionHandler` + ProblemDetails; `no-skills` uses custom middleware.
-
 ```csharp
-// managedcode Program.cs
-builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
-builder.Services.AddProblemDetails();
-app.UseExceptionHandler();
+// managedcode-dotnet-skills
+public class GlobalExceptionHandler(...) : IExceptionHandler
+
+// dotnet-artisan
+public sealed class GlobalExceptionHandler(...) : IExceptionHandler
+{
+    // always returns 500
+}
+
+// no-skills
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 ```
 
-Scores: no-skills **3**, dotnet-artisan **4**, managedcode-dotnet-skills **4**, dotnet-skills **4**, dotnet-webapi **1**.
+Scores: 3, 3, 4, 3, 4.
 
-**Verdict:** The `IExceptionHandler` implementations are preferable to manual middleware.
+**Verdict:** `managedcode-dotnet-skills` and `dotnet-webapi` are best due to typed `IExceptionHandler` mapping.
 
 ## 11. Async Patterns & Cancellation [HIGH]
 
-Async is broadly correct (`Task`, `await`, no `async void`), but cancellation token propagation is sparse.
+```csharp
+// dotnet-webapi endpoint signature
+group.MapGet("/", async (..., CancellationToken ct = default) => ...)
 
-Scores: no-skills **2**, dotnet-artisan **3**, managedcode-dotnet-skills **3**, dotnet-skills **3**, dotnet-webapi **1**.
+// dotnet-artisan service method
+public async Task<IReadOnlyList<AppointmentResponse>> GetTodayAsync(CancellationToken ct = default)
 
-**Verdict:** Good async baseline, incomplete cancellation flow through layers.
+// no-skills service method
+public async Task<AppointmentResponseDto> CreateAsync(AppointmentCreateDto dto) // no ct
+```
+
+Scores: 2, 5, 2, 2, 5.
+
+**Verdict:** `dotnet-artisan` and `dotnet-webapi` clearly win on cancellation propagation depth.
 
 ## 12. EF Core Best Practices [HIGH]
 
-`dotnet-artisan` is strongest: frequent `AsNoTracking()`, includes, and clean service query patterns.
-
 ```csharp
 // dotnet-artisan
-var query = db.Appointments
-    .AsNoTracking()
-    .Include(a => a.Pet)
-    .Include(a => a.Veterinarian);
+var query = db.Appointments.AsNoTracking().Include(a => a.Pet).Include(a => a.Veterinarian);
+
+// managedcode-dotnet-skills
+modelBuilder.ApplyConfigurationsFromAssembly(typeof(VetClinicDbContext).Assembly);
+
+// no-skills
+var query = _context.Appointments.Include(a => a.Pet).Include(a => a.Veterinarian); // no AsNoTracking
 ```
 
-Scores: no-skills **2**, dotnet-artisan **5**, managedcode-dotnet-skills **4**, dotnet-skills **4**, dotnet-webapi **1**.
+Scores: 3, 5, 4, 4, 5.
 
-**Verdict:** `dotnet-artisan` best aligns with performant EF read patterns.
+**Verdict:** `dotnet-artisan` and `dotnet-webapi` are strongest for read-query tracking discipline and relationship config.
 
 ## 13. Service Abstraction & DI [HIGH]
 
-All available outputs use interface-based service registration and scoped DI.
-
 ```csharp
+// no-skills Program.cs
 builder.Services.AddScoped<IOwnerService, OwnerService>();
-builder.Services.AddScoped<IAppointmentService, AppointmentService>();
+
+// dotnet-artisan
+public interface IAppointmentService { ... }
+public sealed class AppointmentService(...) : IAppointmentService
 ```
 
-Scores: no-skills **4**, dotnet-artisan **5**, managedcode-dotnet-skills **4**, dotnet-skills **4**, dotnet-webapi **1**.
+Scores: 4, 3, 4, 4, 4.
 
-**Verdict:** Strong across available configs; artisan is most consistent and cleanly organized.
+**Verdict:** Most are good; `dotnet-artisan` loses points for less consistent interface separation by file/structure.
 
 ## 14. Security Configuration [HIGH]
 
-`managedcode` is best of available set (uses HTTPS redirection). None use non-dev HSTS pattern.
-
 ```csharp
-// managedcode Program.cs
-app.UseHttpsRedirection();
+// Program.cs (all configs): no UseHsts(), no UseHttpsRedirection()
 ```
 
-Scores: no-skills **1**, dotnet-artisan **2**, managedcode-dotnet-skills **3**, dotnet-skills **1**, dotnet-webapi **1**.
+Scores: all 1.
 
-**Verdict:** Security middleware is incomplete in all generated variants.
+**Verdict:** Universal production-hardening gap.
 
 ## 15. DTO Design [MEDIUM]
 
-`dotnet-artisan` uses immutable sealed records extensively; others mix mutable classes/records.
-
 ```csharp
-// dotnet-artisan
-public sealed record CreateAppointmentRequest { public required int PetId { get; init; } }
+// dotnet-webapi
+public sealed record AppointmentResponse(...);
+
+// no-skills
+public record AppointmentResponse(...);
+
+// dotnet-skills
+public class AppointmentResponseDto { public int Id { get; set; } }
 ```
 
-```csharp
-// managedcode
-public sealed class AppointmentCreateDto { public int PetId { get; set; } }
-```
+Scores: 3, 5, 4, 4, 5.
 
-Scores: no-skills **3**, dotnet-artisan **5**, managedcode-dotnet-skills **3**, dotnet-skills **3**, dotnet-webapi **1**.
-
-**Verdict:** `dotnet-artisan` has best API contract immutability and intent.
+**Verdict:** `dotnet-artisan` and `dotnet-webapi` best express immutable API contracts.
 
 ## 16. Sealed Types [MEDIUM]
 
-`dotnet-skills` and `dotnet-artisan` heavily use sealing; others are mixed.
+```csharp
+// dotnet-artisan
+public sealed class AppointmentService ...
+public sealed class GlobalExceptionHandler ...
 
-Scores: no-skills **2**, dotnet-artisan **5**, managedcode-dotnet-skills **2**, dotnet-skills **5**, dotnet-webapi **1**.
+// no-skills
+public class AppointmentService : IAppointmentService
+```
 
-**Verdict:** `dotnet-artisan` and `dotnet-skills` best convey non-inheritance intent/perf posture.
+Scores: 1, 5, 1, 2, 4.
+
+**Verdict:** `dotnet-artisan` is clearly strongest.
 
 ## 17. Data Seeder Design [MEDIUM]
 
-All available configs include seed data and startup seeding paths.
-
 ```csharp
-await DataSeeder.SeedAsync(context);
+// all configs: Data/DataSeeder.cs called in Program.cs startup scope
+await DataSeeder.SeedAsync(db); // or DataSeeder.Seed(context)
 ```
 
-Scores: no-skills **4**, dotnet-artisan **4**, managedcode-dotnet-skills **4**, dotnet-skills **4**, dotnet-webapi **1**.
+Scores: 3, 4, 4, 4, 4.
 
-**Verdict:** Similar quality across available outputs.
+**Verdict:** All provide realistic seeders; `no-skills` is a bit less polished overall around surrounding patterns.
 
 ## 18. Structured Logging [MEDIUM]
 
-All available outputs use `ILogger<T>` and named placeholders.
-
 ```csharp
-logger.LogInformation("Appointment created: {AppointmentId} for Pet {PetId}", appointment.Id, appointment.PetId);
+// dotnet-webapi
+logger.LogInformation("Appointment {AppointmentId} status changed to {Status}", id, request.Status);
+
+// no-skills
+_logger.LogInformation("Appointment created: {AppointmentId} for Pet {PetId} with Vet {VetId}", ...);
 ```
 
-Scores: no-skills **3**, dotnet-artisan **4**, managedcode-dotnet-skills **4**, dotnet-skills **4**, dotnet-webapi **1**.
+Scores: all 4.
 
-**Verdict:** Good baseline; artisan/managed/dotnet-skills are more consistently structured.
+**Verdict:** Tie at good quality; all use structured placeholders.
 
 ## 19. Nullable Reference Types [MEDIUM]
 
-All available `.csproj` files enable nullable context.
-
 ```xml
+<!-- all configs: .csproj -->
 <Nullable>enable</Nullable>
 ```
 
-Scores: no-skills **4**, dotnet-artisan **4**, managedcode-dotnet-skills **4**, dotnet-skills **4**, dotnet-webapi **1**.
+Scores: all 4.
 
-**Verdict:** Strong consistency among available projects.
+**Verdict:** Solid baseline nullability posture across all five.
 
 ## 20. API Documentation [MEDIUM]
 
-`dotnet-artisan` is strongest due endpoint-level summaries/tags with Minimal APIs.
-
 ```csharp
-// dotnet-artisan
-group.MapGet("/", ...).WithSummary("List all owners with optional search and pagination");
+// dotnet-webapi endpoint metadata
+.WithName("GetAppointmentById")
+.WithSummary("Get appointment details")
+.WithDescription("Returns full appointment details...")
+.Produces<AppointmentDetailResponse>();
+
+// dotnet-skills controller metadata
+[ProducesResponseType(typeof(AppointmentDto), StatusCodes.Status200OK)]
 ```
 
-Scores: no-skills **3**, dotnet-artisan **5**, managedcode-dotnet-skills **3**, dotnet-skills **3**, dotnet-webapi **1**.
+Scores: 3, 4, 3, 3, 5.
 
-**Verdict:** `dotnet-artisan` provides richest OpenAPI metadata shape.
+**Verdict:** `dotnet-webapi` has the richest, most modern endpoint-level metadata.
 
 ## 21. File Organization [MEDIUM]
 
-All available projects are organized by concern; `dotnet-artisan` is notably clean with endpoint extensions.
+```text
+# dotnet-webapi / dotnet-artisan
+Endpoints/, Services/, DTOs/, Middleware/, Data/
 
-Scores: no-skills **4**, dotnet-artisan **5**, managedcode-dotnet-skills **4**, dotnet-skills **4**, dotnet-webapi **1**.
+# no-skills / managed / dotnet-skills
+Controllers/, Services/, DTOs/, Middleware/, Data/
+```
 
-**Verdict:** `dotnet-artisan` best separation in Program.cs + endpoint modules.
+Scores: 4, 5, 4, 4, 5.
+
+**Verdict:** Minimal-API endpoint extension structure is most maintainable for these generated projects.
 
 ## 22. HTTP Test File Quality [MEDIUM]
 
-All available `.http` files are substantial and cover many happy paths; explicit negative-path tests are sparse.
+```http
+# dotnet-webapi VetClinicApi.http
+GET {{baseUrl}}/api/appointments?page=1&pageSize=10
+PATCH {{baseUrl}}/api/appointments/6/status
+```
 
-Scores: no-skills **3**, dotnet-artisan **4**, managedcode-dotnet-skills **3**, dotnet-skills **3**, dotnet-webapi **1**.
+All `.http` files are broad and realistic. `dotnet-webapi` is slightly better aligned with mapped routes and richer endpoint metadata.
 
-**Verdict:** `dotnet-artisan` has strongest practical API walkthrough, but still mostly success-path heavy.
+Scores: 4, 4, 4, 4, 5.
+
+**Verdict:** `dotnet-webapi` leads narrowly.
 
 ## 23. Type Design & Resource Management [MEDIUM]
 
-Enums and domain types are generally good; precision choices vary (`List<T>` vs `IReadOnlyList<T>`), and cancellation/resource flow can be tighter.
+```csharp
+// dotnet-webapi
+public async Task<IReadOnlyList<AppointmentResponse>> GetTodayAsync(CancellationToken ct)
 
-Scores: no-skills **3**, dotnet-artisan **4**, managedcode-dotnet-skills **3**, dotnet-skills **3**, dotnet-webapi **1**.
+// no-skills
+public async Task<List<AppointmentSummaryDto>> GetTodayAsync()
+```
 
-**Verdict:** `dotnet-artisan` leads on type precision and modern signatures.
+Scores: 3, 4, 4, 4, 5.
+
+**Verdict:** `dotnet-webapi` has the most precise return types and enum usage consistency.
 
 ## 24. Code Standards Compliance [LOW]
 
-Naming and access patterns are generally compliant across available outputs; `dotnet-artisan` is most consistent.
+```csharp
+// managedcode-dotnet-skills
+public class AppointmentsController(IAppointmentService appointmentService) : ControllerBase
 
-Scores: no-skills **4**, dotnet-artisan **5**, managedcode-dotnet-skills **4**, dotnet-skills **4**, dotnet-webapi **1**.
+// dotnet-webapi
+public sealed class AppointmentService(...) : IAppointmentService
+```
 
-**Verdict:** All available variants are readable and convention-friendly; artisan is most polished.
+Scores: 3, 4, 4, 4, 5.
+
+**Verdict:** `dotnet-webapi` is the most consistently modern and convention-aligned.
+
+## 25. Scenario Coverage (all 3 apps) [CRITICAL]
+
+```text
+output/<config>/run-3 contains:
+- VetClinicApi ✅
+- FitnessStudioApi ❌
+- LibraryApi ❌
+```
+
+Scores: all 1.
+
+**Verdict:** Cross-scenario completeness is missing for every configuration, limiting comparison scope.
 
 ## Weighted Summary
 
-Weights used:
-- Critical ×3
-- High ×2
-- Medium ×1
-- Low ×0.5
+Weights used: Critical ×3, High ×2, Medium ×1, Low ×0.5.
 
-| Configuration | Weighted Total |
-|---|---:|
-| dotnet-artisan | **172.5** |
-| dotnet-skills | **141.0** |
-| managedcode-dotnet-skills | **138.0** |
-| no-skills | **117.0** |
-| dotnet-webapi | **43.5** |
+| Configuration | Critical subtotal | High subtotal | Medium subtotal | Low subtotal | Total weighted |
+|---|---:|---:|---:|---:|---:|
+| no-skills | 60.0 | 44.0 | 29.0 | 1.5 | **134.5** |
+| dotnet-artisan | 72.0 | 56.0 | 39.0 | 2.0 | **169.0** |
+| managedcode-dotnet-skills | 54.0 | 48.0 | 32.0 | 2.0 | **136.0** |
+| dotnet-skills | 60.0 | 52.0 | 33.0 | 2.0 | **147.0** |
+| dotnet-webapi | 66.0 | 68.0 | 41.0 | 2.5 | **177.5** |
 
 ## What All Versions Get Right
 
-- All available run-3 outputs compile cleanly with zero warnings/errors.
-- All available run-3 outputs start successfully (`dotnet run` smoke success).
-- All available outputs implement substantial vet-clinic domain rules (appointments, records, vaccinations).
-- All available outputs enable nullable reference types.
-- All available outputs use EF Core + SQLite with organized project structure.
+- All five `VetClinicApi` projects compile cleanly (`Build succeeded`, 0 warnings, 0 errors).
+- All five remain running successfully under `dotnet run --no-build` timeout checks.
+- All five report no current vulnerable NuGet packages.
+- All five enable `<Nullable>enable</Nullable>` and `<ImplicitUsings>enable</ImplicitUsings>`.
+- All five implement the core veterinary domain entities and major endpoint surfaces.
 
 ## Summary: Impact of Skills
 
-Most impactful differences:
-1. **API architecture style** (Minimal API route groups + TypedResults vs controllers).
-2. **Package/version discipline** (exact pinning vs floating ranges).
-3. **EF query quality and modern C# adoption** (especially in `dotnet-artisan`).
-4. **Error handling modernization** (`IExceptionHandler` adoption vs legacy middleware).
+Most impactful differences (highest practical effect):
 
-Overall assessment:
-- **dotnet-artisan** produced the strongest modern architecture and code quality profile.
-- **dotnet-skills** and **managedcode-dotnet-skills** are solid but controller-centric and weaker on built-in-first/package rigor.
-- **no-skills** is functional but lags on architecture modernization and dependency discipline.
-- **dotnet-webapi** cannot be evaluated from run-3 output due missing artifacts.
+1. **API architecture quality**: `dotnet-webapi` (and secondarily `dotnet-artisan`) meaningfully improves endpoint structure and modern Minimal API patterns.
+2. **Async + cancellation propagation**: strong in `dotnet-webapi` and `dotnet-artisan`, weak in controller-heavy variants.
+3. **Package/version discipline**: wildcard package versions in `managedcode-dotnet-skills` and `dotnet-webapi` materially hurt reproducibility.
+4. **Universal migration gap**: every variant still uses `EnsureCreated` instead of migrations.
 
----
+Overall ranking by weighted score:
 
-### Evidence sources
-- `output/*/run-3/VetClinicApi/src/VetClinicApi/Program.cs`
-- `output/*/run-3/VetClinicApi/src/VetClinicApi/*.csproj`
-- `output/*/run-3/VetClinicApi/src/VetClinicApi/{Controllers|Endpoints|Services|Data|Middleware|Validators}`
-- `output/*/run-3/VetClinicApi/src/VetClinicApi/VetClinicApi.http`
-- Command checks: `dotnet build`, `dotnet run --no-build`, `dotnet list package --vulnerable --include-transitive`
+1. **dotnet-webapi** — 177.5
+2. **dotnet-artisan** — 169.0
+3. **dotnet-skills** — 147.0
+4. **managedcode-dotnet-skills** — 136.0
+5. **no-skills** — 134.5
