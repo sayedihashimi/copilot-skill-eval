@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-03-30T15:41:38.206153+00:00",
+  "timestamp": "2026-03-31T12:12:36.401773+00:00",
   "results": [
     {
       "config": "no-skills",
@@ -8,14 +8,14 @@
       "build_success": true,
       "run_success": true,
       "build_warnings": {
-        "naming": 10,
-        "performance": 80,
+        "naming": 4,
+        "performance": 54,
         "reliability": 0,
         "security": 0,
         "usage": 0,
         "style": 0,
-        "other": 18,
-        "total": 108
+        "other": 40,
+        "total": 98
       },
       "format_issues": 0,
       "security_vulnerabilities": {
@@ -24,21 +24,21 @@
         "Moderate": 0,
         "Low": 1
       },
-      "session_id": "90e289fa-b67b-40d7-9281-6718a461b1e0",
+      "session_id": "a89cd48f-a6ce-4f03-b11e-97fe6b17169c",
       "model": "claude-opus-4.6-1m",
       "loaded_skills": [],
       "loaded_plugins": [],
       "asset_match": true
     },
     {
-      "config": "dotnet-artisan",
+      "config": "dotnet-webapi",
       "run_id": 1,
       "scenario": "SparkEvents",
       "build_success": true,
       "run_success": true,
       "build_warnings": {
-        "naming": 2,
-        "performance": 36,
+        "naming": 4,
+        "performance": 34,
         "reliability": 0,
         "security": 0,
         "usage": 0,
@@ -49,39 +49,56 @@
       "format_issues": 0,
       "security_vulnerabilities": {
         "Critical": 0,
-        "High": 1,
+        "High": 0,
         "Moderate": 0,
         "Low": 1
       },
-      "session_id": "ae756689-8527-4bee-a68a-97c17f31e036",
+      "session_id": "9a779929-d4ec-4e7e-8d37-74d2a4bdf5c6",
+      "model": "claude-opus-4.6-1m",
+      "loaded_skills": [
+        "dotnet-webapi"
+      ],
+      "loaded_plugins": [],
+      "asset_match": true
+    },
+    {
+      "config": "dotnet-artisan",
+      "run_id": 1,
+      "scenario": "SparkEvents",
+      "build_success": true,
+      "run_success": true,
+      "build_warnings": {
+        "naming": 4,
+        "performance": 32,
+        "reliability": 0,
+        "security": 0,
+        "usage": 0,
+        "style": 0,
+        "other": 2,
+        "total": 38
+      },
+      "format_issues": 0,
+      "security_vulnerabilities": {
+        "Critical": 0,
+        "High": 0,
+        "Moderate": 0,
+        "Low": 1
+      },
+      "session_id": "1f049787-eeb8-4bbf-8f18-e7aa91e831d1",
       "model": "claude-opus-4.6-1m",
       "loaded_skills": [
         "using-dotnet",
         "dotnet-advisor",
-        "dotnet-csharp",
         "dotnet-api",
+        "dotnet-csharp",
         "dotnet-tooling",
         "using-dotnet",
         "using-dotnet",
-        "using-dotnet",
-        "using-dotnet",
-        "using-dotnet",
         "dotnet-advisor",
-        "using-dotnet",
-        "dotnet-advisor",
-        "dotnet-advisor",
-        "dotnet-advisor",
-        "dotnet-advisor",
-        "dotnet-api",
-        "dotnet-csharp",
         "dotnet-advisor",
         "dotnet-csharp",
         "dotnet-api",
-        "dotnet-csharp",
         "dotnet-api",
-        "dotnet-api",
-        "dotnet-csharp",
-        "dotnet-csharp",
         "dotnet-csharp"
       ],
       "loaded_plugins": [
@@ -96,14 +113,14 @@
       "build_success": true,
       "run_success": true,
       "build_warnings": {
-        "naming": 2,
-        "performance": 60,
+        "naming": 4,
+        "performance": 48,
         "reliability": 0,
         "security": 0,
         "usage": 0,
         "style": 0,
-        "other": 0,
-        "total": 62
+        "other": 14,
+        "total": 66
       },
       "format_issues": 0,
       "security_vulnerabilities": {
@@ -112,13 +129,13 @@
         "Moderate": 0,
         "Low": 1
       },
-      "session_id": "fb19e67d-162e-4f39-a67a-fdb610dc4511",
+      "session_id": "ca8efda4-f3c0-4945-8bae-a633f6b16094",
       "model": "claude-opus-4.6-1m",
       "loaded_skills": [
         "dotnet",
         "dotnet-aspnet-core",
-        "dotnet-modern-csharp",
         "dotnet-project-setup",
+        "dotnet-modern-csharp",
         "dotnet-entity-framework-core"
       ],
       "loaded_plugins": [],
@@ -132,13 +149,13 @@
       "run_success": true,
       "build_warnings": {
         "naming": 2,
-        "performance": 40,
+        "performance": 30,
         "reliability": 0,
         "security": 0,
         "usage": 0,
         "style": 0,
-        "other": 0,
-        "total": 42
+        "other": 14,
+        "total": 46
       },
       "format_issues": 0,
       "security_vulnerabilities": {
@@ -147,7 +164,7 @@
         "Moderate": 0,
         "Low": 1
       },
-      "session_id": "5743e20e-bbbe-47c1-9f53-4a13fd9be25f",
+      "session_id": "a8ff7968-7806-49ac-aef4-da0f2051a1ee",
       "model": "claude-opus-4.6-1m",
       "loaded_skills": [
         "analyzing-dotnet-performance",

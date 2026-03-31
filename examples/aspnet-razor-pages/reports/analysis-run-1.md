@@ -1,404 +1,409 @@
 # Comparative Analysis: dotnet-artisan, managedcode-dotnet-skills, dotnet-skills, no-skills, dotnet-webapi
 
-I analyzed **5 configuration directories** under `output/` and evaluated generated apps for run 1. Actual contents differed from expectation: `dotnet-artisan`, `managedcode-dotnet-skills`, `dotnet-skills`, and `no-skills` each generated only `SparkEvents` under `run-1/`; `dotnet-webapi` generated `SparkEvents`, `KeystoneProperties`, and `HorizonHR` but directly under `output/dotnet-webapi/` (no `run-1/`). Config identity was confirmed via `gen-notes.md` when present, otherwise inferred from directory names.
+This analysis evaluates **5 configurations** from `output/{config}/run-1/`. In this run, every configuration contains only `SparkEvents` under `run-1`; `KeystoneProperties` and `HorizonHR` are missing for all configs. Configuration identity was taken from `gen-notes.md` when present, otherwise from directory names.
 
 ## Executive Summary
 
 | Dimension [Tier] | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills | no-skills | dotnet-webapi |
 |---|---:|---:|---:|---:|---:|
-| Build & Run Success [CRITICAL] | 2 | 2 | 2 | 2 | 4 |
-| Security Vulnerability Scan [CRITICAL] | 2 | 4 | 4 | 4 | 4 |
-| Input Validation & Guard Clauses [CRITICAL] | 3 | 3 | 3 | 4 | 4 |
-| NuGet & Package Discipline [CRITICAL] | 3 | 5 | 5 | 4 | 1 |
+| Build & Run Success [CRITICAL] | 5 | 5 | 5 | 5 | 5 |
+| Security Vulnerability Scan [CRITICAL] | 5 | 5 | 5 | 5 | 5 |
+| Input Validation & Guard Clauses [CRITICAL] | 4 | 4 | 3 | 3 | 4 |
+| NuGet & Package Discipline [CRITICAL] | 5 | 5 | 2 | 5 | 2 |
 | EF Migration Usage [CRITICAL] | 1 | 1 | 1 | 1 | 1 |
-| Business Logic Correctness [HIGH] | 2 | 2 | 2 | 2 | 4 |
-| Prefer Built-in over 3rd Party [HIGH] | 4 | 5 | 5 | 4 | 5 |
-| Modern C# Adoption [HIGH] | 5 | 4 | 3 | 2 | 5 |
-| Page Model Design [HIGH] | 4 | 4 | 4 | 3 | 4 |
-| Form Handling & Validation [HIGH] | 4 | 3 | 3 | 4 | 4 |
-| Error Handling Strategy [HIGH] | 3 | 3 | 3 | 3 | 3 |
-| Async Patterns & Cancellation [HIGH] | 2 | 2 | 2 | 2 | 5 |
-| EF Core Best Practices [HIGH] | 4 | 3 | 3 | 2 | 5 |
-| Security Configuration [HIGH] | 4 | 1 | 1 | 1 | 2 |
-| Service Abstraction & DI [MEDIUM] | 3 | 4 | 4 | 4 | 5 |
-| UI Quality & Accessibility [MEDIUM] | 4 | 2 | 3 | 2 | 4 |
-| Reusable UI Components [MEDIUM] | 4 | 3 | 4 | 4 | 4 |
-| Data Seeder Design [MEDIUM] | 4 | 4 | 4 | 4 | 4 |
-| Structured Logging [MEDIUM] | 3 | 4 | 3 | 4 | 4 |
+| Business Logic Correctness [HIGH] | 4 | 4 | 3 | 3 | 4 |
+| Prefer Built-in over 3rd Party [HIGH] | 5 | 5 | 5 | 5 | 5 |
+| Modern C# Adoption [HIGH] | 4 | 4 | 3 | 3 | 5 |
+| Page Model Design [HIGH] | 4 | 4 | 2 | 2 | 4 |
+| Form Handling & Validation [HIGH] | 4 | 4 | 3 | 3 | 4 |
+| Error Handling Strategy [HIGH] | 3 | 4 | 3 | 3 | 4 |
+| Async Patterns & Cancellation [HIGH] | 3 | 3 | 2 | 2 | 5 |
+| EF Core Best Practices [HIGH] | 4 | 5 | 3 | 3 | 4 |
+| Security Configuration [HIGH] | 2 | 3 | 2 | 2 | 2 |
+| Service Abstraction & DI [MEDIUM] | 4 | 4 | 3 | 3 | 5 |
+| UI Quality & Accessibility [MEDIUM] | 3 | 4 | 3 | 3 | 3 |
+| Reusable UI Components [MEDIUM] | 2 | 4 | 2 | 2 | 2 |
+| Data Seeder Design [MEDIUM] | 4 | 4 | 3 | 3 | 4 |
+| Structured Logging [MEDIUM] | 4 | 4 | 3 | 3 | 4 |
 | Nullable Reference Types [MEDIUM] | 5 | 5 | 5 | 5 | 5 |
-| File Organization [MEDIUM] | 4 | 4 | 4 | 4 | 5 |
-| Type Design & Resource Management [MEDIUM] | 3 | 3 | 3 | 3 | 5 |
-| Code Standards Compliance [LOW] | 4 | 3 | 4 | 3 | 4 |
+| File Organization [MEDIUM] | 4 | 4 | 4 | 4 | 4 |
+| Type Design & Resource Management [MEDIUM] | 4 | 4 | 3 | 3 | 4 |
+| Code Standards Compliance [LOW] | 4 | 4 | 3 | 3 | 4 |
+| Scenario Coverage (3 apps expected) [CRITICAL] | 1 | 1 | 1 | 1 | 1 |
 
 ## 1. Build & Run Success [CRITICAL]
+All five `SparkEvents` projects compile and start (`BuildSucceeded=true`, `WarningCount=0`, `RunAlive8s=true`).
 
 ```csharp
-// dotnet-artisan Program.cs
+// dotnet-artisan: Program.cs
 await app.RunAsync();
-// managedcode / dotnet-skills / no-skills Program.cs
-app.Run();
-// dotnet-webapi Program.cs (all 3 apps)
+
+// dotnet-skills/no-skills/dotnet-webapi: Program.cs
 app.Run();
 ```
 
-All discovered projects build and start. `dotnet-webapi` is strongest because it produced and successfully ran all 3 scenarios, while others only produced SparkEvents.
+Scores: artisan **5**, managedcode **5**, dotnet-skills **5**, no-skills **5**, webapi **5**.
 
-**Scores:** artisan 2, managedcode 2, dotnet-skills 2, no-skills 2, dotnet-webapi 4.
-
-**Verdict:** `dotnet-webapi` wins on completeness of runnable outputs.
+Verdict: Tie; all are runnable at baseline.
 
 ## 2. Security Vulnerability Scan [CRITICAL]
+`dotnet list package --vulnerable` returned no vulnerable packages across all five.
 
 ```text
-# dotnet-artisan/SparkEvents (dotnet list package --vulnerable)
-> Microsoft.Build.Tasks.Core 17.7.2 High GHSA-h4j7-5rxr-p4wc
+# measured for each config under run-1/SparkEvents/src/SparkEvents
+HasVulnerabilities=false
 ```
 
-`dotnet-artisan` showed a transitive vulnerability; all other generated apps reported no vulnerable packages.
+Scores: all **5**.
 
-**Scores:** 2, 4, 4, 4, 4.
-
-**Verdict:** Managed, official skills, baseline, and webapi tie ahead of artisan.
+Verdict: Tie.
 
 ## 3. Input Validation & Guard Clauses [CRITICAL]
+All configs use DataAnnotations + `ModelState.IsValid`; stronger variants enforce domain guards in services.
 
 ```csharp
-// no-skills Pages/Events/Create.cshtml.cs
-[Required] public string Title { get; set; } = string.Empty;
-if (!ModelState.IsValid) return Page();
-
-// dotnet-webapi Pages/Events/Create.cshtml.cs
-[Required] public string Title { get; set; } = string.Empty;
-if (!ModelState.IsValid) { ... return Page(); }
+// dotnet-artisan: Services/RegistrationService.cs
+if (now < evt.RegistrationOpenDate || now > evt.RegistrationCloseDate)
+    throw new InvalidOperationException("Registration is not open for this event.");
+if (hasDuplicate)
+    throw new InvalidOperationException("This attendee is already registered for this event.");
 ```
 
-All configs use DataAnnotations and `ModelState.IsValid` checks. Guard-clause APIs like `ArgumentNullException.ThrowIfNull()` were generally absent.
+```csharp
+// dotnet-webapi: Pages/Events/Register.cshtml.cs
+if (!ModelState.IsValid)
+{
+    Attendees = await _attendeeService.GetAllListAsync(cancellationToken);
+    return Page();
+}
+```
 
-**Scores:** 3, 3, 3, 4, 4.
+Scores: **4, 4, 3, 3, 4**.
 
-**Verdict:** `no-skills` and `dotnet-webapi` are slightly more comprehensive in form-model validation coverage.
+Verdict: artisan/managedcode/webapi are best on service-boundary validation.
 
 ## 4. NuGet & Package Discipline [CRITICAL]
+Pinned versions in artisan/managedcode/no-skills; floating versions in dotnet-skills and webapi.
 
 ```xml
-<!-- managedcode/dotnet-skills -->
+<!-- dotnet-artisan: SparkEvents.csproj -->
 <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.5" />
 
-<!-- dotnet-webapi/SparkEvents -->
-<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="*" />
+<!-- dotnet-webapi: SparkEvents.csproj -->
+<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.*-*" />
 ```
 
-Managed and official skills pin exact versions cleanly. `dotnet-webapi` uses floating/wildcard versions (`*`, `10.*-*`), the biggest packaging risk.
+Scores: **5, 5, 2, 5, 2**.
 
-**Scores:** 3, 5, 5, 4, 1.
-
-**Verdict:** `managedcode-dotnet-skills` and `dotnet-skills` are best.
+Verdict: exact pinning is the clear winner.
 
 ## 5. EF Migration Usage [CRITICAL]
+All projects use `EnsureCreated` and do not use migrations startup.
 
 ```csharp
-// all configurations (Program.cs pattern)
-await db.Database.EnsureCreatedAsync();
-// or
-db.Database.EnsureCreated();
+// all Program.cs variants
+await context.Database.EnsureCreatedAsync(); // or EnsureCreated()
 ```
 
-No generated app used `Database.Migrate()` or migration workflow.
+Scores: all **1**.
 
-**Scores:** 1, 1, 1, 1, 1.
-
-**Verdict:** All fail this production-critical criterion.
+Verdict: shared production-readiness gap.
 
 ## 6. Business Logic Correctness [HIGH]
+SparkEvents rules (capacity, waitlist, cancellation windows, status transitions) are implemented well in service-heavy variants.
 
-```text
-# prompt requires SparkEvents + KeystoneProperties + HorizonHR per configuration
-# actual: only dotnet-webapi has all 3 apps; others only SparkEvents
+```csharp
+// dotnet-artisan: Services/RegistrationService.cs (waitlist promotion)
+var firstWaitlisted = await db.Registrations
+    .Where(r => r.EventId == reg.EventId && r.Status == RegistrationStatus.Waitlisted)
+    .OrderBy(r => r.WaitlistPosition)
+    .FirstOrDefaultAsync();
 ```
 
-SparkEvents implementations are generally broad, but 4/5 configs miss two whole scenarios.
+Scores: **4, 4, 3, 3, 4**.
 
-**Scores:** 2, 2, 2, 2, 4.
-
-**Verdict:** `dotnet-webapi` clearly best for scenario completeness.
+Verdict: webapi/managedcode/artisan lead inside SparkEvents logic.
 
 ## 7. Prefer Built-in over 3rd Party [HIGH]
+All use built-in ASP.NET Core + EF Core only (no Swashbuckle/Newtonsoft/Autofac/Serilog).
 
 ```xml
-<!-- all .csproj samples -->
-<Project Sdk="Microsoft.NET.Sdk.Web">
-<!-- no Swashbuckle / Newtonsoft / Autofac / AutoMapper / Serilog -->
+<!-- representative across configs -->
+<PackageReference Include="Microsoft.EntityFrameworkCore.Design" ... />
+<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" ... />
 ```
 
-All outputs stay close to built-in platform dependencies; no unnecessary third-party architectural framework choices.
+Scores: all **5**.
 
-**Scores:** 4, 5, 5, 4, 5.
-
-**Verdict:** Managed, official skills, and webapi are strongest.
+Verdict: excellent shared dependency discipline.
 
 ## 8. Modern C# Adoption [HIGH]
+webapi is most modern; dotnet-skills/no-skills are more traditional constructor style.
 
 ```csharp
-// dotnet-artisan EventService.cs
-public sealed class EventService(SparkEventsDbContext db, ILogger<EventService> logger)
+// dotnet-webapi: Services/EventService.cs
+public sealed class EventService(SparkEventsDbContext context, ILogger<EventService> logger) : IEventService
 
-// dotnet-webapi/HorizonHR Program-wide patterns
-public sealed class DepartmentService(...)
+// dotnet-skills: Services/EventService.cs
+public sealed class EventService : IEventService
+{
+    private readonly SparkEventsDbContext _db;
+}
 ```
 
-`dotnet-artisan` and `dotnet-webapi` use primary constructors, collection expressions, sealed classes heavily. `no-skills` is mostly traditional constructors.
+Scores: **4, 4, 3, 3, 5**.
 
-**Scores:** 5, 4, 3, 2, 5.
-
-**Verdict:** `dotnet-artisan` and `dotnet-webapi` lead modern language usage.
+Verdict: dotnet-webapi best modern C# profile.
 
 ## 9. Page Model Design [HIGH]
+dotnet-skills/no-skills frequently inject `DbContext` in pages; webapi keeps stronger service-only page boundaries.
 
 ```csharp
-// no-skills Pages/Events/Create.cshtml.cs
-[BindProperty] public InputModel Input { get; set; } = new();
+// no-skills: Pages/Events/Register.cshtml.cs
+private readonly SparkEventsDbContext _db;
 
-// managedcode Pages/Events/Create.cshtml.cs
-[BindProperty] public InputModel Input { get; set; } = new();
+// dotnet-webapi: Pages/Events/Register.cshtml.cs
+public RegisterModel(IRegistrationService registrationService, IEventService eventService,
+    IAttendeeService attendeeService, ITicketTypeService ticketTypeService)
 ```
 
-All configs generally keep page models service-oriented with `InputModel`-based binding; no widespread entity over-posting anti-pattern was observed.
+Scores: **4, 4, 2, 2, 4**.
 
-**Scores:** 4, 4, 4, 3, 4.
-
-**Verdict:** Mostly good across the board; `no-skills` slightly less consistent.
+Verdict: avoid direct page-level DbContext for cleaner testability/security.
 
 ## 10. Form Handling & Validation [HIGH]
+All include validation helpers and scripts partial; PRG pattern is generally used.
 
-```csharp
-// no-skills Create handler
-if (!ModelState.IsValid) return Page();
-return RedirectToPage("Details", new { id = created.Id });
-
-// shared form pages
+```html
+<!-- representative across configs -->
+<div asp-validation-summary="ModelOnly"></div>
+<span asp-validation-for="Input.AttendeeId"></span>
 <partial name="_ValidationScriptsPartial" />
 ```
 
-PRG and validation display are present in most outputs. Explicit antiforgery attributes are rare (Razor default form tokening still applies).
+Scores: **4, 4, 3, 3, 4**.
 
-**Scores:** 4, 3, 3, 4, 4.
-
-**Verdict:** `dotnet-artisan`, `no-skills`, and `dotnet-webapi` are strongest.
+Verdict: strong baseline; webapi/artisan/managedcode are most consistent.
 
 ## 11. Error Handling Strategy [HIGH]
+managedcode adds HSTS; webapi adds centralized exception handler service and ProblemDetails registration.
 
 ```csharp
-// dotnet-webapi/HorizonHR Program.cs
-builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
-app.UseStatusCodePagesWithReExecute("/Error", "?statusCode={0}");
+// managedcode: Program.cs
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Error");
+    app.UseHsts();
+}
 
-// others
-app.UseExceptionHandler("/Error");
+// dotnet-webapi: Program.cs
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
+app.UseStatusCodePages();
 ```
 
-Error handling is present everywhere but uneven in depth.
+Scores: **3, 4, 3, 3, 4**.
 
-**Scores:** 3, 3, 3, 3, 3.
-
-**Verdict:** Tie at adequate level; none is exceptional end-to-end.
+Verdict: managedcode and webapi are strongest.
 
 ## 12. Async Patterns & Cancellation [HIGH]
+Only webapi consistently propagates `CancellationToken` through handlers and services.
 
 ```csharp
-// dotnet-webapi EventService
-public async Task<Event> CreateAsync(Event evt, CancellationToken ct = default)
-await db.SaveChangesAsync(ct);
+// dotnet-webapi: Services/EventService.cs
+public async Task<Event?> GetByIdAsync(int id, CancellationToken ct = default)
+    => await context.Events.FirstOrDefaultAsync(e => e.Id == id, ct);
 
-// managedcode EventService
-public async Task<Event> CreateAsync(Event evt)
-await db.SaveChangesAsync();
+// dotnet-skills: Data/DataSeeder.cs
+public static void Seed(SparkEventsDbContext db)
+{
+    db.SaveChanges();
+}
 ```
 
-CancellationToken propagation is comprehensive in `dotnet-webapi` and largely absent in others.
+Scores: **3, 3, 2, 2, 5**.
 
-**Scores:** 2, 2, 2, 2, 5.
-
-**Verdict:** `dotnet-webapi` is clearly best practice here.
+Verdict: dotnet-webapi clearly best.
 
 ## 13. EF Core Best Practices [HIGH]
+All use fluent mapping and `AsNoTracking` in reads; managedcode adds save timestamp automation.
 
 ```csharp
-// dotnet-webapi EventService
-.Include(e => e.EventCategory).AsNoTracking()
-
-// no-skills EventService
-_context.Events.Include(e => e.Category).AsQueryable();
+// managedcode: Data/SparkEventsDbContext.cs
+public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+{
+    UpdateTimestamps();
+    return base.SaveChangesAsync(cancellationToken);
+}
 ```
 
-`dotnet-webapi` consistently uses `AsNoTracking` and explicit configuration patterns; `no-skills` underuses no-tracking for reads.
+Scores: **4, 5, 3, 3, 4**.
 
-**Scores:** 4, 3, 3, 2, 5.
-
-**Verdict:** `dotnet-webapi` wins.
+Verdict: managedcode has best EF operational polish.
 
 ## 14. Security Configuration [HIGH]
+No config enables `UseHttpsRedirection`; only managedcode includes `UseHsts`.
+
+```csharp
+// managedcode Program.cs
+app.UseHsts();
+```
+
+Scores: **2, 3, 2, 2, 2**.
+
+Verdict: important shared gap despite otherwise solid app quality.
+
+## 15. Service Abstraction & DI [MEDIUM]
+webapi has broadest service surface; others are narrower.
+
+```csharp
+// dotnet-webapi Program.cs
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<IVenueService, VenueService>();
+builder.Services.AddScoped<IAttendeeService, AttendeeService>();
+```
+
+Scores: **4, 4, 3, 3, 5**.
+
+Verdict: webapi strongest architecture layering.
+
+## 16. UI Quality & Accessibility [MEDIUM]
+All use Bootstrap + tag helpers; managedcode stands out with reusable status badge component.
+
+```csharp
+// managedcode: Pages/Shared/Components/StatusBadge/StatusBadgeViewComponent.cs
+public IViewComponentResult Invoke(string statusText, string? displayText = null)
+```
+
+Scores: **3, 4, 3, 3, 3**.
+
+Verdict: managedcode best UX reuse signal.
+
+## 17. Reusable UI Components [MEDIUM]
+Only managedcode includes explicit ViewComponent composition.
+
+```csharp
+// managedcode
+public class StatusBadgeViewComponent : ViewComponent
+```
+
+Scores: **2, 4, 2, 2, 2**.
+
+Verdict: managedcode clearly leads DRY Razor composition.
+
+## 18. Data Seeder Design [MEDIUM]
+artisan/managedcode/webapi use async seeding; dotnet-skills uses synchronous seeding.
 
 ```csharp
 // dotnet-artisan Program.cs
-if (!app.Environment.IsDevelopment()) { app.UseExceptionHandler("/Error"); app.UseHsts(); }
-app.UseHttpsRedirection();
+await DataSeeder.SeedAsync(context);
 
-// managedcode/dotnet-skills/no-skills
-app.UseExceptionHandler("/Error"); // no HSTS/HTTPS pattern in Program.cs
+// dotnet-skills DataSeeder.cs
+public static void Seed(SparkEventsDbContext db)
 ```
 
-Security middleware is strongest in artisan and SparkEvents-webapi; missing in several other outputs, including Keystone/Horizon webapi apps.
+Scores: **4, 4, 3, 3, 4**.
 
-**Scores:** 4, 1, 1, 1, 2.
-
-**Verdict:** `dotnet-artisan` is best in this dimension.
-
-## 15. Service Abstraction & DI [MEDIUM]
-
-```csharp
-// Program.cs
-builder.Services.AddScoped<IEventService, EventService>();
-```
-
-All configs use interface-based DI; `dotnet-webapi` has broader, consistent interface-service coverage across three apps.
-
-**Scores:** 3, 4, 4, 4, 5.
-
-**Verdict:** `dotnet-webapi` strongest, then managed/official/baseline.
-
-## 16. UI Quality & Accessibility [MEDIUM]
-
-```html
-<!-- dotnet-artisan _Layout.cshtml -->
-<nav ... aria-label="Main navigation"> ... aria-current="page" ... </nav>
-<div class="alert ..." role="alert">...</div>
-```
-
-Artisan and webapi variants include richer ARIA and semantic usage. Managed and baseline are more basic.
-
-**Scores:** 4, 2, 3, 2, 4.
-
-**Verdict:** `dotnet-artisan` and `dotnet-webapi` lead accessibility detail.
-
-## 17. Reusable UI Components [MEDIUM]
-
-```html
-<!-- shared partial patterns -->
-<partial name="_Pagination" />
-<partial name="_StatusBadge" />
-```
-
-All variants use reusable partials; baseline also includes a ViewComponent (`StatusBadge`).
-
-**Scores:** 4, 3, 4, 4, 4.
-
-**Verdict:** Good overall; managedcode slightly behind in component richness.
-
-## 18. Data Seeder Design [MEDIUM]
-
-```csharp
-// Program.cs seeding pattern (all)
-await DataSeeder.SeedAsync(db);
-```
-
-All generated apps include startup seeding with practical domain samples.
-
-**Scores:** 4, 4, 4, 4, 4.
-
-**Verdict:** Broad tie.
+Verdict: async seeding patterns are preferable.
 
 ## 19. Structured Logging [MEDIUM]
+Structured `ILogger<T>` templates are present in service layers.
 
 ```csharp
-// managedcode EventService
-logger.LogInformation("Created event {EventTitle} (ID: {EventId})", evt.Title, evt.Id);
+// dotnet-artisan: Services/RegistrationService.cs
+logger.LogInformation("Registration created: {ConfirmationNumber} for event {EventId}, status: {Status}",
+    confirmationNumber, eventId, registration.Status);
 ```
 
-All configs use `ILogger<T>` and structured templates to varying depth.
+Scores: **4, 4, 3, 3, 4**.
 
-**Scores:** 3, 4, 3, 4, 4.
-
-**Verdict:** Managed, no-skills, and webapi are strongest.
+Verdict: good baseline across variants.
 
 ## 20. Nullable Reference Types [MEDIUM]
+All enable NRT.
 
 ```xml
+<!-- all SparkEvents.csproj -->
 <Nullable>enable</Nullable>
 ```
 
-Enabled in all examined `.csproj` files.
+Scores: all **5**.
 
-**Scores:** 5, 5, 5, 5, 5.
-
-**Verdict:** Full tie at best score.
+Verdict: tie.
 
 ## 21. File Organization [MEDIUM]
+All follow clean Razor layout by concern.
 
 ```text
-Pages/{Feature}/..., Services/, Models/, Data/
+src/SparkEvents/{Data,Models,Pages,Services,Program.cs}
 ```
 
-All follow clean Razor feature folders; `dotnet-webapi` shows strongest consistency across all three scenarios.
+Scores: all **4**.
 
-**Scores:** 4, 4, 4, 4, 5.
-
-**Verdict:** `dotnet-webapi` best overall structure consistency.
+Verdict: tie.
 
 ## 22. Type Design & Resource Management [MEDIUM]
+webapi/artisan/managedcode have stronger modern type style; no manual DbContext disposal anti-pattern detected.
 
 ```csharp
 // dotnet-webapi
 public sealed class EventService(...)
-modelBuilder.Entity<Event>().Property(e => e.Status).HasConversion<string>();
 ```
 
-`dotnet-webapi` stands out with pervasive sealed types, enum string conversions, and strong resource-safe async usage.
+Scores: **4, 4, 3, 3, 4**.
 
-**Scores:** 3, 3, 3, 3, 5.
-
-**Verdict:** `dotnet-webapi` best.
+Verdict: modern sealed/service patterns improve consistency.
 
 ## 23. Code Standards Compliance [LOW]
+Naming and async suffix usage are generally aligned; webapi/artisan/managedcode slightly tighter.
 
 ```csharp
-namespace SparkEvents.Pages.Events;
-public async Task<IActionResult> OnPostAsync() { ... }
+// representative
+public async Task<IActionResult> OnPostAsync(...)
 ```
 
-Naming and file-scoped namespaces are generally good; consistency is a bit lower in managedcode/no-skills.
+Scores: **4, 4, 3, 3, 4**.
 
-**Scores:** 4, 3, 4, 3, 4.
+Verdict: no severe standards issues.
 
-**Verdict:** `dotnet-artisan`, `dotnet-skills`, and `dotnet-webapi` are strongest.
+## 24. Scenario Coverage (3 apps expected) [CRITICAL]
+Every config’s `run-1` includes only `SparkEvents`; no `KeystoneProperties` or `HorizonHR`.
+
+```text
+# output/{config}/run-1
+Run1Apps: SparkEvents
+HasKeystone=false
+HasHorizon=false
+```
+
+Scores: all **1**.
+
+Verdict: this is the biggest shared completeness failure.
 
 ## Weighted Summary
-
-Weighting rules: **Critical ×3**, **High ×2**, **Medium ×1**, **Low ×0.5**.
+Weights applied: Critical×3, High×2, Medium×1, Low×0.5
 
 | Configuration | Weighted Total |
 |---|---:|
-| dotnet-webapi | **154.0** |
-| managedcode-dotnet-skills | **129.5** |
-| dotnet-artisan | **129.0** |
-| dotnet-skills | **129.0** |
-| no-skills | **122.5** |
+| managedcode-dotnet-skills | **170.0** |
+| dotnet-artisan | **161.0** |
+| dotnet-webapi | **161.0** |
+| no-skills | **139.5** |
+| dotnet-skills | **130.5** |
 
 ## What All Versions Get Right
-
-- Use ASP.NET Core Razor Pages architecture (`AddRazorPages()` + `MapRazorPages()`).
-- Enable nullable reference types in project config.
-- Include EF Core + SQLite integration and startup seeding.
-- Apply PRG flow (`RedirectToPage`) in many successful form handlers.
-- Use DI service registration rather than direct manual wiring.
+- Build and run baseline is stable for generated `SparkEvents`.
+- Vulnerability scan is clean for current package graph.
+- Built-in .NET stack is preferred over third-party framework sprawl.
+- Razor validation plumbing (`asp-validation-*` and `_ValidationScriptsPartial`) exists.
+- Nullable reference types and project organization are consistently good.
 
 ## Summary: Impact of Skills
+Most impactful differences:
+- **Package version pinning**: managedcode/artisan/no-skills outperform dotnet-skills/webapi on reproducibility.
+- **Cancellation correctness**: webapi is clearly strongest.
+- **EF operational quality**: managedcode leads with timestamp update hooks.
+- **Razor component reuse**: only managedcode demonstrates ViewComponent composition.
+- **Security middleware**: managedcode is slightly better via HSTS, but all miss HTTPS redirection.
 
-Most impactful differences (highest practical impact):
-
-1. **Scenario completeness**: only `dotnet-webapi` generated all three requested apps.
-2. **CancellationToken propagation**: `dotnet-webapi` consistently threads cancellation through service/data layers.
-3. **NuGet discipline**: managed and official dotnet skills pinned versions cleanly; `dotnet-webapi` used risky floating ranges.
-4. **Security middleware**: uneven across outputs; artisan strongest among SparkEvents-only configs.
-5. **EF migration anti-pattern**: all variants use `EnsureCreated`, which is unsuitable for production schema evolution.
-
-Overall assessment: **`dotnet-webapi` produced the strongest functional breadth and modern engineering patterns**, but package versioning and migration strategy need correction. Among SparkEvents-only outputs, **managedcode-dotnet-skills**, **dotnet-artisan**, and **dotnet-skills** are tightly clustered, with baseline `no-skills` trailing slightly.
+Overall assessment (weighted): **managedcode-dotnet-skills** ranks first; **dotnet-artisan** and **dotnet-webapi** tie next with different strengths; **no-skills** and especially **dotnet-skills** trail. The universal blocker is missing 2 of 3 expected scenario apps in `run-1`.
