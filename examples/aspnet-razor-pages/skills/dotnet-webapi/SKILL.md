@@ -2,36 +2,21 @@
 name: dotnet-webapi
 description: >
   Guides creation and modification of ASP.NET Core Web API endpoints with
-  correct HTTP semantics, OpenAPI metadata, error handling, and data access
-  wiring.
+  correct HTTP semantics, OpenAPI metadata, and error handling.
   USE FOR: adding new API endpoints (controllers or minimal APIs), wiring up
-  OpenAPI/Swagger, creating .http test files, connecting endpoints to EF Core,
-  adding pagination/filtering/sorting to list endpoints, setting up global
-  error handling middleware.
-  DO NOT USE FOR: general C# coding style (use dotnet-csharp), EF Core query
-  optimization (use optimizing-ef-core-queries), frontend/Blazor work,
-  gRPC services, or SignalR hubs.
+  OpenAPI/Swagger, creating .http test files, setting up global error handling
+  middleware.
+  DO NOT USE FOR: general C# coding style (use dotnet-csharp), EF Core data
+  access or query optimization (use optimizing-ef-core-queries), frontend/Blazor
+  work, gRPC services, or SignalR hubs.
 ---
 
 # ASP.NET Core Web API
 
 Produce well-structured ASP.NET Core Web API endpoints with proper HTTP
-semantics, OpenAPI documentation, error handling, and data access patterns.
+semantics, OpenAPI documentation, and error handling.
 
 ## Workflow
-
-### General: Seal all types by default
-
-Mark every new class and record as `sealed` unless it is explicitly designed
-for inheritance. This applies to:
-
-- **Model / entity classes** — `public sealed class Product { ... }`
-- **Service implementations** — `public sealed class ProductService(...) : IProductService`
-- **DTO records** — `public sealed record ProductResponse(...)`
-- **Middleware and handlers** — `internal sealed class ApiExceptionHandler(...) : IExceptionHandler`
-
-Sealing types prevents unintended inheritance, communicates design intent, and
-enables JIT devirtualization for better performance (CA1852 analyzer rule).
 
 ### Step 1: Determine the API style
 
@@ -62,7 +47,7 @@ inheritance and enable JIT devirtualization (CA1852).
 | Input (create) | `Create{Entity}Request` | `CreateProductRequest` |
 | Input (update) | `Update{Entity}Request` | `UpdateProductRequest` |
 | Output (single) | `{Entity}Response` | `ProductResponse` |
-| Output (list) | `{Entity}ListResponse` or paginated wrapper | `ProductListResponse` |
+| Output (list) | `{Entity}ListResponse` | `ProductListResponse` |
 
 **Response DTOs** — use positional sealed records for concise, immutable output:
 
@@ -169,45 +154,6 @@ app.MapGet("/api/products/{id}", async Task<Results<Ok<ProductResponse>, NotFoun
 });
 ```
 
-**Pagination:** For any endpoint that returns a list of items, support
-pagination with query parameters. Return metadata so the client knows
-how to navigate.
-
-Use a `sealed record` for the paginated wrapper with `IReadOnlyList<T>` to
-signal immutability:
-
-```csharp
-public sealed record PaginatedResponse<T>
-{
-    public required IReadOnlyList<T> Items { get; init; }
-    public required int Page { get; init; }
-    public required int PageSize { get; init; }
-    public required int TotalCount { get; init; }
-    public required int TotalPages { get; init; }
-    public required bool HasNextPage { get; init; }
-    public required bool HasPreviousPage { get; init; }
-
-    public static PaginatedResponse<T> Create(
-        IReadOnlyList<T> items, int page, int pageSize, int totalCount)
-    {
-        var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
-        return new PaginatedResponse<T>
-        {
-            Items = items,
-            Page = page,
-            PageSize = pageSize,
-            TotalCount = totalCount,
-            TotalPages = totalPages,
-            HasNextPage = page < totalPages,
-            HasPreviousPage = page > 1
-        };
-    }
-}
-```
-
-Enforce a sensible default page size (e.g., 20) and a maximum (e.g., 100)
-to prevent clients from requesting unbounded result sets.
-
 ### Step 4: Wire up OpenAPI
 
 Every ASP.NET Core Web API should have OpenAPI documentation. Check whether
@@ -219,9 +165,10 @@ This is all that is needed — no additional packages required.
 
 **Do NOT add any `Swashbuckle.*` NuGet package** (`Swashbuckle.AspNetCore`,
 `Swashbuckle.AspNetCore.SwaggerUI`, `Swashbuckle.AspNetCore.SwaggerGen`,
-etc.) to projects that don't already use it. Swashbuckle has known
-compatibility issues with .NET 9+ and .NET 10 OpenAPI types. If the project
-already has Swashbuckle installed, keep it unless the user asks to remove it.
+etc.) to .NET 9+ projects. Swashbuckle has known compatibility issues with
+.NET 9+ and .NET 10 OpenAPI types. For projects targeting .NET 8 or earlier,
+Swashbuckle is acceptable. If the project already has Swashbuckle installed,
+keep it unless the user asks to remove it.
 
 Reference: https://learn.microsoft.com/en-us/aspnet/core/fundamentals/openapi/overview
 
@@ -312,53 +259,9 @@ app.UseExceptionHandler();
 folder to maintain consistent project organization. Do not place them at the
 project root.
 
-### Step 6: Wire up data access
+### Step 6: Use a service layer
 
-If the endpoints need database storage, follow these steps.
-
-**1. Search for an existing DbContext.**
-
-Look for classes that inherit `DbContext` in the project. If one exists,
-add the new `DbSet<T>` properties to it. If multiple DbContexts exist,
-ask the user which one to extend, or create a new one if appropriate.
-
-**2. Use EF Core migrations — not `EnsureCreated()`.**
-
-`EnsureCreated()` does not track schema changes and silently skips if
-the database already exists. Always use migrations for projects that will
-evolve:
-
-```bash
-# Install the EF Core tools if not already installed
-dotnet tool install --global dotnet-ef
-
-# Create the migration
-dotnet ef migrations add Add{Entity}Table --project <project-path>
-
-# Apply it
-dotnet ef database update --project <project-path>
-```
-
-**Do not** seed data in `Program.cs`. If seed data is needed, use EF Core's
-`HasData()` in `OnModelCreating` so it is captured in a migration:
-
-```csharp
-modelBuilder.Entity<Category>().HasData(
-    new Category { Id = 1, Name = "Electronics" },
-    new Category { Id = 2, Name = "Books" }
-);
-```
-
-**3. DbContext Fluent API configuration:**
-
-- Define unique indexes on natural keys (`HasIndex(...).IsUnique()`)
-- Set cascade/restrict delete behaviors explicitly on foreign keys
-- Store enums as strings: `.HasConversion<string>()`
-- Specify column types for decimals: `.HasColumnType("decimal(10,2)")`
-
-**4. Service layer between endpoints and DbContext.**
-
-Do not inject `DbContext` directly into controllers or endpoint handlers.
+Do not inject data stores directly into controllers or endpoint handlers.
 Create a service interface and a sealed implementation class that owns the
 data access logic and mapping between entities and request/response types.
 
@@ -369,28 +272,15 @@ mocks and follows the Dependency Inversion Principle:
 // Services/IProductService.cs
 public interface IProductService
 {
-    Task<PaginatedResponse<ProductResponse>> GetAllAsync(
-        string? search, int page, int pageSize, CancellationToken ct);
+    Task<IReadOnlyList<ProductResponse>> GetAllAsync(CancellationToken ct);
     Task<ProductResponse?> GetByIdAsync(int id, CancellationToken ct);
     Task<ProductResponse> CreateAsync(CreateProductRequest request, CancellationToken ct);
-    Task<ProductResponse> UpdateAsync(int id, UpdateProductRequest request, CancellationToken ct);
-    Task DeleteAsync(int id, CancellationToken ct);
 }
 
 // Services/ProductService.cs
-public sealed class ProductService(AppDbContext db, ILogger<ProductService> logger)
-    : IProductService
+public sealed class ProductService(...) : IProductService
 {
-    public async Task<PaginatedResponse<ProductResponse>> GetAllAsync(
-        string? search, int page, int pageSize, CancellationToken ct)
-    {
-        var query = db.Products.AsNoTracking().AsQueryable();
-        // ... filter, order, paginate, project to DTOs
-        return PaginatedResponse<ProductResponse>.Create(items, page, pageSize, totalCount);
-    }
-
-    private static ProductResponse MapToResponse(Product p) =>
-        new(p.Id, p.Name, p.Price, p.Category.Name, p.IsAvailable);
+    // Data access logic, entity-to-DTO mapping
 }
 ```
 
@@ -401,8 +291,8 @@ Register with the interface, not the concrete type:
 builder.Services.AddScoped<IProductService, ProductService>();
 ```
 
-Use `AsNoTracking()` on all read-only queries to avoid unnecessary change
-tracking overhead.
+For EF Core data access patterns (migrations, Fluent API configuration,
+`AsNoTracking`, seed data), see the `optimizing-ef-core-queries` skill.
 
 ### Step 7: Create a .http test file
 
@@ -413,8 +303,8 @@ documentation and a quick manual test harness.
 ```http
 @baseUrl = http://localhost:5000
 
-### Get all products (paginated)
-GET {{baseUrl}}/api/products?page=1&pageSize=10
+### Get all products
+GET {{baseUrl}}/api/products
 
 ### Get product by ID
 GET {{baseUrl}}/api/products/1
@@ -439,9 +329,8 @@ paths (e.g., non-existent IDs). Match the port to `launchSettings.json`.
 ### Step 8: Build and verify
 
 1. Run `dotnet build` — confirm zero errors and zero warnings.
-2. Start the app and verify the OpenAPI document loads at `/openapi/v1.json`.
+2. Start the app and verify the OpenAPI document loads (default: `/openapi/v1.json`).
 3. Run the requests in the `.http` file and confirm correct status codes.
-4. If migrations were created, verify the database schema matches expectations.
 
 ## Validation
 
@@ -454,16 +343,11 @@ paths (e.g., non-existent IDs). Match the port to `launchSettings.json`.
 - [ ] Endpoints have summary/description metadata for OpenAPI
 - [ ] Enum values appear as strings in JSON responses and OpenAPI schemas
 - [ ] Error responses use RFC 7807 Problem Details format
-- [ ] List endpoints support pagination with metadata in the response
-- [ ] EF Core entities are not exposed directly in request/response bodies
-- [ ] Read-only queries use `AsNoTracking()`
-- [ ] Database changes use EF Core migrations, not `EnsureCreated()`
+- [ ] Domain entities are not exposed directly in API request/response bodies
 - [ ] A `.http` file exists with a request for every new endpoint
 - [ ] `dotnet build` passes with zero errors and zero warnings
 - [ ] All DTOs are `sealed record` types (not mutable classes)
-- [ ] All classes are `sealed` unless explicitly designed for inheritance
 - [ ] Minimal API handlers use `TypedResults` with explicit `Results<T1, T2>` return types
-- [ ] Collection properties in response types use `IReadOnlyList<T>`, not `List<T>`
 - [ ] Every service has a corresponding interface registered in DI
 - [ ] Exception handlers are placed in the `Middleware/` folder
 
@@ -471,19 +355,14 @@ paths (e.g., non-existent IDs). Match the port to `launchSettings.json`.
 
 | Pitfall | Solution |
 |---------|----------|
-| Exposing EF Core entities as API responses | Create separate `sealed record` request/response types. Entities leak navigation properties and internal fields. |
+| Exposing domain entities as API responses | Create separate `sealed record` request/response types. Entities leak navigation properties and internal fields. |
 | Forgetting `CancellationToken` | Add to every endpoint and forward through the entire async call chain. |
-| Using `EnsureCreated()` instead of migrations | Use `dotnet ef migrations add` / `dotnet ef database update`. `EnsureCreated()` silently ignores schema changes. |
-| Seeding data in `Program.cs` | Use `HasData()` in Fluent API so seeds are versioned in migrations. |
 | Returning `200 OK` from POST create | Return `201 Created` with a `Location` header. |
 | Missing OpenAPI metadata | Chain `.WithName()`, `.WithSummary()`, `.WithDescription()`, `.Produces<T>()` on every endpoint. |
-| Injecting DbContext into controllers/handlers | Use a service layer with an interface for separation and testability. |
-| Returning unbounded lists | Always paginate. Default 20, max 100. |
+| Injecting data stores directly into endpoints | Use a service layer with an interface for separation and testability. |
 | Mixing controller and minimal API styles | Pick one per project and be consistent. |
 | `TypedResults` in ternary without explicit return type | `Ok<T>` and `NotFound` have no common base — annotate with `Task<Results<Ok<T>, NotFound>>` or fall back to `Results` factory. |
 | Using mutable classes for DTOs | Use `sealed record` with positional syntax (responses) or `init` properties (requests). |
-| Not sealing types | Seal all types by default (CA1852). Enables JIT devirtualization. |
-| Returning `List<T>` in responses | Use `IReadOnlyList<T>` to signal immutability. |
 | Registering services without interfaces | Define `IService` and register with `AddScoped<IService, Service>()`. |
 | Adding any `Swashbuckle.*` package to new .NET 9+ projects | Use built-in `AddOpenApi()` + `MapOpenApi()`. Do not add `Swashbuckle.AspNetCore`, `Swashbuckle.AspNetCore.SwaggerUI`, or any other Swashbuckle package. |
 
@@ -493,4 +372,3 @@ paths (e.g., non-existent IDs). Match the port to `launchSettings.json`.
 - [OpenAPI in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/openapi/overview) — built-in OpenAPI support in .NET 9+
 - [Minimal APIs overview](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/overview) — routing, parameter binding, and response types
 - [Handle errors in ASP.NET Core APIs](https://learn.microsoft.com/en-us/aspnet/core/web-api/handle-errors) — Problem Details and exception handling
-- [EF Core Migrations](https://learn.microsoft.com/en-us/ef/core/managing-schemas/migrations/) — managing schema changes with migrations
