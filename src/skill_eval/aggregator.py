@@ -162,6 +162,78 @@ def parse_run_content(analysis_file: Path) -> dict[str, str]:
     return sections
 
 
+_TOKEN_EFFICIENCY_DIM = "Token Efficiency"
+_TOKEN_EFFICIENCY_TIER = "MEDIUM"
+_TOKEN_EFFICIENCY_WEIGHT = 1.0
+_BASELINE_CONFIG = "no-skills"
+
+
+def _compute_token_efficiency_scores(
+    generation_usage: list[dict],
+    config_names: list[str],
+    run_ids: list[int],
+) -> dict[str, dict[str, float]] | None:
+    """Compute Token Efficiency scores from generation usage data.
+
+    Scores each config on a 1–5 scale based on total tokens (input + output)
+    relative to the "no-skills" baseline:
+        5 — ≤100% of baseline
+        4 — 101–125%
+        3 — 126–175%
+        2 — 176–250%
+        1 — >250%
+
+    Returns per-run scores: {run_id: {config: score}} or None if baseline
+    is missing.
+    """
+    if _BASELINE_CONFIG not in config_names:
+        return None
+
+    # Group total tokens by (config, run_id)
+    tokens_by_cfg_run: dict[str, dict[int, int]] = {}
+    for u in generation_usage:
+        cfg = u.get("config")
+        run_id = u.get("run_id")
+        if cfg not in config_names or run_id not in run_ids:
+            continue
+        total = u.get("input_tokens", 0) + u.get("output_tokens", 0)
+        tokens_by_cfg_run.setdefault(cfg, {})[run_id] = total
+
+    baseline_runs = tokens_by_cfg_run.get(_BASELINE_CONFIG, {})
+    if not baseline_runs:
+        return None
+
+    baseline_mean = statistics.mean(baseline_runs.values())
+    if baseline_mean == 0:
+        return None
+
+    def _ratio_to_score(ratio: float) -> float:
+        if ratio <= 1.0:
+            return 5.0
+        if ratio <= 1.25:
+            return 4.0
+        if ratio <= 1.75:
+            return 3.0
+        if ratio <= 2.50:
+            return 2.0
+        return 1.0
+
+    # Build per-run score dicts in the same shape as parsed run scores
+    per_run_scores: list[dict[str, float]] = []
+    for run_id in run_ids:
+        scores: dict[str, float] = {}
+        for cfg in config_names:
+            cfg_total = tokens_by_cfg_run.get(cfg, {}).get(run_id)
+            if cfg_total is not None:
+                ratio = cfg_total / baseline_mean
+                scores[cfg] = _ratio_to_score(ratio)
+            elif cfg == _BASELINE_CONFIG:
+                scores[cfg] = 5.0
+        per_run_scores.append(scores)
+
+    return per_run_scores
+
+
 def aggregate_results(config: EvalConfig, project_root: Path) -> None:
     """Parse all per-run analysis files and write the aggregated report."""
     reports_dir = project_root / config.output.reports_directory
@@ -225,6 +297,15 @@ def aggregate_results(config: EvalConfig, project_root: Path) -> None:
         except (json.JSONDecodeError, OSError):
             pass
 
+    # Inject automated Token Efficiency dimension if usage data exists
+    if generation_usage and _BASELINE_CONFIG in config_names:
+        token_scores = _compute_token_efficiency_scores(
+            generation_usage, config_names, parsed_run_ids,
+        )
+        if token_scores and len(token_scores) == len(all_run_scores):
+            for i, run_scores in enumerate(all_run_scores):
+                run_scores[_TOKEN_EFFICIENCY_DIM] = token_scores[i]
+
     # Collect all dimension names across runs
     all_dims: list[str] = []
     seen = set()
@@ -240,6 +321,10 @@ def aggregate_results(config: EvalConfig, project_root: Path) -> None:
     for d in config.dimensions:
         dim_weights[d.name] = d.effective_weight
         dim_tiers[d.name] = d.tier.upper()
+    # Register automated Token Efficiency dimension
+    if _TOKEN_EFFICIENCY_DIM in all_dims:
+        dim_weights[_TOKEN_EFFICIENCY_DIM] = _TOKEN_EFFICIENCY_WEIGHT
+        dim_tiers[_TOKEN_EFFICIENCY_DIM] = _TOKEN_EFFICIENCY_TIER
 
     # Compute per-dimension stats
     dim_stats: dict[str, dict[str, dict[str, float]]] = {}
@@ -342,6 +427,122 @@ def _select_best_run_content(
 
     run_file = reports_dir / config.output.per_run_analysis_pattern.format(run=median_run_id)
     return parse_run_content(run_file)
+
+
+def _write_token_usage_sections(
+    lines: list[str],
+    generation_usage: list[dict],
+    config_names: list[str],
+) -> None:
+    """Write Token Usage Summary and Per Run detail tables."""
+    # Filter to configs in scope
+    usage_in_scope = [u for u in generation_usage if u.get("config") in config_names]
+    if not usage_in_scope:
+        return
+
+    # Group by config
+    by_config: dict[str, list[dict]] = {}
+    for u in usage_in_scope:
+        by_config.setdefault(u["config"], []).append(u)
+
+    # Compute per-config averages
+    config_avgs: dict[str, dict[str, float]] = {}
+    for cfg in config_names:
+        entries = by_config.get(cfg, [])
+        if not entries:
+            continue
+        n = len(entries)
+        config_avgs[cfg] = {
+            "input_tokens": sum(e.get("input_tokens", 0) for e in entries) / n,
+            "output_tokens": sum(e.get("output_tokens", 0) for e in entries) / n,
+            "cache_read_tokens": sum(e.get("cache_read_tokens", 0) for e in entries) / n,
+            "api_calls": sum(e.get("api_calls", 0) for e in entries) / n,
+            "wall_time_seconds": sum(e.get("wall_time_seconds", 0) for e in entries) / n,
+        }
+
+    if not config_avgs:
+        return
+
+    # Baseline for delta calculation
+    baseline_avg = config_avgs.get(_BASELINE_CONFIG)
+    baseline_input = baseline_avg["input_tokens"] if baseline_avg else None
+
+    # Token Usage Summary table
+    lines.extend([
+        "## Token Usage Summary",
+        "",
+        "Average token consumption per configuration across all runs.",
+        "",
+    ])
+
+    has_baseline = baseline_input is not None and baseline_input > 0
+    if has_baseline:
+        lines.append(
+            "| Configuration | Avg Input Tokens | Avg Output Tokens "
+            "| Avg Cache Read | Avg API Calls | Avg Wall Time "
+            "| Δ Input vs Baseline |"
+        )
+        lines.append("|---|---|---|---|---|---|---|")
+    else:
+        lines.append(
+            "| Configuration | Avg Input Tokens | Avg Output Tokens "
+            "| Avg Cache Read | Avg API Calls | Avg Wall Time |"
+        )
+        lines.append("|---|---|---|---|---|---|")
+
+    for cfg in config_names:
+        avg = config_avgs.get(cfg)
+        if not avg:
+            continue
+        mins, secs = divmod(int(avg["wall_time_seconds"]), 60)
+        row = (
+            f"| {cfg} "
+            f"| {avg['input_tokens']:,.0f} "
+            f"| {avg['output_tokens']:,.0f} "
+            f"| {avg['cache_read_tokens']:,.0f} "
+            f"| {avg['api_calls']:.0f} "
+            f"| {mins}m {secs}s"
+        )
+        if has_baseline:
+            if cfg == _BASELINE_CONFIG:
+                row += " | — (baseline)"
+            else:
+                delta_pct = (avg["input_tokens"] - baseline_input) / baseline_input * 100
+                sign = "+" if delta_pct >= 0 else ""
+                row += f" | {sign}{delta_pct:.1f}%"
+        row += " |"
+        lines.append(row)
+
+    lines.extend(["", "---", ""])
+
+    # Token Usage Per Run detail table
+    sorted_usage = sorted(
+        usage_in_scope,
+        key=lambda u: (config_names.index(u["config"]), u.get("run_id", 0)),
+    )
+
+    lines.extend([
+        "## Token Usage Per Run",
+        "",
+        "| Configuration | Run | Scenario | Input Tokens | Output Tokens "
+        "| Cache Read | API Calls | Wall Time |",
+        "|---|---|---|---|---|---|---|---|",
+    ])
+
+    for u in sorted_usage:
+        mins, secs = divmod(int(u.get("wall_time_seconds", 0)), 60)
+        lines.append(
+            f"| {u.get('config', '?')} "
+            f"| {u.get('run_id', '?')} "
+            f"| {u.get('scenario', '—')} "
+            f"| {u.get('input_tokens', 0):,} "
+            f"| {u.get('output_tokens', 0):,} "
+            f"| {u.get('cache_read_tokens', 0):,} "
+            f"| {u.get('api_calls', 0)} "
+            f"| {mins}m {secs}s |"
+        )
+
+    lines.extend(["", "---", ""])
 
 
 def _write_aggregated_report(
@@ -591,6 +792,10 @@ def _write_aggregated_report(
 
         lines.extend(["", "---", ""])
 
+    # Token Usage Summary
+    if generation_usage:
+        _write_token_usage_sections(lines, generation_usage, config_names)
+
     # Consistency Analysis
     lines.append("## Consistency Analysis")
     lines.append("")
@@ -767,6 +972,7 @@ def _write_aggregated_report(
         f"- Verification data: `{config.output.reports_directory}/{config.output.verification_data_file}`",
         f"- Score data: `{config.output.reports_directory}/{config.output.scores_data_file}`",
         f"- Build notes: `{config.output.reports_directory}/{config.output.notes_file}`",
+        f"- Generation usage: `{config.output.reports_directory}/generation-usage.json`",
         "",
     ])
 
