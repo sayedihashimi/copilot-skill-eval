@@ -224,9 +224,13 @@ def _run_copilot(
             click.echo(f"  ⚠️  Retry {attempt}/{max_retries} after idle timeout")
 
         start_time = time.monotonic()
-        proc = subprocess.Popen(cmd, cwd=cwd)
+        proc = subprocess.Popen(cmd, cwd=cwd, stderr=subprocess.PIPE)
         timed_out = _watchdog_wait(proc, idle_timeout)
         elapsed = time.monotonic() - start_time
+
+        stderr_output = ""
+        if proc.stderr:
+            stderr_output = proc.stderr.read().decode(errors="replace").strip()
 
         if timed_out:
             click.echo(f"  ⚠️  Copilot idle for {idle_timeout}s — killing (PID {proc.pid})")
@@ -239,10 +243,13 @@ def _run_copilot(
             )
 
         if proc.returncode != 0:
-            raise RuntimeError(
+            msg = (
                 f"Copilot CLI exited with code {proc.returncode} "
                 f"for configuration '{configuration.name}'"
             )
+            if stderr_output:
+                click.echo(f"    Copilot stderr: {stderr_output}")
+            raise RuntimeError(msg)
 
         # Parse usage from Copilot CLI log
         usage = _parse_copilot_log_usage(proc.pid)

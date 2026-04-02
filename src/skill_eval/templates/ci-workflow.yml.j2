@@ -35,8 +35,11 @@ jobs:
 
       - name: Install GitHub Copilot CLI
         run: curl -fsSL https://gh.io/copilot-install | bash
+
+      - name: Verify Copilot CLI
+        run: copilot --version
         env:
-          GITHUB_TOKEN: ${{ '{{' }} secrets.GITHUB_TOKEN {{ '}}' }}
+          COPILOT_GITHUB_TOKEN: ${{ '{{' }} secrets.COPILOT_TOKEN {{ '}}' }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -71,6 +74,7 @@ jobs:
             run $ARGS
         env:
           GITHUB_TOKEN: ${{ '{{' }} secrets.GITHUB_TOKEN {{ '}}' }}
+          COPILOT_GITHUB_TOKEN: ${{ '{{' }} secrets.COPILOT_TOKEN {{ '}}' }}
 
       - name: Upload reports
         if: always()

@@ -209,10 +209,12 @@ skill-eval ci-setup
 
 This creates `.github/workflows/skill-eval.yml` with:
 - Manual trigger via `workflow_dispatch` (with skip/analyze-only options)
-- GitHub Copilot CLI installation
+- GitHub Copilot CLI installation and verification
 - Python + skill-eval installation
 - Config validation → pipeline execution
 - Report and output artifact upload
+
+**Required secret:** The workflow expects a `COPILOT_TOKEN` repository secret — a [fine-grained personal access token](https://github.com/settings/personal-access-tokens/new) with the **"Copilot Requests"** permission. The default `GITHUB_TOKEN` does not have Copilot access.
 
 Options: `--runs-on`, `--python-version`, `--schedule`, `--timeout`.
 
