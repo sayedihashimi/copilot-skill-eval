@@ -8,7 +8,14 @@ Evaluate how **GitHub Copilot custom skills** impact code generation quality. Ge
 pipx install git+https://github.com/sayedihashimi/copilot-skill-eval
 ```
 
-> Requires **Python 3.10+** and **[pipx](https://pipx.pypa.io)**. Also needs the **GitHub Copilot CLI** (`copilot` command) and your tech stack's build tools (e.g., `dotnet`, `npm`, `go`).
+> **Prerequisites:** Python 3.10+, the [GitHub Copilot CLI](https://docs.github.com/en/copilot) (`copilot` command), and your tech stack's build tools (e.g., `dotnet`, `npm`, `go`).
+>
+> Don't have pipx? Install it first:
+> ```bash
+> pip install pipx
+> pipx ensurepath
+> ```
+> Then restart your terminal.
 
 ## How It Works
 
