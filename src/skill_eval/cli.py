@@ -87,6 +87,78 @@ def init(ctx: click.Context) -> None:
     run_init(ctx.obj["project_root"])
 
 
+@main.command("ci-setup")
+@click.option("--runs-on", default="ubuntu-latest",
+              help="GitHub Actions runner (default: ubuntu-latest)")
+@click.option("--python-version", default="3.12",
+              help="Python version for the CI job (default: 3.12)")
+@click.option("--schedule", default=None,
+              help="Cron schedule for automatic runs (e.g., '0 6 * * 1' for weekly)")
+@click.option("--timeout", "timeout_minutes", type=int, default=120,
+              help="Job timeout in minutes (default: 120)")
+@click.pass_context
+def ci_setup(
+    ctx: click.Context,
+    runs_on: str,
+    python_version: str,
+    schedule: str | None,
+    timeout_minutes: int,
+) -> None:
+    """Generate a GitHub Actions workflow for running evaluations in CI.
+
+    Creates .github/workflows/skill-eval.yml configured for this project.
+    """
+    from jinja2 import Environment, FileSystemLoader
+
+    from skill_eval.prompt_renderer import _PACKAGE_TEMPLATES, _REPO_TEMPLATES
+
+    project_root: Path = ctx.obj["project_root"]
+    config = _load(ctx)
+
+    # Find template directory
+    template_dir = _PACKAGE_TEMPLATES if _PACKAGE_TEMPLATES.is_dir() else _REPO_TEMPLATES
+    env = Environment(
+        loader=FileSystemLoader(str(template_dir)),
+        keep_trailing_newline=True,
+    )
+    template = env.get_template("ci-workflow.yml.j2")
+
+    # Determine config paths relative to project root
+    config_path = ctx.obj.get("config_path")
+    config_rel = str(config_path) if config_path else "eval.yaml"
+
+    skill_sources_path = ctx.obj.get("skill_sources_path")
+    skill_sources_rel = None
+    if skill_sources_path:
+        skill_sources_rel = str(skill_sources_path)
+    elif (project_root / "skill-sources.yaml").exists():
+        skill_sources_rel = "skill-sources.yaml"
+
+    rendered = template.render(
+        config_path=config_rel,
+        skill_sources_path=skill_sources_rel,
+        runs_on=runs_on,
+        python_version=python_version,
+        schedule=schedule,
+        timeout_minutes=timeout_minutes,
+        reports_directory=config.output.reports_directory,
+        output_directory=config.output.directory,
+    )
+
+    workflow_dir = project_root / ".github" / "workflows"
+    workflow_dir.mkdir(parents=True, exist_ok=True)
+    workflow_path = workflow_dir / "skill-eval.yml"
+    workflow_path.write_text(rendered, encoding="utf-8")
+
+    click.echo(f"✅ GitHub Actions workflow created: {workflow_path}")
+    click.echo(f"   Runner:  {runs_on}")
+    click.echo(f"   Python:  {python_version}")
+    click.echo(f"   Timeout: {timeout_minutes} minutes")
+    if schedule:
+        click.echo(f"   Schedule: {schedule}")
+    click.echo("\nTo run manually: go to Actions → Skill Evaluation → Run workflow")
+
+
 @main.command()
 @click.option(
     "--configurations", "-c",
