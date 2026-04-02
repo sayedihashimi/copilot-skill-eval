@@ -1,7 +1,7 @@
 # Aggregated Analysis: ASP.NET Core Web API Skill Evaluation
 
-**Runs:** 3 | **Configurations:** 5 | **Scenarios:** 3 | **Dimensions:** 26
-**Date:** 2026-03-31 10:41 UTC
+**Runs:** 3 | **Configurations:** 5 | **Scenarios:** 3 | **Dimensions:** 27
+**Date:** 2026-04-02 00:57 UTC
 
 ---
 
@@ -39,7 +39,7 @@ Each configuration gives Copilot different custom skills or plugins. The **no-sk
 
 1. **Generate** — For each configuration, Copilot CLI (`copilot --yolo`) is given a scenario prompt and generates a complete project from scratch. One scenario is randomly selected per run.
 2. **Verify** — Each generated project is built (`dotnet build`), run, format-checked, and scanned for NuGet vulnerabilities.
-3. **Analyze** — An AI judge reviews the source code of all configurations side-by-side and scores each across 26 quality dimensions.
+3. **Analyze** — An AI judge reviews the source code of all configurations side-by-side and scores each across 27 quality dimensions.
 
 Generation model: **claude-opus-4.6-1m**
 Analysis model: **gpt-5.3-codex**
@@ -101,6 +101,7 @@ Scores shown as **mean ± standard deviation** across runs.
 | HTTP Test File Quality [MEDIUM] | 4.0 | 5.0 | 4.0 | 4.0 | 4.0 |
 | Type Design & Resource Management [MEDIUM] | 3.5 ± 0.7 | 4.5 ± 0.7 | 4.0 | 4.0 | 4.0 |
 | Code Standards Compliance [LOW] | 3.0 | 5.0 | 4.3 ± 0.6 | 4.0 | 4.0 |
+| Token Efficiency [MEDIUM] | 4.3 ± 0.6 | 4.3 ± 0.6 | 2.7 ± 1.2 | 2.7 ± 1.2 | 2.0 ± 1.0 |
 | Scenario Coverage (all 3 apps) [MEDIUM] | 1.0 | 1.0 | 1.0 | 1.0 | 1.0 |
 
 ---
@@ -109,11 +110,11 @@ Scores shown as **mean ± standard deviation** across runs.
 
 | Rank | Configuration | Mean Score | % of Max (217.5) | Std Dev | Min | Max |
 |---|---|---|---|---|---|---|
-| 🥇 | dotnet-webapi | 172.2 | 79% | 17.2 | 153.5 | 187.5 |
-| 🥈 | dotnet-artisan | 157.8 | 73% | 28.4 | 126.0 | 180.5 |
-| 🥉 | dotnet-skills | 139.7 | 64% | 11.0 | 127.0 | 147.0 |
-| 4th | managedcode-dotnet-skills | 137.0 | 63% | 9.8 | 129.0 | 148.0 |
-| 5th | no-skills | 120.8 | 56% | 13.9 | 105.5 | 132.5 |
+| 🥇 | dotnet-webapi | 176.5 | 81% | 17.3 | 157.5 | 191.5 |
+| 🥈 | dotnet-artisan | 160.5 | 74% | 27.3 | 130.0 | 182.5 |
+| 🥉 | dotnet-skills | 141.7 | 65% | 10.1 | 130.0 | 148.0 |
+| 4th | managedcode-dotnet-skills | 139.7 | 64% | 9.6 | 131.0 | 150.0 |
+| 5th | no-skills | 125.2 | 58% | 13.3 | 110.5 | 136.5 |
 
 ---
 
@@ -121,10 +122,10 @@ Scores shown as **mean ± standard deviation** across runs.
 
 | Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
 |---|---|---|---|---|---|
-| 1 | 124.5 | 187.5 | 180.5 | 148.0 | 147.0 |
-| 2 | 105.5 | 153.5 | 126.0 | 129.0 | 127.0 |
-| 3 | 132.5 | 175.5 | 167.0 | 134.0 | 145.0 |
-| **Mean** | **120.8** | **172.2** | **157.8** | **137.0** | **139.7** |
+| 1 | 128.5 | 191.5 | 182.5 | 150.0 | 148.0 |
+| 2 | 110.5 | 157.5 | 130.0 | 131.0 | 130.0 |
+| 3 | 136.5 | 180.5 | 169.0 | 138.0 | 147.0 |
+| **Mean** | **125.2** | **176.5** | **160.5** | **139.7** | **141.7** |
 
 ---
 
@@ -140,15 +141,51 @@ Scores shown as **mean ± standard deviation** across runs.
 
 ---
 
+## Token Usage Summary
+
+Average token consumption per configuration across all runs.
+
+| Configuration | Avg Input Tokens | Avg Output Tokens | Avg Cache Read | Avg API Calls | Avg Wall Time | Δ Input vs Baseline |
+|---|---|---|---|---|---|---|
+| no-skills | 2,302,594 | 50,516 | 2,152,268 | 35 | 11m 0s | — (baseline) |
+| dotnet-webapi | 2,375,147 | 52,735 | 2,199,089 | 33 | 11m 51s | +3.2% |
+| dotnet-artisan | 3,717,309 | 54,367 | 3,518,324 | 36 | 17m 1s | +61.4% |
+| managedcode-dotnet-skills | 3,921,513 | 52,566 | 3,721,304 | 47 | 12m 38s | +70.3% |
+| dotnet-skills | 5,738,030 | 82,012 | 5,387,456 | 87 | 14m 55s | +149.2% |
+
+---
+
+## Token Usage Per Run
+
+| Configuration | Run | Scenario | Input Tokens | Output Tokens | Cache Read | API Calls | Wall Time |
+|---|---|---|---|---|---|---|---|
+| no-skills | 1 | FitnessStudioApi | 2,348,300 | 53,225 | 2,201,793 | 34 | 11m 22s |
+| no-skills | 2 | LibraryApi | 2,111,275 | 49,999 | 1,951,727 | 32 | 10m 49s |
+| no-skills | 3 | VetClinicApi | 2,448,208 | 48,323 | 2,303,283 | 38 | 10m 50s |
+| dotnet-webapi | 1 | FitnessStudioApi | 2,390,904 | 55,952 | 2,223,400 | 31 | 12m 57s |
+| dotnet-webapi | 2 | LibraryApi | 2,605,283 | 52,263 | 2,449,946 | 35 | 11m 54s |
+| dotnet-webapi | 3 | VetClinicApi | 2,129,253 | 49,991 | 1,923,922 | 33 | 10m 43s |
+| dotnet-artisan | 1 | FitnessStudioApi | 4,286,599 | 51,838 | 4,061,890 | 40 | 19m 36s |
+| dotnet-artisan | 2 | LibraryApi | 2,692,257 | 53,173 | 2,542,911 | 34 | 17m 55s |
+| dotnet-artisan | 3 | VetClinicApi | 4,173,072 | 58,091 | 3,950,170 | 35 | 13m 32s |
+| managedcode-dotnet-skills | 1 | FitnessStudioApi | 4,548,270 | 55,939 | 4,373,101 | 45 | 13m 1s |
+| managedcode-dotnet-skills | 2 | LibraryApi | 4,375,470 | 54,359 | 4,147,525 | 55 | 13m 19s |
+| managedcode-dotnet-skills | 3 | VetClinicApi | 2,840,798 | 47,400 | 2,643,285 | 41 | 11m 34s |
+| dotnet-skills | 1 | FitnessStudioApi | 8,897,537 | 133,544 | 8,160,452 | 163 | 17m 17s |
+| dotnet-skills | 2 | LibraryApi | 3,233,174 | 52,071 | 3,074,168 | 42 | 12m 11s |
+| dotnet-skills | 3 | VetClinicApi | 5,083,380 | 60,420 | 4,927,747 | 55 | 15m 16s |
+
+---
+
 ## Consistency Analysis
 
 | Configuration | Score σ | Most Consistent Dim (σ) | Most Variable Dim (σ) |
 |---|---|---|---|
-| no-skills | 13.9 | Scenario Coverage (0.0) | NuGet & Package Discipline (1.5) |
-| dotnet-webapi | 17.2 | Scenario Coverage (0.0) | Security Vulnerability Scan (2.3) |
-| dotnet-artisan | 28.4 | Scenario Coverage (0.0) | NuGet & Package Discipline (1.7) |
-| managedcode-dotnet-skills | 9.8 | Scenario Coverage (0.0) | NuGet & Package Discipline (1.5) |
-| dotnet-skills | 11.0 | Scenario Coverage (0.0) | Sealed Types (1.4) |
+| no-skills | 13.3 | Scenario Coverage (0.0) | NuGet & Package Discipline (1.5) |
+| dotnet-webapi | 17.3 | Scenario Coverage (0.0) | Security Vulnerability Scan (2.3) |
+| dotnet-artisan | 27.3 | Scenario Coverage (0.0) | NuGet & Package Discipline (1.7) |
+| managedcode-dotnet-skills | 9.6 | Scenario Coverage (0.0) | NuGet & Package Discipline (1.5) |
+| dotnet-skills | 10.1 | Scenario Coverage (0.0) | Sealed Types (1.4) |
 
 ---
 
@@ -828,7 +865,18 @@ Scores: 3, 4, 4, 4, 5.
 
 **Verdict:** `dotnet-webapi` is the most consistently modern and convention-aligned.
 
-### 26. Scenario Coverage (all 3 apps) [MEDIUM × 1]
+### 26. Token Efficiency [MEDIUM × 1]
+
+#### Scores Across Runs
+
+| Run | no-skills | dotnet-webapi | dotnet-artisan | managedcode-dotnet-skills | dotnet-skills |
+|---|---|---|---|---|---|
+| 1 | 4 | 4 | 2 | 2 | 1 |
+| 2 | 5 | 4 | 4 | 2 | 3 |
+| 3 | 4 | 5 | 2 | 4 | 2 |
+| **Mean** | **4.3** | **4.3** | **2.7** | **2.7** | **2.0** |
+
+### 27. Scenario Coverage (all 3 apps) [MEDIUM × 1]
 
 #### Scores Across Runs
 
@@ -884,3 +932,4 @@ Scores: all 1.
 - Verification data: `reports/verification-data.json`
 - Score data: `reports/scores-data.json`
 - Build notes: `reports/build-notes.md`
+- Generation usage: `reports/generation-usage.json`
