@@ -8,9 +8,10 @@ from jinja2 import Environment, FileSystemLoader
 
 from skill_eval.config import EvalConfig, Scenario
 
-# Templates ship with the repo in the templates/ directory.
-# Users can override by placing templates in their project root.
-_BUNDLED_TEMPLATES = Path(__file__).resolve().parent.parent.parent / "templates"
+# Templates are bundled inside the package for standalone installs.
+# Also check the repo-root templates/ for development convenience.
+_PACKAGE_TEMPLATES = Path(__file__).resolve().parent / "templates"
+_REPO_TEMPLATES = Path(__file__).resolve().parent.parent.parent / "templates"
 
 
 def _get_env(project_root: Path) -> Environment:
@@ -21,13 +22,17 @@ def _get_env(project_root: Path) -> Environment:
     if local_templates.is_dir():
         search_paths.append(str(local_templates))
 
-    if _BUNDLED_TEMPLATES.is_dir():
-        search_paths.append(str(_BUNDLED_TEMPLATES))
+    # Prefer in-package templates (works with pip/pipx installs)
+    if _PACKAGE_TEMPLATES.is_dir():
+        search_paths.append(str(_PACKAGE_TEMPLATES))
+    # Fall back to repo-root templates (development mode)
+    elif _REPO_TEMPLATES.is_dir():
+        search_paths.append(str(_REPO_TEMPLATES))
 
     if not search_paths:
         raise FileNotFoundError(
             "No templates directory found. Expected templates/ in your project root "
-            f"or the bundled templates at {_BUNDLED_TEMPLATES}"
+            f"or the bundled templates at {_PACKAGE_TEMPLATES}"
         )
 
     return Environment(
