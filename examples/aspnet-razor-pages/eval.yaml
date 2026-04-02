@@ -3,6 +3,7 @@ description: >
   Evaluate how custom Copilot skills impact the quality of generated
   ASP.NET Core Razor Pages code across three realistic application scenarios.
 runs: 1
+generation_model: "claude-opus-4.6"
 
 scenarios:
   - name: SparkEvents
@@ -23,33 +24,44 @@ configurations:
   - name: dotnet-webapi
     label: "dotnet-webapi skill"
     skills:
-      - skills/dotnet-webapi
+      - source: dotnet-webapi
     plugins: []
   - name: dotnet-artisan
     label: "dotnet-artisan plugin chain"
     skills: []
     plugins:
-      - plugins/dotnet-artisan
+      - source: dotnet-artisan
   - name: managedcode-dotnet-skills
     label: "Community managed-code skills"
     skills:
-      - skills/managedcode-dotnet-skills
+      - source: managedcode-dotnet-skills
     plugins: []
   - name: dotnet-skills
     label: "Official .NET Skills (dotnet/skills)"
     skills: []
     plugins:
-      - plugins/dotnet-skills/dotnet
-      - plugins/dotnet-skills/dotnet-ai
-      - plugins/dotnet-skills/dotnet-data
-      - plugins/dotnet-skills/dotnet-diag
-      - plugins/dotnet-skills/dotnet-experimental
-      - plugins/dotnet-skills/dotnet-maui
-      - plugins/dotnet-skills/dotnet-msbuild
-      - plugins/dotnet-skills/dotnet-nuget
-      - plugins/dotnet-skills/dotnet-template-engine
-      - plugins/dotnet-skills/dotnet-test
-      - plugins/dotnet-skills/dotnet-upgrade
+      - source: dotnet-skills
+        path: dotnet
+      - source: dotnet-skills
+        path: dotnet-ai
+      - source: dotnet-skills
+        path: dotnet-data
+      - source: dotnet-skills
+        path: dotnet-diag
+      - source: dotnet-skills
+        path: dotnet-experimental
+      - source: dotnet-skills
+        path: dotnet-maui
+      - source: dotnet-skills
+        path: dotnet-msbuild
+      - source: dotnet-skills
+        path: dotnet-nuget
+      - source: dotnet-skills
+        path: dotnet-template-engine
+      - source: dotnet-skills
+        path: dotnet-test
+      - source: dotnet-skills
+        path: dotnet-upgrade
 
 verification:
   build:

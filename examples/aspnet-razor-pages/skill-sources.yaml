@@ -1,0 +1,20 @@
+# Skill/plugin sources for ASP.NET Core Razor Pages evaluation.
+# These repos are cloned and cached locally by skill-eval.
+
+sources:
+  - name: dotnet-webapi
+    type: git
+    url: https://github.com/sayedihashimi/dotnet-webapi-skill
+
+  - name: managedcode-dotnet-skills
+    type: git
+    url: https://github.com/managedcode/dotnet-skills
+
+  - name: dotnet-artisan
+    type: git
+    url: https://github.com/novotnyllc/dotnet-artisan
+
+  - name: dotnet-skills
+    type: git
+    url: https://github.com/dotnet/skills
+    path: plugins

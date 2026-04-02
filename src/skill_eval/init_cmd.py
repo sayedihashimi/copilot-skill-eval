@@ -11,8 +11,9 @@ from skill_eval.prompt_renderer import render_scenario_template
 
 
 def run_init(project_root: Path) -> None:
-    """Interactively create eval.yaml and starter scenario prompts."""
+    """Interactively create eval.yaml, skill-sources.yaml, and starter scenario prompts."""
     eval_path = project_root / "eval.yaml"
+    sources_path = project_root / "skill-sources.yaml"
 
     if eval_path.exists():
         if not click.confirm("eval.yaml already exists. Overwrite?", default=False):
@@ -51,12 +52,15 @@ def run_init(project_root: Path) -> None:
         scenario_desc = click.prompt(f"  Brief description of {scenario_name}", default="")
         scenarios.append({"name": scenario_name, "description": scenario_desc})
 
-    # Configurations
+    # Configurations and skill sources
     click.echo("\n⚙️  Configurations — skill sets to compare")
     click.echo("  A baseline configuration will be created automatically.")
     configurations = [
         {"name": "no-skills", "label": "Baseline (default Copilot)", "skills": [], "plugins": []},
     ]
+    skill_sources: list[dict] = []
+    source_names: set[str] = set()
+
     while True:
         config_name = click.prompt(
             f"  Configuration {len(configurations) + 1} name (or 'done' to finish)",
@@ -69,14 +73,17 @@ def run_init(project_root: Path) -> None:
             continue
 
         config_label = click.prompt(f"  Display label for '{config_name}'", default=config_name)
-        skill_dir = click.prompt(
-            f"  Skill directory path (relative, or empty for none)", default=""
+
+        skills, new_sources = _prompt_for_refs(
+            "skill", config_name, skill_sources, source_names,
         )
-        skills = [skill_dir] if skill_dir else []
-        plugin_dir = click.prompt(
-            f"  Plugin directory path (relative, or empty for none)", default=""
+        skill_sources.extend(new_sources)
+
+        plugins, new_sources = _prompt_for_refs(
+            "plugin", config_name, skill_sources, source_names,
         )
-        plugins = [plugin_dir] if plugin_dir else []
+        skill_sources.extend(new_sources)
+
         configurations.append({
             "name": config_name,
             "label": config_label,
@@ -134,6 +141,15 @@ def run_init(project_root: Path) -> None:
     )
     click.echo(f"\n✅ Created: {eval_path}")
 
+    # Write skill-sources.yaml if any sources were defined
+    if skill_sources:
+        sources_data = {"sources": skill_sources}
+        sources_path.write_text(
+            yaml.dump(sources_data, default_flow_style=False, sort_keys=False, allow_unicode=True),
+            encoding="utf-8",
+        )
+        click.echo(f"✅ Created: {sources_path}")
+
     # Create scenario prompt files
     prompts_dir = project_root / "prompts" / "scenarios"
     prompts_dir.mkdir(parents=True, exist_ok=True)
@@ -151,7 +167,26 @@ def run_init(project_root: Path) -> None:
     skills_dir = project_root / "skills"
     skills_dir.mkdir(exist_ok=True)
 
+    # Optionally generate CI workflow
+    setup_ci = click.confirm(
+        "\n🔄 Generate a GitHub Actions workflow for CI?", default=False,
+    )
+    if setup_ci:
+        _generate_ci_workflow(project_root, config, has_sources=bool(skill_sources))
+
     # Print next steps
+    source_step = ""
+    if skill_sources:
+        source_step = """
+  2. Review skill-sources.yaml — verify git URLs and paths.
+     Sources will be cloned automatically on first run.
+"""
+    else:
+        source_step = """
+  2. Copy your skill(s) into the skills/ directory,
+     or create a skill-sources.yaml with remote git references.
+"""
+
     click.echo(f"""
 {'=' * 60}
 🎉 Setup complete!
@@ -159,9 +194,7 @@ def run_init(project_root: Path) -> None:
 Next steps:
   1. Edit the scenario prompts in prompts/scenarios/
      Describe each app's entities, business rules, and endpoints.
-
-  2. Copy your skill(s) into the skills/ directory.
-
+{source_step}
   3. Review eval.yaml and adjust dimensions as needed.
 
   4. Run the evaluation:
@@ -171,6 +204,124 @@ Next steps:
      @skill-eval run the evaluation
 {'=' * 60}
 """)
+
+
+def _prompt_for_refs(
+    ref_type: str,
+    config_name: str,
+    existing_sources: list[dict],
+    source_names: set[str],
+) -> tuple[list, list[dict]]:
+    """Prompt user for skill or plugin references, returning refs and any new sources.
+
+    Returns (refs_for_config, new_sources_to_add).
+    """
+    refs: list = []
+    new_sources: list[dict] = []
+
+    while True:
+        if refs:
+            prompt_text = f"  Another {ref_type} for '{config_name}' (or empty to finish)"
+        else:
+            prompt_text = f"  {ref_type.capitalize()} for '{config_name}' (or empty for none)"
+        entry = click.prompt(prompt_text, default="")
+        if not entry:
+            break
+
+        location = click.prompt(
+            f"    Is '{entry}' local or remote?",
+            type=click.Choice(["local", "remote", "existing-source"]),
+            default="remote",
+        )
+
+        if location == "local":
+            refs.append(entry)  # plain string = local path
+        elif location == "existing-source":
+            # Reference a previously defined source
+            if not existing_sources and not new_sources:
+                click.echo("    No sources defined yet. Defining a new one.")
+                location = "remote"
+            else:
+                all_names = [s["name"] for s in existing_sources + new_sources]
+                click.echo(f"    Available sources: {', '.join(all_names)}")
+                source_name = click.prompt("    Source name", type=click.Choice(all_names))
+                sub_path = click.prompt("    Sub-path within source (or empty)", default="")
+                ref_dict: dict = {"source": source_name}
+                if sub_path:
+                    ref_dict["path"] = sub_path
+                refs.append(ref_dict)
+                continue
+
+        if location == "remote":
+            # Create a new source
+            source_name = click.prompt(
+                f"    Source name (unique identifier)", default=entry,
+            )
+            while source_name in source_names:
+                click.echo(f"    Name '{source_name}' already used.")
+                source_name = click.prompt("    Choose another name")
+
+            git_url = click.prompt(f"    Git URL for '{source_name}'")
+            git_ref = click.prompt(
+                "    Branch/tag (or empty for default)", default="",
+            )
+            sub_path = click.prompt(
+                "    Subfolder within repo (or empty for root)", default="",
+            )
+
+            source: dict = {
+                "name": source_name,
+                "type": "git",
+                "url": git_url,
+            }
+            if git_ref:
+                source["ref"] = git_ref
+            if sub_path:
+                source["path"] = sub_path
+
+            new_sources.append(source)
+            source_names.add(source_name)
+
+            # Build the ref for the configuration
+            ref_dict = {"source": source_name}
+            refs.append(ref_dict)
+
+    return refs, new_sources
+
+
+def _generate_ci_workflow(
+    project_root: Path,
+    config: dict,
+    has_sources: bool,
+) -> None:
+    """Generate a GitHub Actions workflow file."""
+    from jinja2 import Environment, FileSystemLoader
+
+    from skill_eval.prompt_renderer import _PACKAGE_TEMPLATES, _REPO_TEMPLATES
+
+    template_dir = _PACKAGE_TEMPLATES if _PACKAGE_TEMPLATES.is_dir() else _REPO_TEMPLATES
+    env = Environment(
+        loader=FileSystemLoader(str(template_dir)),
+        keep_trailing_newline=True,
+    )
+    template = env.get_template("ci-workflow.yml.j2")
+
+    rendered = template.render(
+        config_path="eval.yaml",
+        skill_sources_path="skill-sources.yaml" if has_sources else None,
+        runs_on="ubuntu-latest",
+        python_version="3.12",
+        schedule=None,
+        timeout_minutes=120,
+        reports_directory=config.get("output", {}).get("reports_directory", "reports"),
+        output_directory=config.get("output", {}).get("directory", "output"),
+    )
+
+    workflow_dir = project_root / ".github" / "workflows"
+    workflow_dir.mkdir(parents=True, exist_ok=True)
+    workflow_path = workflow_dir / "skill-eval.yml"
+    workflow_path.write_text(rendered, encoding="utf-8")
+    click.echo(f"✅ Created: {workflow_path}")
 
 
 def _slugify(name: str) -> str:

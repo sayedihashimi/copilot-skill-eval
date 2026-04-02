@@ -16,8 +16,15 @@ dependencies = [
     "pydantic>=2.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/sayedihashimi/copilot-skill-eval"
+Repository = "https://github.com/sayedihashimi/copilot-skill-eval"
+
 [project.scripts]
 skill-eval = "skill_eval.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+skill_eval = ["templates/*"]
