@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Annotated, Union
 
 import yaml
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, BeforeValidator, field_validator
 
 
 class Scenario(BaseModel):
@@ -16,13 +17,64 @@ class Scenario(BaseModel):
     description: str = ""
 
 
+class SkillReference(BaseModel):
+    """A reference to a skill/plugin, either a local path or a named source.
+
+    When parsed from YAML:
+    - A plain string ``"skills/my-skill"`` becomes a local path reference.
+    - A mapping ``{source: "my-source", path: "subfolder"}`` references
+      a named source from skill-sources.yaml.
+    """
+
+    source: str | None = None  # name in skill-sources.yaml
+    path: str | None = None  # sub-path within the source, or a local relative path
+    local_path: str | None = None  # set when this is a legacy plain-string path
+
+    @property
+    def is_source_ref(self) -> bool:
+        """True when this references a named source from skill-sources.yaml."""
+        return self.source is not None
+
+    @property
+    def display_name(self) -> str:
+        """Human-readable label for logging."""
+        if self.is_source_ref:
+            parts = [self.source]
+            if self.path:
+                parts.append(self.path)
+            return ":".join(parts)
+        return self.local_path or ""
+
+
+def _coerce_skill_reference(v: object) -> object:
+    """Accept plain strings as legacy local-path skill references."""
+    if isinstance(v, str):
+        return {"local_path": v}
+    return v
+
+
+SkillRef = Annotated[SkillReference, BeforeValidator(_coerce_skill_reference)]
+
+
 class Configuration(BaseModel):
     """A skill configuration to evaluate."""
 
     name: str
     label: str = ""
-    skills: list[str] = []  # relative paths to skill directories
-    plugins: list[str] = []  # relative paths to plugin directories
+    skills: list[SkillRef] = []
+    plugins: list[SkillRef] = []
+
+    def get_local_skill_paths(self) -> list[str]:
+        """Return legacy local paths for skills (backward compat helper)."""
+        return [r.local_path for r in self.skills if r.local_path]
+
+    def get_local_plugin_paths(self) -> list[str]:
+        """Return legacy local paths for plugins (backward compat helper)."""
+        return [r.local_path for r in self.plugins if r.local_path]
+
+    def has_any_skills_or_plugins(self) -> bool:
+        """True if this configuration declares at least one skill or plugin."""
+        return bool(self.skills or self.plugins)
 
 
 class BuildVerification(BaseModel):
