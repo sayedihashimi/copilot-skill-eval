@@ -17,3 +17,4 @@ sources:
   - name: dotnet-skills
     type: git
     url: https://github.com/dotnet/skills
+    path: plugins
