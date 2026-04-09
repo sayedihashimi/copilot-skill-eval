@@ -110,18 +110,21 @@ def _create_staging_dir(
     links.append(output_link)
 
     # Link user-specified include directories (for analysis scenarios)
+    if include_directories:
+        click.echo(f"  Linking {len(include_directories)} include director(ies):")
     for inc in (include_directories or []):
         inc_src = (project_root / inc.path).resolve()
         if not inc_src.exists():
-            click.echo(f"  ⚠️  include_directory not found: {inc.path}")
+            click.echo(f"    ⚠️  not found: {inc.path} (resolved to {inc_src})")
             continue
         link_name = inc.name or inc_src.name
         inc_link = staging / link_name
         if inc_link.exists():
-            click.echo(f"  ⚠️  staging conflict: {link_name} already exists, skipping")
+            click.echo(f"    ⚠️  staging conflict: {link_name} already exists, skipping")
             continue
         _link_directory(inc_src, inc_link)
         links.append(inc_link)
+        click.echo(f"    ✅ {link_name}/ → {inc_src}")
 
     # Determine skill/plugin paths (resolved or legacy)
     skill_paths = resolved.skill_paths if resolved else [
