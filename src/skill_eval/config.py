@@ -9,12 +9,20 @@ import yaml
 from pydantic import BaseModel, BeforeValidator, field_validator
 
 
+class IncludeDirectory(BaseModel):
+    """A directory to link into the staging workspace so Copilot can access it."""
+
+    path: str  # relative to eval.yaml location
+    name: str | None = None  # name in the staging dir; defaults to basename
+
+
 class Scenario(BaseModel):
     """A code-generation scenario (an app to be built)."""
 
     name: str
     prompt: str  # relative path to the prompt file
     description: str = ""
+    include_directories: list[IncludeDirectory] = []
 
 
 class SkillReference(BaseModel):

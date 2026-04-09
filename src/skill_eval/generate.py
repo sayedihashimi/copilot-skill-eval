@@ -21,7 +21,7 @@ from pathlib import Path
 
 import click
 
-from skill_eval.config import Configuration, EvalConfig
+from skill_eval.config import Configuration, EvalConfig, IncludeDirectory
 from skill_eval.prompt_renderer import render_generate_prompt
 from skill_eval.session_tracer import (
     compare_resources,
@@ -73,6 +73,7 @@ def _create_staging_dir(
     project_root: Path,
     cfg: Configuration,
     resolved: ResolvedConfiguration | None = None,
+    include_directories: list[IncludeDirectory] | None = None,
 ) -> tuple[Path, list[Path]]:
     """Create an isolated working directory for a Copilot invocation.
 
@@ -81,6 +82,10 @@ def _create_staging_dir(
     and *only* the ``skills/`` and ``plugins/`` that the configuration
     declares.  This prevents Copilot from auto-discovering skills/plugins
     that belong to other configurations.
+
+    When *include_directories* is provided, those directories are also
+    linked into the staging directory so Copilot can access existing
+    source code for analysis scenarios.
 
     When *resolved* is provided, uses the pre-resolved absolute paths.
     Otherwise falls back to resolving relative to project_root (legacy).
@@ -103,6 +108,20 @@ def _create_staging_dir(
     output_link = staging / "output"
     _link_directory(output_src, output_link)
     links.append(output_link)
+
+    # Link user-specified include directories (for analysis scenarios)
+    for inc in (include_directories or []):
+        inc_src = (project_root / inc.path).resolve()
+        if not inc_src.exists():
+            click.echo(f"  ⚠️  include_directory not found: {inc.path}")
+            continue
+        link_name = inc.name or inc_src.name
+        inc_link = staging / link_name
+        if inc_link.exists():
+            click.echo(f"  ⚠️  staging conflict: {link_name} already exists, skipping")
+            continue
+        _link_directory(inc_src, inc_link)
+        links.append(inc_link)
 
     # Determine skill/plugin paths (resolved or legacy)
     skill_paths = resolved.skill_paths if resolved else [
@@ -488,7 +507,20 @@ def run_generate(
         # prevent contamination from previous configs or manual registrations.
         saved_skill_dirs = get_skill_directories()
 
-        staging_dir, staging_links = _create_staging_dir(project_root, cfg, resolved=resolved)
+        # Collect all include_directories from all scenarios so they're
+        # available regardless of which scenario is selected for each run.
+        all_include_dirs: list[IncludeDirectory] = []
+        seen_paths: set[str] = set()
+        for scenario in config.scenarios:
+            for inc in scenario.include_directories:
+                if inc.path not in seen_paths:
+                    all_include_dirs.append(inc)
+                    seen_paths.add(inc.path)
+
+        staging_dir, staging_links = _create_staging_dir(
+            project_root, cfg, resolved=resolved,
+            include_directories=all_include_dirs,
+        )
         added_skills: list[Path] = []
         try:
             # Determine skill paths (resolved or legacy)
