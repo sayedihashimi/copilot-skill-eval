@@ -1,0 +1,25 @@
+Follow the instructions in the task file below.
+{% if has_skills %}
+Make sure to use the skills that are available.
+{% endif %}
+
+## {{ scenario.name }}
+
+{{ scenario.description }}
+
+Follow the instructions in @{{ scenario.prompt }}.
+{% if include_directories %}
+
+The following project directories are available in your workspace:
+{% for inc in include_directories %}
+- `./{{ inc.name or inc.path.split('/')[-1] }}/`
+{% endfor %}
+{% endif %}
+
+Put any output files in the `{{ output_directory }}/{{ scenario.name }}` directory.
+
+{% if has_skills %}
+When you are done, create a file named "gen-notes.md" in the `{{ output_directory }}/{{ scenario.name }}` directory that documents which skills were used and how they influenced the analysis.
+{% else %}
+When you are done, create a file named "gen-notes.md" in the `{{ output_directory }}/{{ scenario.name }}` directory with a brief summary of the work performed.
+{% endif %}

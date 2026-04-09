@@ -67,6 +67,15 @@ def render_generate_prompt(
         output_dir = f"{output_dir}/run-{run_id}"
 
     if scenario is not None:
+        # Use analysis template when the scenario includes existing directories
+        if scenario.include_directories:
+            template = env.get_template("analyze-code.md.j2")
+            return template.render(
+                scenario=scenario,
+                output_directory=output_dir,
+                has_skills=has_skills,
+                include_directories=scenario.include_directories,
+            )
         template = env.get_template("create-single-app.md.j2")
         return template.render(
             scenario=scenario,
