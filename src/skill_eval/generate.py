@@ -277,13 +277,27 @@ def _run_copilot(
             )
 
         if proc.returncode != 0:
-            msg = (
-                f"Copilot CLI exited with code {proc.returncode} "
-                f"for configuration '{configuration.name}'"
-            )
             if stderr_output:
                 click.echo(f"    Copilot stderr: {stderr_output}")
-            raise RuntimeError(msg)
+            # Check if output was actually produced despite non-zero exit.
+            # The Copilot CLI may exit non-zero for post-completion issues
+            # (e.g., notification script failures) while the work completed.
+            if cwd:
+                output_dir = cwd / "output"
+                has_output = output_dir.exists() and any(output_dir.rglob("*.md"))
+            else:
+                has_output = False
+            if has_output:
+                click.echo(
+                    f"    ⚠️  Copilot exited with code {proc.returncode} "
+                    f"but output files exist — treating as success"
+                )
+            else:
+                msg = (
+                    f"Copilot CLI exited with code {proc.returncode} "
+                    f"for configuration '{configuration.name}'"
+                )
+                raise RuntimeError(msg)
 
         # Parse usage from Copilot CLI log
         usage = _parse_copilot_log_usage(proc.pid)

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import os
 import random
 import subprocess
 import sys
@@ -41,8 +42,12 @@ def _analyze_single_run(
     cmd = ["copilot", "-p", prompt, "--yolo"]
     if config.analysis_model:
         cmd.extend(["--model", config.analysis_model])
+
+    # Give the Copilot CLI more memory to avoid OOM on large analyses
+    env = {**os.environ, "NODE_OPTIONS": "--max-old-space-size=8192"}
+
     start_time = time.time()
-    proc = subprocess.Popen(cmd, cwd=project_root)
+    proc = subprocess.Popen(cmd, cwd=project_root, env=env)
 
     from skill_eval.generate import _watchdog_wait, _kill_process_tree, _parse_copilot_log_usage
     timed_out = _watchdog_wait(proc, idle_timeout)
@@ -52,7 +57,16 @@ def _analyze_single_run(
         _kill_process_tree(proc)
         return run_id, False, None
 
-    success = proc.returncode == 0 and run_analysis_path.exists()
+    # Success = the analysis file was written, regardless of exit code.
+    # The Copilot CLI may exit non-zero for reasons unrelated to the
+    # analysis (e.g., notification script failures, post-completion errors).
+    success = run_analysis_path.exists()
+    if proc.returncode != 0 and success:
+        click.echo(
+            f"  ⚠️  Run {run_id}: Copilot exited with code {proc.returncode} "
+            f"but analysis file was written — treating as success"
+        )
+
     usage = _parse_copilot_log_usage(proc.pid)
     if usage:
         usage["wall_time_seconds"] = round(elapsed, 1)
@@ -100,30 +114,43 @@ def run_analyze(config: EvalConfig, project_root: Path, parallel: int = 2) -> No
         click.echo("  ❌ No runs to analyze")
         return
 
-    # Phase 1: Per-run analysis (sequential)
+    # Phase 1: Per-run analysis (sequential, with retries)
     click.echo(f"\n  Analyzing {len(runs_to_analyze)} runs...")
 
+    max_retries = 2
     analysis_usage: list[dict] = []
     for run_id in runs_to_analyze:
         click.echo(f"\n  --- Analyzing run {run_id}/{num_runs} ---")
-        try:
-            _, success, usage = _analyze_single_run(config, run_id, project_root)
-            if success:
-                if usage:
-                    mins, secs = divmod(int(usage.get("wall_time_seconds", 0)), 60)
-                    click.echo(
-                        f"  ✅ Run {run_id}: "
-                        f"{usage.get('input_tokens', 0):,} in / "
-                        f"{usage.get('output_tokens', 0):,} out / "
-                        f"{mins}m {secs}s"
-                    )
-                    analysis_usage.append(usage)
+        succeeded = False
+        for attempt in range(1, max_retries + 1):
+            if attempt > 1:
+                click.echo(f"  🔄 Retry {attempt}/{max_retries} for run {run_id}")
+                # Remove partial output from previous attempt
+                partial = reports_dir / config.output.per_run_analysis_pattern.format(run=run_id)
+                if partial.exists():
+                    partial.unlink()
+            try:
+                _, success, usage = _analyze_single_run(config, run_id, project_root)
+                if success:
+                    if usage:
+                        mins, secs = divmod(int(usage.get("wall_time_seconds", 0)), 60)
+                        click.echo(
+                            f"  ✅ Run {run_id}: "
+                            f"{usage.get('input_tokens', 0):,} in / "
+                            f"{usage.get('output_tokens', 0):,} out / "
+                            f"{mins}m {secs}s"
+                        )
+                        analysis_usage.append(usage)
+                    else:
+                        click.echo(f"  ✅ Run {run_id} analysis complete")
+                    succeeded = True
+                    break
                 else:
-                    click.echo(f"  ✅ Run {run_id} analysis complete")
-            else:
-                click.echo(f"  ⚠️  Run {run_id} analysis failed or timed out")
-        except Exception as e:
-            click.echo(f"  ❌ Run {run_id} error: {e}")
+                    click.echo(f"  ⚠️  Run {run_id} analysis failed or timed out")
+            except Exception as e:
+                click.echo(f"  ❌ Run {run_id} error: {e}")
+        if not succeeded:
+            click.echo(f"  ❌ Run {run_id} failed after {max_retries} attempts")
 
     # Phase 2: Aggregate scores (fast, Python-only)
     click.echo(f"\n  --- Aggregating results ---")
