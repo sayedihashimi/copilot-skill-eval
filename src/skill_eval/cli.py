@@ -301,13 +301,14 @@ def run(
     else:
         click.echo("\n⏭️  Step 1/3: Generate — skipped")
 
-    if not skip_verify:
+    if not skip_verify and config.verification is not None:
         click.echo("\n🔨 Step 2/3: Verifying builds...")
         t0 = _time.monotonic()
         run_verify(config, project_root)
         timings["verify"] = _time.monotonic() - t0
     else:
-        click.echo("\n⏭️  Step 2/3: Verify — skipped")
+        reason = "not configured" if config.verification is None else "skipped"
+        click.echo(f"\n⏭️  Step 2/3: Verify — {reason}")
 
     click.echo("\n📊 Step 3/3: Running analysis...")
     t0 = _time.monotonic()

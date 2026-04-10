@@ -91,13 +91,30 @@ def run_init(project_root: Path) -> None:
             "plugins": plugins,
         })
 
-    # Verification commands
-    click.echo(f"\n🔨 Verification — how to build/run {tech_stack} projects")
-    build_cmd = click.prompt("  Build command", default=_default_build_cmd(tech_stack))
-    run_cmd = click.prompt(
-        "  Run command (or empty to skip run verification)",
-        default=_default_run_cmd(tech_stack),
+    # Eval type
+    click.echo("\n📝 Eval type — what does Copilot produce in this evaluation?")
+    eval_type_choice = click.prompt(
+        "  Eval type",
+        type=click.Choice(["code_generation", "text_output"]),
+        default="code_generation",
     )
+
+    # Verification commands (only for code generation evals)
+    verification: dict | None = None
+    if eval_type_choice == "code_generation":
+        click.echo(f"\n🔨 Verification — how to build/run {tech_stack} projects")
+        build_cmd = click.prompt("  Build command", default=_default_build_cmd(tech_stack))
+        run_cmd = click.prompt(
+            "  Run command (or empty to skip run verification)",
+            default=_default_run_cmd(tech_stack),
+        )
+        verification = {
+            "build": {"command": build_cmd},
+        }
+        if run_cmd:
+            verification["run"] = {"command": run_cmd, "timeout_seconds": 15}
+    else:
+        click.echo("\n⏭️  Verification — skipped for text output evals")
 
     # Dimensions
     click.echo("\n📊 Analysis dimensions — quality criteria to evaluate")
@@ -105,16 +122,10 @@ def run_init(project_root: Path) -> None:
     dimensions = _suggest_dimensions(tech_stack)
     click.echo(f"  Suggested {len(dimensions)} dimensions for {tech_stack}.")
 
-    # Build the config dict
-    verification: dict = {
-        "build": {"command": build_cmd},
-    }
-    if run_cmd:
-        verification["run"] = {"command": run_cmd, "timeout_seconds": 15}
-
-    config = {
+    config: dict = {
         "name": name,
         "description": description,
+        "eval_type": eval_type_choice,
         "scenarios": [
             {
                 "name": s["name"],
@@ -124,7 +135,6 @@ def run_init(project_root: Path) -> None:
             for s in scenarios
         ],
         "configurations": configurations,
-        "verification": verification,
         "dimensions": dimensions,
         "output": {
             "directory": "output",
@@ -133,6 +143,8 @@ def run_init(project_root: Path) -> None:
             "notes_file": "build-notes.md",
         },
     }
+    if verification is not None:
+        config["verification"] = verification
 
     # Write eval.yaml
     eval_path.write_text(

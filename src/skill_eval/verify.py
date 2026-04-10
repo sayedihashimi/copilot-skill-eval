@@ -352,6 +352,10 @@ def _verify_single(
 
 def run_verify(config: EvalConfig, project_root: Path) -> None:
     """Verify all generated projects build and run (sequential)."""
+    if config.verification is None:
+        click.echo("⏭️  Verification skipped (not configured for this eval type)")
+        return
+
     output_base = project_root / config.output.directory
     reports_dir = project_root / config.output.reports_directory
     reports_dir.mkdir(parents=True, exist_ok=True)

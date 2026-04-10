@@ -593,11 +593,18 @@ def _write_aggregated_report(
     ])
 
     # Scenarios
+    is_text = config.is_text_output
+    scenario_intro = (
+        "Each run evaluates one of the following scenarios "
+        "(randomly selected per run):"
+        if is_text else
+        "Each run generates one of the following application scenarios "
+        "(randomly selected per run):"
+    )
     lines.extend([
         "### Scenarios",
         "",
-        "Each run generates one of the following application scenarios "
-        "(randomly selected per run):",
+        scenario_intro,
         "",
         "| Scenario | Description |",
         "|---|---|",
@@ -634,17 +641,34 @@ def _write_aggregated_report(
         models = {u.get("model") for u in generation_usage if u.get("model")}
         model_name = ", ".join(sorted(models)) if models else "—"
 
+    if is_text:
+        how_it_works = [
+            "### How It Works",
+            "",
+            "1. **Generate** — For each configuration, Copilot CLI (`copilot --yolo`) "
+            "is given a scenario prompt and produces text output. "
+            "One scenario is randomly selected per run.",
+            "2. **Analyze** — An AI judge reviews the text output of all "
+            "configurations side-by-side and scores each across "
+            f"{len(all_dims)} quality dimensions.",
+        ]
+    else:
+        how_it_works = [
+            "### How It Works",
+            "",
+            "1. **Generate** — For each configuration, Copilot CLI (`copilot --yolo`) "
+            "is given a scenario prompt and generates a complete project from scratch. "
+            "One scenario is randomly selected per run.",
+            "2. **Verify** — Each generated project is built"
+            + (f" (`{config.verification.build.command}`)" if config.verification else "")
+            + ", run, format-checked, and scanned for vulnerabilities.",
+            "3. **Analyze** — An AI judge reviews the source code of all "
+            "configurations side-by-side and scores each across "
+            f"{len(all_dims)} quality dimensions.",
+        ]
+
+    lines.extend(how_it_works)
     lines.extend([
-        "### How It Works",
-        "",
-        "1. **Generate** — For each configuration, Copilot CLI (`copilot --yolo`) "
-        "is given a scenario prompt and generates a complete project from scratch. "
-        "One scenario is randomly selected per run.",
-        "2. **Verify** — Each generated project is built (`dotnet build`), "
-        "run, format-checked, and scanned for NuGet vulnerabilities.",
-        "3. **Analyze** — An AI judge reviews the source code of all "
-        "configurations side-by-side and scores each across "
-        f"{len(all_dims)} quality dimensions.",
         "",
         f"Generation model: **{model_name}**",
         f"Analysis model: **{config.analysis_model}**",
@@ -661,6 +685,23 @@ def _write_aggregated_report(
         tier_counts[t] = tier_counts.get(t, 0) + 1
     max_weighted = sum(d.effective_weight * 5 for d in config.dimensions)
 
+    if is_text:
+        score_labels = [
+            "| 5 | Excellent — comprehensive and well-structured |",
+            "| 4 | Good — thorough with minor gaps |",
+            "| 3 | Acceptable — covers the basics |",
+            "| 2 | Below average — significant gaps |",
+            "| 1 | Poor — missing or fundamentally wrong |",
+        ]
+    else:
+        score_labels = [
+            "| 5 | Excellent — follows all best practices |",
+            "| 4 | Good — minor gaps only |",
+            "| 3 | Acceptable — some issues present |",
+            "| 2 | Below average — significant gaps |",
+            "| 1 | Poor — missing or fundamentally wrong |",
+        ]
+
     lines.extend([
         "## Scoring Methodology",
         "",
@@ -668,11 +709,7 @@ def _write_aggregated_report(
         "",
         "| Score | Meaning |",
         "|:---:|---|",
-        "| 5 | Excellent — follows all best practices |",
-        "| 4 | Good — minor gaps only |",
-        "| 3 | Acceptable — some issues present |",
-        "| 2 | Below average — significant gaps |",
-        "| 1 | Poor — missing or fundamentally wrong |",
+        *score_labels,
         "",
         "Dimensions are grouped into **tiers** that determine their weight "
         "in the final weighted score:",
@@ -767,8 +804,8 @@ def _write_aggregated_report(
 
     lines.extend(["", "---", ""])
 
-    # Verification Summary
-    if verif_data and verif_data.get("results"):
+    # Verification Summary (skip for text_output evals)
+    if verif_data and verif_data.get("results") and not config.is_text_output:
         lines.append("## Verification Summary (All Runs)")
         lines.append("")
         lines.append("| Configuration | Build Pass Rate | Run Pass Rate | Avg Warnings |")

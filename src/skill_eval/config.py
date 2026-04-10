@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Annotated, Union
 
 import yaml
-from pydantic import BaseModel, BeforeValidator, field_validator
+from pydantic import BaseModel, BeforeValidator, field_validator, model_validator
 
 
 class IncludeDirectory(BaseModel):
@@ -178,14 +178,25 @@ class EvalConfig(BaseModel):
 
     name: str
     description: str = ""
+    eval_type: str = "code_generation"  # "code_generation" or "text_output"
     scenarios: list[Scenario]
     configurations: list[Configuration]
-    verification: Verification
+    verification: Verification | None = None
     dimensions: list[Dimension]
     output: OutputSettings = OutputSettings()
     runs: int = 3
     generation_model: str = "claude-opus-4.6"
     analysis_model: str = "gpt-5.3-codex"
+
+    @field_validator("eval_type")
+    @classmethod
+    def valid_eval_type(cls, v: str) -> str:
+        allowed = {"code_generation", "text_output"}
+        if v not in allowed:
+            raise ValueError(
+                f"eval_type must be one of {allowed}, got '{v}'"
+            )
+        return v
 
     @field_validator("scenarios")
     @classmethod
@@ -212,6 +223,21 @@ class EvalConfig(BaseModel):
         if not v:
             raise ValueError("At least one analysis dimension is required")
         return v
+
+    @property
+    def is_text_output(self) -> bool:
+        """True when this eval produces text output rather than code."""
+        return self.eval_type == "text_output"
+
+    @model_validator(mode="after")
+    def check_verification_required(self) -> "EvalConfig":
+        """Require verification for code_generation evals."""
+        if self.eval_type == "code_generation" and self.verification is None:
+            raise ValueError(
+                "verification is required for code_generation evals. "
+                "Set eval_type: text_output if this eval produces text output."
+            )
+        return self
 
 
 def load_config(config_path: Path | None = None) -> EvalConfig:

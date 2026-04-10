@@ -100,9 +100,13 @@ def render_analyze_prompt(
 
     If *run_id* is provided, the prompt targets output under ``run-{N}``
     subdirectories for each configuration.
+
+    Selects ``analyze-text.md.j2`` for text_output evals, otherwise
+    ``analyze.md.j2``.
     """
     env = _get_env(project_root)
-    template = env.get_template("analyze.md.j2")
+    template_name = "analyze-text.md.j2" if config.is_text_output else "analyze.md.j2"
+    template = env.get_template(template_name)
 
     output_directory = config.output.directory
     run_suffix = f"/run-{run_id}" if run_id is not None else ""
