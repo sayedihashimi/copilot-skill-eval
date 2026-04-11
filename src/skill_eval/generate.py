@@ -244,8 +244,13 @@ def _run_copilot(
     if cwd:
         click.echo(f"  Working directory: {cwd}")
 
-    # Give the Copilot CLI more memory to avoid OOM on large prompts
-    env = {**os.environ, "NODE_OPTIONS": "--max-old-space-size=16384"}
+    # Give the Copilot CLI more memory to avoid OOM on large prompts.
+    # Append to any existing NODE_OPTIONS to avoid overriding Copilot's own settings.
+    existing_opts = os.environ.get("NODE_OPTIONS", "")
+    if "--max-old-space-size" not in existing_opts:
+        env = {**os.environ, "NODE_OPTIONS": f"{existing_opts} --max-old-space-size=8192".strip()}
+    else:
+        env = dict(os.environ)
 
     for attempt in range(1 + max_retries):
         if attempt > 0:
