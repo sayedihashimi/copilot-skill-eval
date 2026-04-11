@@ -27,6 +27,7 @@ from skill_eval.prompt_renderer import render_generate_prompt
 from skill_eval.session_tracer import (
     SessionTrace,
     compare_resources,
+    extract_chat_markdown,
     parse_events_file,
 )
 from skill_eval.skill_manager import (
@@ -708,6 +709,14 @@ def run_generate(
                                 )
                         elif comparison.get("match"):
                             click.echo("    ✅ All skills/plugins match config")
+
+                    # Extract and save the full chat log
+                    events_file = run_output / "events.jsonl"
+                    if events_file.exists():
+                        chat_md = extract_chat_markdown(events_file)
+                        if chat_md:
+                            chat_path = run_output / "copilot-chat.md"
+                            chat_path.write_text(chat_md, encoding="utf-8")
 
                     all_usage.append(usage)
                     click.echo(f"    ✅ {scenario.name} done")

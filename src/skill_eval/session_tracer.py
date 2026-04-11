@@ -145,6 +145,54 @@ def parse_events_file(events_path: Path) -> SessionTrace:
     return trace
 
 
+def extract_chat_markdown(events_path: Path) -> str | None:
+    """Extract the full Copilot conversation from an events file as markdown.
+
+    Reads ``assistant.message``, ``user.message``, and ``tool.execution_*``
+    events to reconstruct the conversation. Returns formatted markdown or
+    ``None`` if no messages found.
+    """
+    sections: list[str] = []
+    turn_num = 0
+
+    with open(events_path, encoding="utf-8") as fh:
+        for line in fh:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                event = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+
+            etype = event.get("type", "")
+            data = event.get("data") or {}
+
+            if etype == "user.message":
+                content = data.get("content", "")
+                if content:
+                    turn_num += 1
+                    sections.append(f"## User (Turn {turn_num})\n\n{content}")
+
+            elif etype == "assistant.message":
+                content = data.get("content", "")
+                if content:
+                    sections.append(f"## Assistant (Turn {turn_num})\n\n{content}")
+
+            elif etype == "tool.execution_start":
+                tool_name = data.get("toolName", "unknown")
+                params = data.get("parameterSummary", "")
+                if params:
+                    sections.append(f"*→ Tool: `{tool_name}` — {params}*")
+                else:
+                    sections.append(f"*→ Tool: `{tool_name}`*")
+
+    if not sections:
+        return None
+
+    return "# Copilot Chat Log\n\n" + "\n\n".join(sections) + "\n"
+
+
 # Session discovery -----------------------------------------------------------
 
 def _find_latest_events_file(

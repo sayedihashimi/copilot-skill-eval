@@ -72,15 +72,24 @@ def _analyze_outlier_events(
     config: str,
     run_id: int,
     normal_usage: dict | None,
-) -> str:
-    """Inspect events.jsonl for an outlier run and return a brief explanation."""
+) -> tuple[str, str]:
+    """Inspect events.jsonl for an outlier run.
+
+    Returns ``(summary, recommendation)`` where *summary* is a brief
+    description and *recommendation* is actionable advice about what the
+    skill/plugin could do differently.
+    """
     events_path = output_dir / config / f"run-{run_id}" / "events.jsonl"
     if not events_path.exists():
-        return "events.jsonl not found — unable to determine cause"
+        return "events.jsonl not found", ""
 
     turns = 0
     tool_calls = 0
     skill_invocations = 0
+    skill_names: list[str] = []
+    tool_name_counts: dict[str, int] = {}
+    read_calls = 0
+    shell_calls = 0
     try:
         with open(events_path, encoding="utf-8") as fh:
             for line in fh:
@@ -92,25 +101,73 @@ def _analyze_outlier_events(
                 except json.JSONDecodeError:
                     continue
                 etype = event.get("type", "")
+                data = event.get("data") or {}
                 if etype == "assistant.turn_end":
                     turns += 1
                 elif etype == "tool.execution_start":
                     tool_calls += 1
+                    tname = data.get("toolName", "unknown")
+                    tool_name_counts[tname] = tool_name_counts.get(tname, 0) + 1
+                    if tname in ("read_file", "Read"):
+                        read_calls += 1
+                    elif tname in ("shell", "run_in_terminal", "powershell"):
+                        shell_calls += 1
                 elif etype == "skill.invoked":
                     skill_invocations += 1
+                    skill_names.append(data.get("name", "unknown"))
     except OSError:
-        return "Could not read events.jsonl"
+        return "Could not read events.jsonl", ""
 
     normal_calls = normal_usage.get("api_calls", 0) if normal_usage else 0
-    parts: list[str] = []
-    parts.append(f"{turns} turns, {tool_calls} tool calls")
+
+    # Build summary
+    parts: list[str] = [f"{turns} turns, {tool_calls} tool calls"]
     if skill_invocations:
-        parts.append(f"{skill_invocations} skill invocations")
+        unique_skills = list(dict.fromkeys(skill_names))
+        parts.append(f"{skill_invocations} skill invocations ({', '.join(unique_skills)})")
     if normal_calls and tool_calls > normal_calls * 2:
         parts.append(
             f"~{tool_calls / max(normal_calls, 1):.0f}× more tool calls than typical"
         )
-    return "; ".join(parts)
+    summary = "; ".join(parts)
+
+    # Build recommendation
+    advice: list[str] = []
+    if normal_calls and tool_calls > normal_calls * 3:
+        advice.append(
+            "The agent entered an excessive tool-calling loop. "
+        )
+        if read_calls > normal_calls:
+            advice.append(
+                "Many file-read calls suggest the agent re-read files repeatedly. "
+                "Skill instructions could be more explicit about output format "
+                "to reduce exploratory reads."
+            )
+        if shell_calls > normal_calls:
+            advice.append(
+                "Many shell/terminal calls suggest the agent ran commands "
+                "instead of writing output directly. Skill instructions could "
+                "clarify that no commands need to be executed."
+            )
+    if skill_invocations > 1 and len(set(skill_names)) == 1:
+        advice.append(
+            f"Skill '{skill_names[0]}' was invoked {skill_invocations} times — "
+            f"the skill's reference files may be too large or fragmented, "
+            f"causing repeated context loading. Consider consolidating "
+            f"reference documents."
+        )
+    if not advice and tool_calls > (normal_calls or 10) * 2:
+        # Top tool by count
+        top_tool = max(tool_name_counts, key=tool_name_counts.get) if tool_name_counts else "unknown"
+        top_count = tool_name_counts.get(top_tool, 0)
+        advice.append(
+            f"Most-used tool: `{top_tool}` ({top_count} calls). "
+            f"The agent may have struggled with the task structure. "
+            f"Consider simplifying the scenario prompt or adding clearer "
+            f"instructions in the skill."
+        )
+
+    return summary, " ".join(advice)
 
 
 def parse_run_scores(
@@ -438,10 +495,10 @@ def aggregate_results(config: EvalConfig, project_root: Path) -> None:
 
             for cfg, run_ids_set in token_outliers.items():
                 for rid in run_ids_set:
-                    analysis = _analyze_outlier_events(
+                    summary, recommendation = _analyze_outlier_events(
                         output_dir, cfg, rid, normal_usage_by_cfg.get(cfg),
                     )
-                    outlier_analyses[(cfg, rid)] = analysis
+                    outlier_analyses[(cfg, rid)] = (summary, recommendation)
 
     # Inject automated Token Efficiency dimension if usage data exists
     if generation_usage and _BASELINE_CONFIG in config_names:
@@ -527,7 +584,40 @@ def aggregate_results(config: EvalConfig, project_root: Path) -> None:
         verif_data, rich_content, generation_usage,
         token_outliers=token_outliers,
         outlier_analyses=outlier_analyses,
+        project_root=project_root,
     )
+
+
+def _extract_final_response(chat_path: Path) -> str | None:
+    """Extract the last assistant message from a copilot-chat.md file."""
+    if not chat_path.exists():
+        return None
+    text = chat_path.read_text(encoding="utf-8")
+    # Split on "## Assistant" headers and take the last one
+    parts = re.split(r"^## Assistant.*$", text, flags=re.MULTILINE)
+    if len(parts) < 2:
+        return None
+    last_response = parts[-1].strip()
+    # Trim if excessively long (keep first 3000 chars)
+    if len(last_response) > 3000:
+        last_response = last_response[:3000] + "\n\n*(truncated)*"
+    return last_response
+
+
+def _get_best_run_per_config(
+    weighted_per_run: dict[str, list[float]],
+    run_ids: list[int],
+    config_names: list[str],
+) -> dict[str, int]:
+    """Return the best-scoring run_id for each config."""
+    best: dict[str, int] = {}
+    for cfg in config_names:
+        scores = weighted_per_run[cfg]
+        if not scores:
+            continue
+        best_idx = max(range(len(scores)), key=lambda i: scores[i])
+        best[cfg] = run_ids[best_idx]
+    return best
 
 
 def _write_scores_json(
@@ -583,7 +673,7 @@ def _write_token_usage_sections(
     generation_usage: list[dict],
     config_names: list[str],
     token_outliers: dict[str, set[int]] | None = None,
-    outlier_analyses: dict[tuple[str, int], str] | None = None,
+    outlier_analyses: dict[tuple[str, int], tuple[str, str]] | None = None,
 ) -> None:
     """Write Token Usage Summary and Per Run detail tables.
 
@@ -738,11 +828,35 @@ def _write_token_usage_sections(
             if run_id not in token_outliers.get(cfg, set()):
                 continue
             total = u.get("input_tokens", 0) + u.get("output_tokens", 0)
-            analysis = outlier_analyses.get((cfg, run_id), "—")
+            entry = outlier_analyses.get((cfg, run_id), ("—", ""))
+            if isinstance(entry, tuple):
+                summary, _ = entry
+            else:
+                summary = entry
             lines.append(
-                f"| {cfg} | {run_id} | {total:,} | {analysis} |"
+                f"| {cfg} | {run_id} | {total:,} | {summary} |"
             )
         lines.append("")
+
+        # Skill/plugin improvement advice for outlier runs
+        has_advice = False
+        for u in sorted_usage:
+            cfg = u.get("config", "?")
+            run_id = u.get("run_id", 0)
+            if run_id not in token_outliers.get(cfg, set()):
+                continue
+            entry = outlier_analyses.get((cfg, run_id), ("", ""))
+            recommendation = entry[1] if isinstance(entry, tuple) else ""
+            if recommendation:
+                if not has_advice:
+                    lines.extend([
+                        "#### Recommendations to Reduce Outliers",
+                        "",
+                    ])
+                    has_advice = True
+                lines.append(f"- **{cfg} run {run_id}**: {recommendation}")
+        if has_advice:
+            lines.append("")
 
     lines.extend(["---", ""])
 
@@ -762,7 +876,8 @@ def _write_aggregated_report(
     rich_content: dict[str, str] | None = None,
     generation_usage: list[dict] | None = None,
     token_outliers: dict[str, set[int]] | None = None,
-    outlier_analyses: dict[tuple[str, int], str] | None = None,
+    outlier_analyses: dict[tuple[str, int], tuple[str, str]] | None = None,
+    project_root: Path | None = None,
 ) -> None:
     """Write the final aggregated analysis markdown report."""
     n_runs = len(run_ids)
@@ -1203,6 +1318,43 @@ def _write_aggregated_report(
                         "Review the session events.jsonl files for details.",
                         "",
                     ])
+
+    # Best Run Recommendations — final Copilot response from highest-scoring run
+    if project_root:
+        output_dir = project_root / config.output.directory
+        best_runs = _get_best_run_per_config(weighted_per_run, run_ids, config_names)
+        recommendations_found = False
+
+        for cfg in config_names:
+            best_rid = best_runs.get(cfg)
+            if best_rid is None:
+                continue
+            # Search scenario dirs within the best run for copilot-chat.md
+            run_dir = output_dir / cfg / f"run-{best_rid}"
+            chat_files = list(run_dir.rglob("copilot-chat.md"))
+            if not chat_files:
+                continue
+            response = _extract_final_response(chat_files[0])
+            if not response:
+                continue
+            if not recommendations_found:
+                lines.extend([
+                    "---",
+                    "",
+                    "## Copilot Recommendations (Best Run)",
+                    "",
+                    "Final recommendations from Copilot's highest-scoring run "
+                    "for each configuration.",
+                    "",
+                ])
+                recommendations_found = True
+            score = max(weighted_per_run[cfg])
+            lines.extend([
+                f"### {cfg} (run {best_rid}, score {score:.0f})",
+                "",
+                response,
+                "",
+            ])
 
     # Data references
     lines.extend([
