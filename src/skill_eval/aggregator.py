@@ -403,11 +403,12 @@ def _compute_token_efficiency_scores(
             if run_id in cfg_outliers:
                 continue  # skip outlier runs
             cfg_total = tokens_by_cfg_run.get(cfg, {}).get(run_id)
-            if cfg_total is not None:
+            if cfg_total is not None and cfg_total > 0:
                 ratio = cfg_total / baseline_mean
                 scores[cfg] = _ratio_to_score(ratio)
-            elif cfg == _BASELINE_CONFIG:
+            elif cfg == _BASELINE_CONFIG and cfg_total is not None and cfg_total > 0:
                 scores[cfg] = 5.0
+            # Skip runs with 0 tokens (missing usage data)
         per_run_scores.append(scores)
 
     return per_run_scores
@@ -694,7 +695,7 @@ def _write_token_usage_sections(
     for u in usage_in_scope:
         by_config.setdefault(u["config"], []).append(u)
 
-    # Compute per-config averages (excluding outliers)
+    # Compute per-config averages (excluding outliers and runs with missing usage)
     config_avgs: dict[str, dict[str, float]] = {}
     outlier_count = 0
     for cfg in config_names:
@@ -702,7 +703,11 @@ def _write_token_usage_sections(
         if not entries:
             continue
         cfg_outlier_runs = token_outliers.get(cfg, set())
-        clean = [e for e in entries if e.get("run_id") not in cfg_outlier_runs]
+        clean = [
+            e for e in entries
+            if e.get("run_id") not in cfg_outlier_runs
+            and (e.get("input_tokens", 0) + e.get("output_tokens", 0)) > 0
+        ]
         outlier_count += len(entries) - len(clean)
         if not clean:
             clean = entries  # fall back if all excluded
@@ -794,19 +799,30 @@ def _write_token_usage_sections(
         cfg = u.get("config", "?")
         run_id = u.get("run_id", 0)
         is_outlier = run_id in token_outliers.get(cfg, set())
+        total_tokens = u.get("input_tokens", 0) + u.get("output_tokens", 0)
+        has_usage = total_tokens > 0
         mins, secs = divmod(int(u.get("wall_time_seconds", 0)), 60)
-        note = "⚠️ outlier" if is_outlier else ""
-        lines.append(
-            f"| {cfg} "
-            f"| {run_id} "
-            f"| {u.get('scenario', '—')} "
-            f"| {u.get('input_tokens', 0):,} "
-            f"| {u.get('output_tokens', 0):,} "
-            f"| {u.get('cache_read_tokens', 0):,} "
-            f"| {u.get('api_calls', 0)} "
-            f"| {mins}m {secs}s "
-            f"| {note} |"
-        )
+        note = "⚠️ outlier" if is_outlier else ("⚠️ no usage data" if not has_usage else "")
+        if has_usage:
+            lines.append(
+                f"| {cfg} "
+                f"| {run_id} "
+                f"| {u.get('scenario', '—')} "
+                f"| {u.get('input_tokens', 0):,} "
+                f"| {u.get('output_tokens', 0):,} "
+                f"| {u.get('cache_read_tokens', 0):,} "
+                f"| {u.get('api_calls', 0)} "
+                f"| {mins}m {secs}s "
+                f"| {note} |"
+            )
+        else:
+            lines.append(
+                f"| {cfg} "
+                f"| {run_id} "
+                f"| {u.get('scenario', '—')} "
+                f"| — | — | — | — | — "
+                f"| {note} |"
+            )
 
     lines.extend(["", ""])
 
