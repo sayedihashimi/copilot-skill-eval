@@ -290,7 +290,9 @@ def _run_copilot(
         if timed_out:
             click.echo(f"  ⚠️  Copilot idle for {idle_timeout}s — killing (PID {proc.pid})")
             # Try to capture usage before killing — work may have completed
-            usage = _parse_copilot_log_usage(proc.pid)
+            usage = _parse_copilot_log_usage(
+                proc.pid, session_id=trace.session_id if trace else None,
+            )
             _kill_process_tree(proc)
             if usage:
                 usage["wall_time_seconds"] = round(elapsed, 1)
@@ -336,8 +338,9 @@ def _run_copilot(
                 )
                 raise RuntimeError(msg)
 
-        # Parse usage from Copilot CLI log
-        usage = _parse_copilot_log_usage(proc.pid)
+        # Parse usage from Copilot CLI log (use session ID for reliable matching)
+        sid = trace.session_id if trace else None
+        usage = _parse_copilot_log_usage(proc.pid, session_id=sid)
         if usage:
             usage["wall_time_seconds"] = round(elapsed, 1)
             mins, secs = divmod(int(elapsed), 60)
@@ -477,12 +480,13 @@ def _kill_process_tree(proc: subprocess.Popen) -> None:
         pass
 
 
-def _parse_copilot_log_usage(pid: int) -> dict | None:
-    """Parse token usage from the most recent Copilot CLI log file.
+def _parse_copilot_log_usage(pid: int, session_id: str | None = None) -> dict | None:
+    """Parse token usage from the Copilot CLI log file.
 
     Copilot CLI writes detailed logs to ~/.copilot/logs/ with per-request
-    token counts. This function finds the log matching the given PID and
-    extracts aggregate usage.
+    token counts. When *session_id* is provided, matches the log file
+    containing that session (most reliable). Falls back to PID-based
+    matching, then to the most recent log.
     """
     import re as _re
 
@@ -490,26 +494,78 @@ def _parse_copilot_log_usage(pid: int) -> dict | None:
     if not log_dir.exists():
         return None
 
-    # Find log file matching this PID
-    matching = [f for f in log_dir.glob(f"process-*-{pid}.log")]
-    if not matching:
-        # Fall back to most recent log
-        logs = sorted(log_dir.glob("process-*.log"), key=lambda f: f.stat().st_mtime)
-        if not logs:
-            return None
-        matching = [logs[-1]]
+    log_file: Path | None = None
 
-    log_file = matching[0]
+    # Strategy 1: Find log containing the session ID (most reliable)
+    if session_id and not log_file:
+        # Check recent logs (sorted newest first) for the session ID
+        candidates = sorted(
+            log_dir.glob("process-*.log"),
+            key=lambda f: f.stat().st_mtime,
+            reverse=True,
+        )
+        for f in candidates[:10]:  # check last 10 logs
+            try:
+                # Read just the first 50KB to find session_id quickly
+                with open(f, encoding="utf-8", errors="replace") as fh:
+                    head = fh.read(50_000)
+                if session_id in head:
+                    log_file = f
+                    break
+            except OSError:
+                continue
+
+    # Strategy 2: Match by PID
+    if not log_file:
+        matching = list(log_dir.glob(f"process-*-{pid}.log"))
+        if matching:
+            log_file = matching[0]
+
+    # Strategy 3: Most recent log
+    if not log_file:
+        logs = sorted(log_dir.glob("process-*.log"), key=lambda f: f.stat().st_mtime)
+        if logs:
+            log_file = logs[-1]
+
+    if not log_file:
+        return None
+
     try:
         content = log_file.read_text(encoding="utf-8", errors="replace")
     except Exception:
         return None
 
-    # Extract all token usage entries
-    input_tokens = [int(m) for m in _re.findall(r'"input_tokens": (\d+)', content)]
-    output_tokens = [int(m) for m in _re.findall(r'"output_tokens": (\d+)', content)]
-    durations = [int(m) for m in _re.findall(r'"duration": (\d+),', content)]
-    cache_read = [int(m) for m in _re.findall(r'"cache_read_tokens": (\d+)', content)]
+    # Extract token usage — if we have a session ID, only count entries
+    # for this specific session to avoid cross-contamination from shared logs.
+    if session_id:
+        # Parse structured blocks: each "assistant_usage" telemetry entry
+        # has session_id and metrics with token counts.
+        blocks = content.split('"kind": "assistant_usage"')
+        input_tokens = []
+        output_tokens = []
+        cache_read = []
+        durations = []
+        for block in blocks[1:]:  # skip first chunk (before first block)
+            if session_id not in block:
+                continue
+            inp = _re.findall(r'"input_tokens": (\d+)', block)
+            out = _re.findall(r'"output_tokens": (\d+)', block)
+            crd = _re.findall(r'"cache_read_tokens": (\d+)', block)
+            dur = _re.findall(r'"duration": (\d+)', block)
+            if inp:
+                input_tokens.append(int(inp[0]))
+            if out:
+                output_tokens.append(int(out[0]))
+            if crd:
+                cache_read.append(int(crd[0]))
+            if dur:
+                durations.append(int(dur[0]))
+    else:
+        # Fallback: extract all token entries from the file
+        input_tokens = [int(m) for m in _re.findall(r'"input_tokens": (\d+)', content)]
+        output_tokens = [int(m) for m in _re.findall(r'"output_tokens": (\d+)', content)]
+        cache_read = [int(m) for m in _re.findall(r'"cache_read_tokens": (\d+)', content)]
+        durations = [int(m) for m in _re.findall(r'"duration": (\d+),', content)]
 
     if not input_tokens:
         return None
