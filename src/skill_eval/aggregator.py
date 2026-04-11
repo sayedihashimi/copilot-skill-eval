@@ -591,20 +591,51 @@ def aggregate_results(config: EvalConfig, project_root: Path) -> None:
     )
 
 
-def _extract_final_response(chat_path: Path) -> str | None:
-    """Extract the last assistant message from a copilot-chat.md file."""
-    if not chat_path.exists():
+def _extract_recommendations(run_dir: Path) -> str | None:
+    """Extract prioritized recommendations from the best run's output files.
+
+    Looks for the "Prioritized Fix Recommendations" or "Executive Summary"
+    section from the analysis output (e.g., performance-analysis.md).
+    """
+    # Find the main output file (not gen-notes, not copilot-chat)
+    candidates = [
+        f for f in run_dir.rglob("*.md")
+        if f.name not in ("gen-notes.md", "copilot-chat.md")
+    ]
+    if not candidates:
         return None
-    text = chat_path.read_text(encoding="utf-8")
-    # Split on "## Assistant" headers and take the last one
-    parts = re.split(r"^## Assistant.*$", text, flags=re.MULTILINE)
-    if len(parts) < 2:
-        return None
-    last_response = parts[-1].strip()
-    # Trim if excessively long (keep first 3000 chars)
-    if len(last_response) > 3000:
-        last_response = last_response[:3000] + "\n\n*(truncated)*"
-    return last_response
+
+    # Prefer the largest file (most likely the main analysis)
+    output_file = max(candidates, key=lambda f: f.stat().st_size)
+    text = output_file.read_text(encoding="utf-8")
+
+    # Try to extract "Prioritized Fix Recommendations" section first
+    sections_to_try = [
+        r"^##\s+Prioritized Fix Recommendations",
+        r"^##\s+Prioritized Recommendations",
+        r"^##\s+Top.*Recommendations",
+        r"^##\s+Executive Summary",
+    ]
+    for pattern in sections_to_try:
+        match = re.search(pattern, text, re.MULTILINE)
+        if not match:
+            continue
+        # Extract from header to the next ## header (or end)
+        start = match.start()
+        next_header = re.search(r"^## ", text[match.end():], re.MULTILINE)
+        if next_header:
+            end = match.end() + next_header.start()
+        else:
+            end = len(text)
+        section = text[start:end].strip()
+        if len(section) > 3000:
+            section = section[:3000] + "\n\n*(truncated)*"
+        return section
+
+    # Fallback: last 2000 chars of the file
+    if len(text) > 2000:
+        return "*(Excerpt from end of report)*\n\n" + text[-2000:].strip()
+    return text.strip() or None
 
 
 def _get_best_run_per_config(
@@ -1339,7 +1370,7 @@ def _write_aggregated_report(
                         "",
                     ])
 
-    # Best Run Recommendations — final Copilot response from highest-scoring run
+    # Best Run Recommendations — prioritized fixes from highest-scoring run
     if project_root:
         output_dir = project_root / config.output.directory
         best_runs = _get_best_run_per_config(weighted_per_run, run_ids, config_names)
@@ -1349,12 +1380,10 @@ def _write_aggregated_report(
             best_rid = best_runs.get(cfg)
             if best_rid is None:
                 continue
-            # Search scenario dirs within the best run for copilot-chat.md
             run_dir = output_dir / cfg / f"run-{best_rid}"
-            chat_files = list(run_dir.rglob("copilot-chat.md"))
-            if not chat_files:
+            if not run_dir.exists():
                 continue
-            response = _extract_final_response(chat_files[0])
+            response = _extract_recommendations(run_dir)
             if not response:
                 continue
             if not recommendations_found:
@@ -1363,8 +1392,8 @@ def _write_aggregated_report(
                     "",
                     "## Copilot Recommendations (Best Run)",
                     "",
-                    "Final recommendations from Copilot's highest-scoring run "
-                    "for each configuration.",
+                    "Prioritized recommendations extracted from the "
+                    "highest-scoring run's output for each configuration.",
                     "",
                 ])
                 recommendations_found = True
