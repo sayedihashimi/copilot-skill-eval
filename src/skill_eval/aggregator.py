@@ -374,10 +374,11 @@ def _compute_token_efficiency_scores(
     # Exclude outlier runs from baseline mean
     baseline_outliers = token_outliers.get(_BASELINE_CONFIG, set())
     clean_baseline = {
-        rid: t for rid, t in baseline_runs.items() if rid not in baseline_outliers
+        rid: t for rid, t in baseline_runs.items()
+        if rid not in baseline_outliers and t > 0
     }
     if not clean_baseline:
-        clean_baseline = baseline_runs  # fall back if all excluded
+        return None
 
     baseline_mean = statistics.mean(clean_baseline.values())
     if baseline_mean == 0:
@@ -401,14 +402,15 @@ def _compute_token_efficiency_scores(
         for cfg in config_names:
             cfg_outliers = token_outliers.get(cfg, set())
             if run_id in cfg_outliers:
-                continue  # skip outlier runs
+                continue
             cfg_total = tokens_by_cfg_run.get(cfg, {}).get(run_id)
-            if cfg_total is not None and cfg_total > 0:
+            if cfg_total is None or cfg_total <= 0:
+                continue  # skip runs with missing usage data
+            if cfg == _BASELINE_CONFIG:
+                scores[cfg] = 5.0
+            else:
                 ratio = cfg_total / baseline_mean
                 scores[cfg] = _ratio_to_score(ratio)
-            elif cfg == _BASELINE_CONFIG and cfg_total is not None and cfg_total > 0:
-                scores[cfg] = 5.0
-            # Skip runs with 0 tokens (missing usage data)
         per_run_scores.append(scores)
 
     return per_run_scores
@@ -661,8 +663,10 @@ def _select_best_run_content(
         avg = statistics.mean(cfg_scores) if cfg_scores else 0.0
         run_avg_scores.append((i, run_id, avg))
 
+    if not run_avg_scores:
+        return {}
+
     run_avg_scores.sort(key=lambda x: x[2])
-    # Pick the middle run (median)
     median_idx, median_run_id, _ = run_avg_scores[len(run_avg_scores) // 2]
 
     run_file = reports_dir / config.output.per_run_analysis_pattern.format(run=median_run_id)
@@ -1111,7 +1115,7 @@ def _write_aggregated_report(
     medals = ["🥇", "🥈", "🥉"]
     for i, (cfg, mean, stdev, mn, mx) in enumerate(rankings):
         medal = medals[i] if i < len(medals) else f"{i+1}th"
-        pct = mean / max_weighted * 100
+        pct = (mean / max_weighted * 100) if max_weighted > 0 else 0.0
         lines.append(
             f"| {medal} | {cfg} | {mean:.1f} | {pct:.0f}% | {stdev:.1f} | {mn:.1f} | {mx:.1f} |"
         )

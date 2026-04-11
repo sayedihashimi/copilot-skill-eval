@@ -251,10 +251,14 @@ def _run_copilot(
         if attempt > 0:
             click.echo(f"  ⚠️  Retry {attempt}/{max_retries}")
 
-        # Write Copilot JSON output directly to the run's events.jsonl
+        # Write Copilot JSON output directly to the run's events.jsonl.
+        # On retries, use a suffixed name to avoid truncating partial data.
         if run_output:
             run_output.mkdir(parents=True, exist_ok=True)
-            events_path = run_output / "events.jsonl"
+            if attempt == 0:
+                events_path = run_output / "events.jsonl"
+            else:
+                events_path = run_output / f"events-attempt-{attempt}.jsonl"
             stdout_fh = open(events_path, "w", encoding="utf-8")
         else:
             stdout_fh = tempfile.NamedTemporaryFile(
@@ -278,6 +282,8 @@ def _run_copilot(
         trace: SessionTrace | None = None
         try:
             trace = parse_events_file(events_path)
+            if trace is not None and trace.total_events == 0:
+                trace = None  # discard empty/incomplete traces
         except OSError:
             pass
 
@@ -344,6 +350,15 @@ def _run_copilot(
             usage = {}
         if trace and trace.session_id:
             usage["session_id"] = trace.session_id
+        # On successful retry, rename events file to the canonical name
+        if attempt > 0 and run_output:
+            canonical = run_output / "events.jsonl"
+            try:
+                if canonical.exists():
+                    canonical.unlink()
+                events_path.rename(canonical)
+            except OSError:
+                pass
         return usage, trace
 
 
