@@ -495,33 +495,33 @@ def _parse_copilot_log_usage(pid: int, session_id: str | None = None) -> dict | 
         return None
 
     log_file: Path | None = None
+    content: str | None = None
 
     # Strategy 1: Find log containing the session ID (most reliable)
-    if session_id and not log_file:
-        # Check recent logs (sorted newest first) for the session ID
+    if session_id:
+        session_marker = f'"session_id": "{session_id}"'
         candidates = sorted(
             log_dir.glob("process-*.log"),
             key=lambda f: f.stat().st_mtime,
             reverse=True,
         )
-        for f in candidates[:10]:  # check last 10 logs
+        for f in candidates[:10]:
             try:
-                # Read just the first 50KB to find session_id quickly
-                with open(f, encoding="utf-8", errors="replace") as fh:
-                    head = fh.read(50_000)
-                if session_id in head:
+                file_content = f.read_text(encoding="utf-8", errors="replace")
+                if session_marker in file_content:
                     log_file = f
+                    content = file_content
                     break
             except OSError:
                 continue
+        if not log_file:
+            return None
 
-    # Strategy 2: Match by PID
+    # Strategy 2 (no session ID): Match by PID, then most recent log
     if not log_file:
         matching = list(log_dir.glob(f"process-*-{pid}.log"))
         if matching:
             log_file = matching[0]
-
-    # Strategy 3: Most recent log
     if not log_file:
         logs = sorted(log_dir.glob("process-*.log"), key=lambda f: f.stat().st_mtime)
         if logs:
@@ -530,10 +530,11 @@ def _parse_copilot_log_usage(pid: int, session_id: str | None = None) -> dict | 
     if not log_file:
         return None
 
-    try:
-        content = log_file.read_text(encoding="utf-8", errors="replace")
-    except Exception:
-        return None
+    if content is None:
+        try:
+            content = log_file.read_text(encoding="utf-8", errors="replace")
+        except Exception:
+            return None
 
     # Extract token usage — if we have a session ID, only count entries
     # for this specific session to avoid cross-contamination from shared logs.
@@ -545,8 +546,9 @@ def _parse_copilot_log_usage(pid: int, session_id: str | None = None) -> dict | 
         output_tokens = []
         cache_read = []
         durations = []
+        session_marker = f'"session_id": "{session_id}"'
         for block in blocks[1:]:  # skip first chunk (before first block)
-            if session_id not in block:
+            if session_marker not in block:
                 continue
             inp = _re.findall(r'"input_tokens": (\d+)', block)
             out = _re.findall(r'"output_tokens": (\d+)', block)
