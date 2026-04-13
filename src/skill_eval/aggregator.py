@@ -1415,10 +1415,13 @@ def _write_aggregated_report(
     for run_id in run_ids:
         run_file = config.output.per_run_analysis_pattern.format(run=run_id)
         lines.append(f"- Per-run analysis: `{config.output.reports_directory}/{run_file}`")
+    reports_dir = path.parent
+    if (reports_dir / config.output.verification_data_file).exists():
+        lines.append(f"- Verification data: `{config.output.reports_directory}/{config.output.verification_data_file}`")
+    lines.append(f"- Score data: `{config.output.reports_directory}/{config.output.scores_data_file}`")
+    if (reports_dir / config.output.notes_file).exists():
+        lines.append(f"- Build notes: `{config.output.reports_directory}/{config.output.notes_file}`")
     lines.extend([
-        f"- Verification data: `{config.output.reports_directory}/{config.output.verification_data_file}`",
-        f"- Score data: `{config.output.reports_directory}/{config.output.scores_data_file}`",
-        f"- Build notes: `{config.output.reports_directory}/{config.output.notes_file}`",
         f"- Generation usage: `{config.output.reports_directory}/generation-usage.json`",
         "",
     ])
