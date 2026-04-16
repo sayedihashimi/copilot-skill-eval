@@ -26,11 +26,12 @@ You define what to evaluate in two files:
 | **`eval.yaml`** | Scenarios (apps to generate), configurations (skill sets to compare), verification commands, and analysis dimensions |
 | **`skill-sources.yaml`** | Where to get skills/plugins — local paths or git repos (cloned and cached automatically) |
 
-The framework then runs a three-stage pipeline:
+The framework then runs a four-stage pipeline:
 
 1. **Generate** — Builds the same apps with each skill configuration using Copilot CLI
 2. **Verify** — Compiles, format-checks, security-scans, and runs each generated project
 3. **Analyze** — Scores quality across weighted dimensions and produces a comparative report
+4. **Suggest Improvements** — For skills marked with `suggest_improvements: true`, generates actionable improvement suggestions based on evaluation results and skill source analysis
 
 ## Quick Start
 
@@ -74,6 +75,7 @@ description: "Evaluate my React skills"
 runs: 3                          # runs per configuration (increases reliability)
 generation_model: "claude-opus-4.6"  # model for code generation
 analysis_model: "gpt-5.3-codex"     # model for comparative analysis
+improvement_model: "claude-opus-4.6" # model for improvement suggestions (optional, defaults to analysis_model)
 
 scenarios:
   - name: Dashboard
@@ -90,6 +92,7 @@ configurations:
     plugins: []
   - name: my-react-skill
     label: "My React Skill"
+    suggest_improvements: true       # generate improvement suggestions for this skill
     skills:
       - source: react-components      # references skill-sources.yaml
 
@@ -163,13 +166,15 @@ Dimensions are the quality criteria used to score and compare generated code:
 ### Pipeline commands
 
 ```bash
-skill-eval run                              # Full pipeline: generate → verify → analyze
+skill-eval run                              # Full pipeline: generate → verify → analyze → suggest improvements
 skill-eval run --runs 5                     # 5 runs per config for higher reliability
 skill-eval run --skip-generate              # Re-verify + re-analyze existing output
+skill-eval run --skip-improvements          # Skip improvement suggestion generation
 skill-eval run --analyze-only               # Re-analyze only
 skill-eval run -c my-skill -c baseline      # Only run specific configurations
 skill-eval run --generation-model claude-sonnet-4  # Override generation model
 skill-eval run -m gpt-5.3-codex            # Override analysis model
+skill-eval run --improvement-model claude-opus-4.6 # Override improvement model
 
 skill-eval generate                         # Generate code only
 skill-eval generate --resume                # Skip runs where output already exists
@@ -177,6 +182,8 @@ skill-eval generate --generation-model claude-opus-4.6  # Specify generation mod
 skill-eval verify                           # Verify builds only
 skill-eval analyze                          # Analyze only
 skill-eval analyze -m gpt-5.3-codex        # Specify analysis model
+skill-eval suggest-improvements             # Generate improvement suggestions only
+skill-eval suggest-improvements -m claude-opus-4.6  # Specify improvement model
 ```
 
 ### Setup & validation

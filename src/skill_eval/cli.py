@@ -228,9 +228,30 @@ def analyze(ctx: click.Context, analysis_model: str | None) -> None:
     run_analyze(config, ctx.obj["project_root"])
 
 
+@main.command("suggest-improvements")
+@click.option("--model", "-m", type=str, default=None,
+              help="AI model for improvement suggestions (overrides eval.yaml improvement_model).")
+@click.pass_context
+def suggest_improvements(ctx: click.Context, model: str | None) -> None:
+    """Generate improvement suggestions for skills/plugins.
+
+    Analyzes evaluation results and skill/plugin source files to produce
+    actionable improvement suggestions for configurations marked with
+    suggest_improvements: true in eval.yaml.
+
+    Requires that the analysis step has already been run.
+    """
+    from skill_eval.suggest_improvements import run_suggest_improvements
+
+    config = _load(ctx)
+    resolver = _build_resolver(ctx)
+    run_suggest_improvements(config, ctx.obj["project_root"], resolver, model_override=model)
+
+
 @main.command()
 @click.option("--skip-generate", is_flag=True, help="Skip the generation step.")
 @click.option("--skip-verify", is_flag=True, help="Skip the verification step.")
+@click.option("--skip-improvements", is_flag=True, help="Skip the improvement suggestions step.")
 @click.option("--analyze-only", is_flag=True, help="Only run the analysis step.")
 @click.option(
     "--configurations", "-c",
@@ -245,19 +266,23 @@ def analyze(ctx: click.Context, analysis_model: str | None) -> None:
               help="AI model for code generation (overrides eval.yaml generation_model).")
 @click.option("--analysis-model", "-m", type=str, default=None,
               help="AI model for analysis (overrides eval.yaml analysis_model).")
+@click.option("--improvement-model", type=str, default=None,
+              help="AI model for improvement suggestions (overrides eval.yaml improvement_model).")
 @click.pass_context
 def run(
     ctx: click.Context,
     skip_generate: bool,
     skip_verify: bool,
+    skip_improvements: bool,
     analyze_only: bool,
     configurations: tuple[str, ...],
     runs: int | None,
     resume: bool,
     generation_model: str | None,
     analysis_model: str | None,
+    improvement_model: str | None,
 ) -> None:
-    """Run the full evaluation pipeline: generate → verify → analyze.
+    """Run the full evaluation pipeline: generate → verify → analyze → suggest improvements.
 
     This is the main command that runs the entire evaluation. Use flags
     to skip individual steps.
@@ -266,6 +291,7 @@ def run(
 
     from skill_eval.analyze import run_analyze
     from skill_eval.generate import run_generate
+    from skill_eval.suggest_improvements import run_suggest_improvements
     from skill_eval.verify import run_verify
 
     config = _load(ctx)
@@ -276,11 +302,15 @@ def run(
         config.generation_model = generation_model
     if analysis_model is not None:
         config.analysis_model = analysis_model
+    if improvement_model is not None:
+        config.improvement_model = improvement_model
     click.echo(f"  Runs per configuration: {config.runs}")
     click.echo(f"  Generation model: {config.generation_model}")
     click.echo(f"  Analysis model:   {config.analysis_model}")
     project_root = ctx.obj["project_root"]
     timings: dict[str, float] = {}
+    has_improvement_targets = bool(config.improvement_targets)
+    total_steps = 3 + (1 if has_improvement_targets and not skip_improvements else 0)
     pipeline_start = _time.monotonic()
 
     if analyze_only:
@@ -288,7 +318,7 @@ def run(
         skip_verify = True
 
     if not skip_generate:
-        click.echo("\n📦 Step 1/3: Generating code...")
+        click.echo(f"\n📦 Step 1/{total_steps}: Generating code...")
         t0 = _time.monotonic()
         run_generate(
             config,
@@ -299,26 +329,40 @@ def run(
         )
         timings["generate"] = _time.monotonic() - t0
     else:
-        click.echo("\n⏭️  Step 1/3: Generate — skipped")
+        click.echo(f"\n⏭️  Step 1/{total_steps}: Generate — skipped")
 
     if not skip_verify and config.verification is not None:
-        click.echo("\n🔨 Step 2/3: Verifying builds...")
+        click.echo(f"\n🔨 Step 2/{total_steps}: Verifying builds...")
         t0 = _time.monotonic()
         run_verify(config, project_root)
         timings["verify"] = _time.monotonic() - t0
     else:
         reason = "not configured" if config.verification is None else "skipped"
-        click.echo(f"\n⏭️  Step 2/3: Verify — {reason}")
+        click.echo(f"\n⏭️  Step 2/{total_steps}: Verify — {reason}")
 
-    click.echo("\n📊 Step 3/3: Running analysis...")
+    click.echo(f"\n📊 Step 3/{total_steps}: Running analysis...")
     t0 = _time.monotonic()
     run_analyze(config, project_root)
     timings["analyze"] = _time.monotonic() - t0
+
+    if has_improvement_targets and not skip_improvements:
+        click.echo(f"\n💡 Step 4/{total_steps}: Generating improvement suggestions...")
+        t0 = _time.monotonic()
+        run_suggest_improvements(
+            config, project_root, resolver, model_override=improvement_model
+        )
+        timings["improvements"] = _time.monotonic() - t0
+    elif has_improvement_targets and skip_improvements:
+        click.echo(f"\n⏭️  Step 4/{total_steps}: Improvement suggestions — skipped")
 
     total_time = _time.monotonic() - pipeline_start
 
     click.echo("\n🎉 Evaluation complete!")
     click.echo(f"   Report: {config.output.reports_directory}/{config.output.analysis_file}")
+    if has_improvement_targets and not skip_improvements:
+        for t in config.improvement_targets:
+            imp_file = config.output.improvements_file_pattern.format(config=t.name)
+            click.echo(f"   Improvements: {config.output.reports_directory}/{imp_file}")
     click.echo(f"\n⏱️  Pipeline timing:")
     for step, elapsed in timings.items():
         mins, secs = divmod(int(elapsed), 60)

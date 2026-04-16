@@ -6,7 +6,7 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 
-from skill_eval.config import EvalConfig, Scenario
+from skill_eval.config import Configuration, EvalConfig, Scenario
 
 # Templates are bundled inside the package for standalone installs.
 # Also check the repo-root templates/ for development convenience.
@@ -127,3 +127,53 @@ def render_scenario_template(scenario_name: str, project_root: Path) -> str:
     env = _get_env(project_root)
     template = env.get_template("scenario.prompt.md.j2")
     return template.render(scenario_name=scenario_name)
+
+
+def render_improvement_prompt(
+    config: EvalConfig,
+    configuration: Configuration,
+    project_root: Path,
+    skill_paths: list[Path],
+    plugin_paths: list[Path],
+) -> str:
+    """Render the improvement suggestions prompt for a specific configuration.
+
+    *skill_paths* and *plugin_paths* are resolved absolute paths to the
+    skill/plugin directories for this configuration.
+    """
+    env = _get_env(project_root)
+    template = env.get_template("suggest-improvements.md.j2")
+
+    reports_dir = config.output.reports_directory
+    improvements_file = config.output.improvements_file_pattern.format(
+        config=configuration.name
+    )
+
+    # Build paths to available data files
+    build_notes_path = f"{reports_dir}/{config.output.notes_file}"
+    scores_data_path = f"{reports_dir}/{config.output.scores_data_file}"
+    verification_data_path = f"{reports_dir}/{config.output.verification_data_file}"
+
+    # Check which data files actually exist
+    build_notes_exists = (project_root / build_notes_path).exists()
+    verification_data_exists = (project_root / verification_data_path).exists()
+    scores_data_exists = (project_root / scores_data_path).exists()
+
+    other_configurations = [
+        c for c in config.configurations if c.name != configuration.name
+    ]
+
+    return template.render(
+        config_name=configuration.name,
+        config_label=configuration.label,
+        skill_paths=[str(p) for p in skill_paths],
+        plugin_paths=[str(p) for p in plugin_paths],
+        dimensions=config.dimensions,
+        other_configurations=other_configurations,
+        reports_directory=reports_dir,
+        analysis_file=config.output.analysis_file,
+        improvements_file=improvements_file,
+        build_notes_path=build_notes_path if build_notes_exists else None,
+        verification_data_path=verification_data_path if verification_data_exists else None,
+        scores_data_path=scores_data_path if scores_data_exists else None,
+    )

@@ -71,6 +71,7 @@ class Configuration(BaseModel):
     label: str = ""
     skills: list[SkillRef] = []
     plugins: list[SkillRef] = []
+    suggest_improvements: bool = False
 
     def get_local_skill_paths(self) -> list[str]:
         """Return legacy local paths for skills (backward compat helper)."""
@@ -169,6 +170,7 @@ class OutputSettings(BaseModel):
     analysis_file: str = "analysis.md"
     notes_file: str = "build-notes.md"
     per_run_analysis_pattern: str = "analysis-run-{run}.md"
+    improvements_file_pattern: str = "improvements-{config}.md"
     verification_data_file: str = "verification-data.json"
     scores_data_file: str = "scores-data.json"
 
@@ -187,6 +189,7 @@ class EvalConfig(BaseModel):
     runs: int = 3
     generation_model: str = "claude-opus-4.6"
     analysis_model: str = "gpt-5.3-codex"
+    improvement_model: str | None = None
 
     @field_validator("eval_type")
     @classmethod
@@ -228,6 +231,16 @@ class EvalConfig(BaseModel):
     def is_text_output(self) -> bool:
         """True when this eval produces text output rather than code."""
         return self.eval_type == "text_output"
+
+    @property
+    def effective_improvement_model(self) -> str:
+        """Return improvement_model if set, otherwise fall back to analysis_model."""
+        return self.improvement_model or self.analysis_model
+
+    @property
+    def improvement_targets(self) -> list[Configuration]:
+        """Return configurations marked with suggest_improvements: true."""
+        return [c for c in self.configurations if c.suggest_improvements]
 
     @model_validator(mode="after")
     def check_verification_required(self) -> "EvalConfig":

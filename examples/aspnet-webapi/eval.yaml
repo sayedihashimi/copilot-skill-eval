@@ -23,6 +23,7 @@ configurations:
     plugins: []
   - name: dotnet-webapi
     label: "dotnet-webapi skill"
+    suggest_improvements: true
     skills:
       - source: dotnet-webapi
     plugins: []
