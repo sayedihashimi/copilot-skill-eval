@@ -163,11 +163,28 @@ def render_improvement_prompt(
         c for c in config.configurations if c.name != configuration.name
     ]
 
+    # Build display-friendly short paths for the report output.
+    # Absolute paths are passed for reading; short paths for display.
+    cache_dir = Path.home() / ".skill-eval" / "cache"
+
+    def _short_path(p: Path) -> str:
+        """Return a path relative to the skill-eval cache, or project root."""
+        try:
+            return str(p.relative_to(cache_dir))
+        except ValueError:
+            pass
+        try:
+            return str(p.relative_to(project_root))
+        except ValueError:
+            return str(p)
+
     return template.render(
         config_name=configuration.name,
         config_label=configuration.label,
         skill_paths=[str(p) for p in skill_paths],
         plugin_paths=[str(p) for p in plugin_paths],
+        skill_display_paths=[_short_path(p) for p in skill_paths],
+        plugin_display_paths=[_short_path(p) for p in plugin_paths],
         dimensions=config.dimensions,
         other_configurations=other_configurations,
         reports_directory=reports_dir,

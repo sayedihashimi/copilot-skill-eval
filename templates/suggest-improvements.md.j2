@@ -29,6 +29,14 @@ Read ALL files in the following directories to understand what instructions and 
 - **Plugin**: `{{ path }}`
 {% endfor %}
 
+When referencing these files in the report output, use these shorter display paths instead of the full absolute paths:
+{% for path in skill_display_paths %}
+- `{{ path }}`
+{% endfor %}
+{% for path in plugin_display_paths %}
+- `{{ path }}`
+{% endfor %}
+
 Pay special attention to:
 - `instructions.md` or similar instruction files — these are the core of the skill
 - Any configuration files, templates, or example code included in the skill
@@ -86,6 +94,7 @@ These are the other configurations that were evaluated alongside `{{ config_name
    - The **exact existing text** from the skill/plugin source file (the "before")
    - The **proposed replacement text** (the "after")
    - Use clearly labeled fenced code blocks: `**Before** (file-path):` and `**After** (file-path):`
+   - Use the short display paths (not full absolute paths) when labeling files in before/after blocks
    - For new content being added (not replacing existing text), show the surrounding context where it should be inserted, then the after block with the new content in place.
    - This is critical — it lets the reader understand what exists today and judge whether the proposed change is appropriate.
 
