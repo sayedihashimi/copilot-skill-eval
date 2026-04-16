@@ -104,6 +104,96 @@ def _snapshot_skill_dirs(
     return backup_dir
 
 
+# ---------------------------------------------------------------------------
+# Patch generation
+# ---------------------------------------------------------------------------
+
+def _generate_patch(
+    skill_paths: list[Path],
+    plugin_paths: list[Path],
+    backup_root: Path,
+    patch_path: Path,
+) -> bool:
+    """Generate a unified diff patch comparing turn-1 backup to current state.
+
+    Returns True if a non-empty patch was written.
+    """
+    original_backup = backup_root / "turn-1"
+    if not original_backup.exists():
+        return False
+
+    import difflib
+
+    patch_lines: list[str] = []
+
+    all_entries: list[tuple[str, int, Path]] = []
+    for i, p in enumerate(skill_paths):
+        all_entries.append(("skill", i, p))
+    for i, p in enumerate(plugin_paths):
+        all_entries.append(("plugin", i, p))
+
+    for kind, idx, current_path in all_entries:
+        backup_dir = original_backup / f"{kind}-{idx}-{current_path.name}"
+        if not backup_dir.is_dir() or not current_path.is_dir():
+            continue
+
+        # Collect all files from both original and current
+        original_files: set[Path] = set()
+        current_files: set[Path] = set()
+
+        for f in backup_dir.rglob("*"):
+            if f.is_file():
+                original_files.add(f.relative_to(backup_dir))
+        for f in current_path.rglob("*"):
+            if f.is_file():
+                current_files.add(f.relative_to(current_path))
+
+        all_files = sorted(original_files | current_files)
+
+        for rel_file in all_files:
+            orig_file = backup_dir / rel_file
+            curr_file = current_path / rel_file
+
+            # Use the skill/plugin directory name as the path prefix
+            label = f"{current_path.name}/{rel_file}"
+
+            orig_lines = _read_file_lines(orig_file)
+            curr_lines = _read_file_lines(curr_file)
+
+            if orig_lines == curr_lines:
+                continue
+
+            orig_label = f"a/{label}"
+            curr_label = f"b/{label}"
+
+            diff = difflib.unified_diff(
+                orig_lines, curr_lines,
+                fromfile=orig_label, tofile=curr_label,
+                lineterm="",
+            )
+            diff_lines = list(diff)
+            if diff_lines:
+                patch_lines.extend(diff_lines)
+                patch_lines.append("")  # blank line between file diffs
+
+    if not patch_lines:
+        return False
+
+    patch_path.parent.mkdir(parents=True, exist_ok=True)
+    patch_path.write_text("\n".join(patch_lines) + "\n", encoding="utf-8")
+    return True
+
+
+def _read_file_lines(path: Path) -> list[str]:
+    """Read a file as a list of lines, returning [] if it doesn't exist or is binary."""
+    if not path.exists():
+        return []
+    try:
+        return path.read_text(encoding="utf-8").splitlines()
+    except (UnicodeDecodeError, OSError):
+        return [f"<binary file: {path.name}>"]
+
+
 def _rollback_skill_dirs(
     skill_paths: list[Path],
     plugin_paths: list[Path],
@@ -818,6 +908,17 @@ def run_auto_improve(
         },
     )
     click.echo(f"\n  📄 Results report: {results_path}")
+
+    # Generate patch file (always, for both local and git sources)
+    patch_path = reports_dir / f"auto-improve-{target_config_name}.patch"
+    if backup_root.exists():
+        patch_written = _generate_patch(
+            skill_paths, plugin_paths, backup_root, patch_path
+        )
+        if patch_written:
+            click.echo(f"  📋 Patch file: {patch_path}")
+        else:
+            click.echo(f"  ℹ️  No changes detected — patch file not written")
 
     if hrs:
         click.echo(f"  Total time: {hrs}h {mins}m {secs}s")
