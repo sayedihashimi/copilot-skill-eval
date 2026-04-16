@@ -378,6 +378,70 @@ def run(
     click.echo(f"   {'total':12s}: {hrs}h {mins}m {secs}s" if hrs else f"   {'total':12s}: {mins}m {secs}s")
 
 
+@main.command("auto-improve")
+@click.option("--configuration", "-c", required=True,
+              help="Name of the configuration to improve (must have suggest_improvements: true).")
+@click.option("--max-turns", type=int, default=5,
+              help="Maximum number of improvement iterations (default: 5).")
+@click.option("--target-score", type=float, default=9.0,
+              help="Stop when weighted average score reaches this value (default: 9.0).")
+@click.option("--min-improvement", type=float, default=0.5,
+              help="Stop if score improvement is below this threshold (default: 0.5).")
+@click.option("--runs-per-iteration", type=int, default=1,
+              help="Number of generation runs per iteration (default: 1).")
+@click.option("--final-runs", type=int, default=None,
+              help="Number of runs for the final validation pass (default: same as --runs-per-iteration).")
+@click.option("--generation-model", type=str, default=None,
+              help="AI model for code generation (overrides eval.yaml).")
+@click.option("--analysis-model", "-m", type=str, default=None,
+              help="AI model for analysis (overrides eval.yaml).")
+@click.option("--improvement-model", type=str, default=None,
+              help="AI model for improvement suggestions (overrides eval.yaml).")
+@click.option("--no-rollback", is_flag=True,
+              help="Disable automatic rollback on score regression.")
+@click.pass_context
+def auto_improve(
+    ctx: click.Context,
+    configuration: str,
+    max_turns: int,
+    target_score: float,
+    min_improvement: float,
+    runs_per_iteration: int,
+    final_runs: int | None,
+    generation_model: str | None,
+    analysis_model: str | None,
+    improvement_model: str | None,
+    no_rollback: bool,
+) -> None:
+    """Iteratively improve a skill/plugin through automated evaluation loops.
+
+    Runs the evaluation pipeline, generates improvement suggestions, applies
+    them via Copilot CLI, and repeats until the target score is reached,
+    improvement plateaus, or the maximum number of turns is exhausted.
+
+    The target configuration must have suggest_improvements: true in eval.yaml.
+    """
+    from skill_eval.auto_improve import run_auto_improve
+
+    config = _load(ctx)
+    resolver = _build_resolver(ctx)
+    run_auto_improve(
+        config,
+        ctx.obj["project_root"],
+        resolver,
+        configuration,
+        max_turns=max_turns,
+        target_score=target_score,
+        min_improvement=min_improvement,
+        runs_per_iteration=runs_per_iteration,
+        final_runs=final_runs,
+        generation_model=generation_model,
+        analysis_model=analysis_model,
+        improvement_model=improvement_model,
+        no_rollback=no_rollback,
+    )
+
+
 @main.command()
 @click.pass_context
 def validate_config(ctx: click.Context) -> None:
