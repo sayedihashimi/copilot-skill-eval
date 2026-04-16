@@ -74,6 +74,36 @@ def _read_weighted_average(
     return weighted_avg, per_dim_means
 
 
+def _read_focused_score(
+    scores_path: Path,
+    target_config: str,
+    focus_dimensions: list[str],
+) -> float | None:
+    """Compute the mean score across only the *focus_dimensions*.
+
+    Returns the simple average of per-dimension means for the focused
+    dimensions, or None if scores can't be read.
+    """
+    _, per_dim = _read_weighted_average(scores_path, target_config)
+    if not per_dim:
+        return None
+
+    focused_vals = [per_dim[d] for d in focus_dimensions if d in per_dim]
+    if not focused_vals:
+        return None
+
+    return sum(focused_vals) / len(focused_vals)
+
+
+def _auto_detect_lowest_dims(
+    per_dim_means: dict[str, float],
+    n: int,
+) -> list[str]:
+    """Return the *n* lowest-scoring dimension names."""
+    sorted_dims = sorted(per_dim_means.items(), key=lambda x: x[1])
+    return [name for name, _ in sorted_dims[:n]]
+
+
 # ---------------------------------------------------------------------------
 # Skill directory backup / rollback
 # ---------------------------------------------------------------------------
@@ -222,9 +252,13 @@ def _apply_improvements(
     skill_paths: list[Path],
     plugin_paths: list[Path],
     model: str | None,
+    focus_dimensions: list[str] | None = None,
     idle_timeout: int = 600,
 ) -> bool:
     """Invoke Copilot CLI to apply the improvements file to skill/plugin sources.
+
+    When *focus_dimensions* is set, the prompt prioritises changes that
+    improve those specific dimensions.
 
     Returns True if the process completed without timing out.
     """
@@ -232,6 +266,16 @@ def _apply_improvements(
 
     all_paths = skill_paths + plugin_paths
     paths_str = "\n".join(f"  - {p}" for p in all_paths)
+
+    focus_directive = ""
+    if focus_dimensions:
+        dims_str = ", ".join(focus_dimensions)
+        focus_directive = (
+            f"\n\nPRIORITY FOCUS: Concentrate on suggestions that improve these "
+            f"dimensions: {dims_str}. Apply those suggestions first. "
+            f"Skip suggestions for other dimensions unless they are trivial to apply "
+            f"and do not risk regressing the focused dimensions.\n"
+        )
 
     prompt = (
         f"Read the improvement suggestions in the file at {improvements_path}. "
@@ -244,6 +288,7 @@ def _apply_improvements(
         f"- Make the concrete changes described in the improvements file.\n"
         f"- If a suggestion is vague or unclear, skip it rather than guessing.\n"
         f"- After applying changes, briefly summarize what you changed."
+        f"{focus_directive}"
     )
 
     cmd = ["copilot", "-p", prompt, "--yolo"]
@@ -279,13 +324,25 @@ def _check_stop(
     target_score: float,
     min_improvement: float,
     max_turns: int,
+    use_focused: bool = False,
 ) -> str | None:
-    """Evaluate stopping conditions. Returns a StopReason or None to continue."""
+    """Evaluate stopping conditions. Returns a StopReason or None to continue.
+
+    When *use_focused* is True, target and plateau checks use ``focused_score``
+    instead of ``weighted_average``.  The regression guard always uses the
+    overall ``weighted_average``.
+    """
     if not history:
         return None
 
     latest = history[-1]
-    score = latest.get("weighted_average")
+    score_key = "focused_score" if use_focused else "weighted_average"
+    delta_key = "focused_delta" if use_focused else "delta"
+    score = latest.get(score_key)
+
+    # Fall back to weighted_average if focused_score is missing
+    if score is None:
+        score = latest.get("weighted_average")
 
     if score is not None and score >= target_score:
         return StopReason.TARGET_REACHED
@@ -295,13 +352,13 @@ def _check_stop(
 
     # Check for plateau (score delta below threshold)
     if len(history) >= 2:
-        prev_score = history[-2].get("weighted_average")
-        if score is not None and prev_score is not None:
-            delta = score - prev_score
-            if delta < min_improvement:
-                return StopReason.PLATEAU
+        delta = latest.get(delta_key)
+        if delta is None:
+            delta = latest.get("delta")
+        if delta is not None and delta < min_improvement:
+            return StopReason.PLATEAU
 
-    # Check for regression (2 consecutive decreases)
+    # Check for regression (2 consecutive decreases) — always uses overall score
     if len(history) >= 3:
         s1 = history[-3].get("weighted_average")
         s2 = history[-2].get("weighted_average")
@@ -350,9 +407,15 @@ _STOP_LABELS = {
 
 def _format_summary_table(iterations: list[dict], stop_reason: str | None) -> list[str]:
     """Build the score progression table as a list of lines (reused for console and report)."""
+    has_focused = any(it.get("focused_score") is not None for it in iterations)
     lines: list[str] = []
-    lines.append(f"| Turn | Score | Delta | Status |")
-    lines.append(f"|-----:|------:|------:|--------|")
+
+    if has_focused:
+        lines.append(f"| Turn | Overall | Delta | Focused | F.Delta | Status |")
+        lines.append(f"|-----:|--------:|------:|--------:|--------:|--------|")
+    else:
+        lines.append(f"| Turn | Score | Delta | Status |")
+        lines.append(f"|-----:|------:|------:|--------|")
 
     for it in iterations:
         turn = it["turn"]
@@ -372,7 +435,16 @@ def _format_summary_table(iterations: list[dict], stop_reason: str | None) -> li
         else:
             status = "—"
 
-        lines.append(f"| {turn} | {score_str} | {delta_str} | {status} |")
+        if has_focused:
+            f_score = it.get("focused_score")
+            f_delta = it.get("focused_delta")
+            f_score_str = f"{f_score:.2f}" if f_score is not None else "—"
+            f_delta_str = f"+{f_delta:.2f}" if f_delta is not None and f_delta >= 0 else (
+                f"{f_delta:.2f}" if f_delta is not None else "—"
+            )
+            lines.append(f"| {turn} | {score_str} | {delta_str} | {f_score_str} | {f_delta_str} | {status} |")
+        else:
+            lines.append(f"| {turn} | {score_str} | {delta_str} | {status} |")
 
     return lines
 
@@ -448,6 +520,17 @@ def _write_results_report(
     lines.append(f"**Iterations:** {len([i for i in iterations if not i.get('is_final_validation')])}  ")
     result_label = _STOP_LABELS.get(stop_reason, stop_reason) if stop_reason else "In progress"
     lines.append(f"**Result:** {result_label}  ")
+
+    # Show focus dimensions if set
+    focus_dims = None
+    for it in iterations:
+        fd = it.get("focus_dimensions")
+        if fd:
+            focus_dims = fd
+            break
+    if focus_dims:
+        lines.append(f"**Focus dimensions:** {', '.join(focus_dims)}  ")
+
     lines.append("")
 
     # Overall score change
@@ -468,6 +551,24 @@ def _write_results_report(
             pct = (delta / first * 100) if first != 0 else 0
             sign_pct = "+" if pct >= 0 else ""
             lines.append(f"| Percent change | {sign_pct}{pct:.1f}% |")
+            lines.append("")
+
+        # Focused score change (if applicable)
+        first_focused = eval_iterations[0].get("focused_score")
+        last_focused = eval_iterations[-1].get("focused_score")
+        if first_focused is not None and last_focused is not None:
+            f_delta = last_focused - first_focused
+            f_sign = "+" if f_delta >= 0 else ""
+            lines.append("### Focused Dimensions Score Change")
+            lines.append("")
+            lines.append(f"| Metric | Value |")
+            lines.append(f"|--------|------:|")
+            lines.append(f"| Starting focused score | {first_focused:.2f} |")
+            lines.append(f"| Final focused score | {last_focused:.2f} |")
+            lines.append(f"| Net change | {f_sign}{f_delta:.2f} |")
+            f_pct = (f_delta / first_focused * 100) if first_focused != 0 else 0
+            f_sign_pct = "+" if f_pct >= 0 else ""
+            lines.append(f"| Percent change | {f_sign_pct}{f_pct:.1f}% |")
             lines.append("")
 
     # Score progression table
@@ -507,6 +608,14 @@ def _write_dimension_analysis(lines: list[str], iterations: list[dict]) -> None:
     if not first_dims and not last_dims:
         return
 
+    # Get focus dimensions if set
+    focus_dims: set[str] = set()
+    for it in eval_iters:
+        fd = it.get("focus_dimensions")
+        if fd:
+            focus_dims = set(fd)
+            break
+
     all_dims = list(dict.fromkeys(list(first_dims.keys()) + list(last_dims.keys())))
 
     improved: list[tuple[str, float, float, float]] = []
@@ -527,8 +636,14 @@ def _write_dimension_analysis(lines: list[str], iterations: list[dict]) -> None:
         else:
             unchanged.append(entry)
 
+    def _dim_label(name: str) -> str:
+        return f"**{name}** 🎯" if name in focus_dims else name
+
     lines.append("## Per-Dimension Analysis")
     lines.append("")
+    if focus_dims:
+        lines.append(f"*Dimensions marked with 🎯 were the focus of improvement.*")
+        lines.append("")
 
     if improved:
         improved.sort(key=lambda x: x[3], reverse=True)
@@ -537,7 +652,7 @@ def _write_dimension_analysis(lines: list[str], iterations: list[dict]) -> None:
         lines.append("| Dimension | Start | End | Change |")
         lines.append("|-----------|------:|----:|-------:|")
         for dim, start, end, delta in improved:
-            lines.append(f"| {dim} | {start:.2f} | {end:.2f} | +{delta:.2f} |")
+            lines.append(f"| {_dim_label(dim)} | {start:.2f} | {end:.2f} | +{delta:.2f} |")
         lines.append("")
 
     if regressed:
@@ -547,7 +662,7 @@ def _write_dimension_analysis(lines: list[str], iterations: list[dict]) -> None:
         lines.append("| Dimension | Start | End | Change |")
         lines.append("|-----------|------:|----:|-------:|")
         for dim, start, end, delta in regressed:
-            lines.append(f"| {dim} | {start:.2f} | {end:.2f} | {delta:.2f} |")
+            lines.append(f"| {_dim_label(dim)} | {start:.2f} | {end:.2f} | {delta:.2f} |")
         lines.append("")
 
     if unchanged:
@@ -557,7 +672,7 @@ def _write_dimension_analysis(lines: list[str], iterations: list[dict]) -> None:
         lines.append("|-----------|------:|----:|-------:|")
         for dim, start, end, delta in unchanged:
             sign = "+" if delta >= 0 else ""
-            lines.append(f"| {dim} | {start:.2f} | {end:.2f} | {sign}{delta:.2f} |")
+            lines.append(f"| {_dim_label(dim)} | {start:.2f} | {end:.2f} | {sign}{delta:.2f} |")
         lines.append("")
 
     if not improved and not regressed and not unchanged:
@@ -651,8 +766,16 @@ def run_auto_improve(
     analysis_model: str | None = None,
     improvement_model: str | None = None,
     no_rollback: bool = False,
+    focus_dimensions: list[str] | None = None,
+    focus_lowest: int | None = None,
 ) -> None:
-    """Run the autonomous improvement loop."""
+    """Run the autonomous improvement loop.
+
+    When *focus_dimensions* is provided, improvement suggestions and stopping
+    conditions target those specific dimensions.  When *focus_lowest* is
+    provided instead, the N lowest-scoring dimensions are auto-selected
+    after the first evaluation turn.
+    """
     from skill_eval.analyze import run_analyze
     from skill_eval.generate import run_generate
     from skill_eval.suggest_improvements import run_suggest_improvements
@@ -696,6 +819,25 @@ def run_auto_improve(
     if improvement_model:
         config.improvement_model = improvement_model
 
+    # Validate focus dimensions
+    if focus_dimensions and focus_lowest:
+        raise click.ClickException(
+            "--dimensions and --focus-lowest are mutually exclusive."
+        )
+
+    if focus_dimensions:
+        known_dims = {d.name for d in config.dimensions}
+        unknown = [d for d in focus_dimensions if d not in known_dims]
+        if unknown:
+            available = ", ".join(sorted(known_dims))
+            raise click.ClickException(
+                f"Unknown dimension(s): {', '.join(unknown)}\n"
+                f"Available: {available}"
+            )
+
+    # active_focus will be set after the first turn if focus_lowest is used
+    active_focus: list[str] | None = focus_dimensions
+
     reports_dir = project_root / config.output.reports_directory
     reports_dir.mkdir(parents=True, exist_ok=True)
     scores_path = reports_dir / config.output.scores_data_file
@@ -717,6 +859,10 @@ def run_auto_improve(
     click.echo(f"  Improvement model: {imp_model}")
     click.echo(f"  Skill paths:       {', '.join(str(p) for p in skill_paths)}")
     click.echo(f"  Plugin paths:      {', '.join(str(p) for p in plugin_paths) or '(none)'}")
+    if active_focus:
+        click.echo(f"  Focus dimensions:  {', '.join(active_focus)}")
+    elif focus_lowest:
+        click.echo(f"  Focus lowest:      {focus_lowest} (auto-detect after first turn)")
 
     iterations: list[dict] = []
     stop_reason: str | None = None
@@ -768,6 +914,27 @@ def run_auto_improve(
             stop_reason = StopReason.PIPELINE_FAILED
             break
 
+        # Auto-detect focus dimensions after first turn
+        if turn == 1 and focus_lowest and not active_focus:
+            active_focus = _auto_detect_lowest_dims(per_dim, focus_lowest)
+            if active_focus:
+                click.echo(f"  🎯 Auto-selected focus dimensions (lowest {focus_lowest}):")
+                for dim_name in active_focus:
+                    score_val = per_dim.get(dim_name, 0)
+                    click.echo(f"       • {dim_name}: {score_val:.2f}")
+            else:
+                click.echo("  ⚠️  Could not auto-detect focus dimensions, using all")
+
+        # Compute focused score if dimensions are selected
+        focused_score: float | None = None
+        focused_delta: float | None = None
+        if active_focus:
+            focused_score = _read_focused_score(scores_path, target_config_name, active_focus)
+            if iterations and focused_score is not None:
+                prev_focused = iterations[-1].get("focused_score")
+                if prev_focused is not None:
+                    focused_delta = focused_score - prev_focused
+
         delta = None
         if iterations:
             prev = iterations[-1].get("weighted_average")
@@ -782,18 +949,27 @@ def run_auto_improve(
             "weighted_average": round(weighted_avg, 2),
             "delta": round(delta, 2) if delta is not None else None,
             "per_dimension": {k: round(v, 2) for k, v in per_dim.items()},
+            "focused_score": round(focused_score, 2) if focused_score is not None else None,
+            "focused_delta": round(focused_delta, 2) if focused_delta is not None else None,
+            "focus_dimensions": active_focus,
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "elapsed_seconds": round(turn_elapsed, 1),
             "improvements_applied": False,
         }
 
         delta_str = f" (delta: {'+' if delta >= 0 else ''}{delta:.2f})" if delta is not None else ""
-        click.echo(f"  📈 Score: {weighted_avg:.2f}{delta_str}  [{mins}m {secs}s]")
+        click.echo(f"  📈 Overall score: {weighted_avg:.2f}{delta_str}  [{mins}m {secs}s]")
+        if focused_score is not None:
+            f_delta_str = f" (delta: {'+' if focused_delta >= 0 else ''}{focused_delta:.2f})" if focused_delta is not None else ""
+            click.echo(f"  🎯 Focused score: {focused_score:.2f}{f_delta_str}")
 
         iterations.append(iteration_record)
 
         # --- Step 3: Check stopping conditions ---
-        stop_reason = _check_stop(iterations, target_score, min_improvement, max_turns)
+        stop_reason = _check_stop(
+            iterations, target_score, min_improvement, max_turns,
+            use_focused=bool(active_focus),
+        )
         if stop_reason:
             _write_history(history_path, target_config_name, iterations, stop_reason)
             break
@@ -809,7 +985,8 @@ def run_auto_improve(
         click.echo("  💡 Generating improvement suggestions...")
         try:
             run_suggest_improvements(
-                config, project_root, resolver, model_override=imp_model
+                config, project_root, resolver, model_override=imp_model,
+                focus_dimensions=active_focus,
             )
         except Exception as e:
             click.echo(f"  ❌ Improvement suggestions failed: {e}")
@@ -834,7 +1011,8 @@ def run_auto_improve(
 
         click.echo("  🔧 Applying improvements via Copilot CLI...")
         apply_success = _apply_improvements(
-            improvements_path, skill_paths, plugin_paths, model=imp_model
+            improvements_path, skill_paths, plugin_paths, model=imp_model,
+            focus_dimensions=active_focus,
         )
 
         if not apply_success:
@@ -905,6 +1083,8 @@ def run_auto_improve(
             "Analysis model": config.analysis_model,
             "Improvement model": imp_model,
             "Rollback enabled": not no_rollback,
+            "Focus dimensions": ", ".join(active_focus) if active_focus else "All",
+            "Focus mode": "explicit" if focus_dimensions else ("auto-detect lowest " + str(focus_lowest) if focus_lowest else "none"),
         },
     )
     click.echo(f"\n  📄 Results report: {results_path}")

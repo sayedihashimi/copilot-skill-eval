@@ -144,6 +144,7 @@ This workflow automates the improve-evaluate loop. The target configuration MUST
    - Target score (default: 9.0)
    - Maximum turns (default: 5)
    - Minimum improvement threshold (default: 0.5)
+   - Whether to focus on specific dimensions (optional)
 2. Run the auto-improve command:
    ```bash
    python -m skill_eval auto-improve -c <config-name> \
@@ -156,7 +157,14 @@ This workflow automates the improve-evaluate loop. The target configuration MUST
    - `--runs-per-iteration 1` — Use 1 run for fast feedback during iteration
    - `--final-runs 3` — Run 3 times at the end for statistically robust final scores
    - `--no-rollback` — Disable automatic rollback when scores regress
+   - `--dimensions "Error Handling,Performance"` — Focus improvement on specific dimensions
+   - `--focus-lowest 3` — Auto-select the 3 lowest-scoring dimensions after first evaluation
    - `--generation-model`, `--analysis-model`, `--improvement-model` — Override AI models
+
+   **Selective Dimensions:** When `--dimensions` or `--focus-lowest` is used, the full
+   evaluation still runs (all dimensions scored), but improvement suggestions and stopping
+   conditions focus on the selected dimensions. An overall score regression guard prevents
+   improving one dimension at the expense of others.
 3. The loop will automatically:
    - Run the full evaluation pipeline each iteration
    - Generate improvement suggestions

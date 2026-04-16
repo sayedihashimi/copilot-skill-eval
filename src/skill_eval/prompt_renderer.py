@@ -135,11 +135,15 @@ def render_improvement_prompt(
     project_root: Path,
     skill_paths: list[Path],
     plugin_paths: list[Path],
+    focus_dimensions: list[str] | None = None,
 ) -> str:
     """Render the improvement suggestions prompt for a specific configuration.
 
     *skill_paths* and *plugin_paths* are resolved absolute paths to the
     skill/plugin directories for this configuration.
+
+    When *focus_dimensions* is provided, the prompt instructs the LLM
+    to prioritize suggestions for those specific dimensions.
     """
     env = _get_env(project_root)
     template = env.get_template("suggest-improvements.md.j2")
@@ -193,4 +197,5 @@ def render_improvement_prompt(
         build_notes_path=build_notes_path if build_notes_exists else None,
         verification_data_path=verification_data_path if verification_data_exists else None,
         scores_data_path=scores_data_path if scores_data_exists else None,
+        focus_dimensions=focus_dimensions or [],
     )

@@ -20,6 +20,7 @@ def _suggest_for_configuration(
     project_root: Path,
     resolver: SourceResolver,
     model: str,
+    focus_dimensions: list[str] | None = None,
     idle_timeout: int = 600,
 ) -> tuple[str, bool]:
     """Generate improvement suggestions for a single configuration.
@@ -45,7 +46,8 @@ def _suggest_for_configuration(
         return configuration.name, False
 
     prompt = render_improvement_prompt(
-        config, configuration, project_root, skill_paths, plugin_paths
+        config, configuration, project_root, skill_paths, plugin_paths,
+        focus_dimensions=focus_dimensions,
     )
 
     cmd = ["copilot", "-p", prompt, "--yolo"]
@@ -85,6 +87,7 @@ def run_suggest_improvements(
     project_root: Path,
     resolver: SourceResolver,
     model_override: str | None = None,
+    focus_dimensions: list[str] | None = None,
 ) -> None:
     """Generate improvement suggestions for all configurations marked with suggest_improvements."""
     targets = config.improvement_targets
@@ -126,7 +129,8 @@ def run_suggest_improvements(
                     partial.unlink()
             try:
                 _, success = _suggest_for_configuration(
-                    config, configuration, project_root, resolver, model
+                    config, configuration, project_root, resolver, model,
+                    focus_dimensions=focus_dimensions,
                 )
                 if success:
                     succeeded = True

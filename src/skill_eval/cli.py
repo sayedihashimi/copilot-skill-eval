@@ -399,6 +399,10 @@ def run(
               help="AI model for improvement suggestions (overrides eval.yaml).")
 @click.option("--no-rollback", is_flag=True,
               help="Disable automatic rollback on score regression.")
+@click.option("--dimensions", type=str, default=None,
+              help="Comma-separated dimension names to focus improvement on (e.g., 'Error Handling,Performance').")
+@click.option("--focus-lowest", type=int, default=None,
+              help="Auto-select the N lowest-scoring dimensions after first evaluation.")
 @click.pass_context
 def auto_improve(
     ctx: click.Context,
@@ -412,6 +416,8 @@ def auto_improve(
     analysis_model: str | None,
     improvement_model: str | None,
     no_rollback: bool,
+    dimensions: str | None,
+    focus_lowest: int | None,
 ) -> None:
     """Iteratively improve a skill/plugin through automated evaluation loops.
 
@@ -420,8 +426,16 @@ def auto_improve(
     improvement plateaus, or the maximum number of turns is exhausted.
 
     The target configuration must have suggest_improvements: true in eval.yaml.
+
+    Use --dimensions to focus on specific dimensions, or --focus-lowest to
+    auto-select the N weakest dimensions after the first evaluation.
     """
     from skill_eval.auto_improve import run_auto_improve
+
+    # Parse comma-separated dimension names
+    focus_dims: list[str] | None = None
+    if dimensions:
+        focus_dims = [d.strip() for d in dimensions.split(",") if d.strip()]
 
     config = _load(ctx)
     resolver = _build_resolver(ctx)
@@ -439,6 +453,8 @@ def auto_improve(
         analysis_model=analysis_model,
         improvement_model=improvement_model,
         no_rollback=no_rollback,
+        focus_dimensions=focus_dims,
+        focus_lowest=focus_lowest,
     )
 
 

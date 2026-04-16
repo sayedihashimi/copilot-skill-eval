@@ -60,6 +60,20 @@ The evaluation scored configurations on these dimensions (with their tier weight
   - *What to look for:* {{ dim.what_to_look_for | replace('\n', ' ') | trim }}
 {% endfor %}
 
+{% if focus_dimensions %}
+### ⚡ Priority Focus Dimensions
+
+**IMPORTANT:** Concentrate your improvement suggestions on these dimensions first:
+{% for dim_name in focus_dimensions %}
+- **{{ dim_name }}**
+{% endfor %}
+
+These are the dimensions where the skill most needs improvement. While you may include
+suggestions for other dimensions, prioritize the focus dimensions and ensure they receive
+the most detailed and actionable suggestions. Order your suggestions so that focus
+dimension improvements come first.
+{% endif %}
+
 ### 5. Other Configurations for Reference
 
 These are the other configurations that were evaluated alongside `{{ config_name }}`:
