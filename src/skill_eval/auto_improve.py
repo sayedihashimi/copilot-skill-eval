@@ -258,6 +258,35 @@ _STOP_LABELS = {
 }
 
 
+def _format_summary_table(iterations: list[dict], stop_reason: str | None) -> list[str]:
+    """Build the score progression table as a list of lines (reused for console and report)."""
+    lines: list[str] = []
+    lines.append(f"| Turn | Score | Delta | Status |")
+    lines.append(f"|-----:|------:|------:|--------|")
+
+    for it in iterations:
+        turn = it["turn"]
+        score = it.get("weighted_average")
+        delta = it.get("delta")
+        score_str = f"{score:.2f}" if score is not None else "—"
+        delta_str = f"+{delta:.2f}" if delta is not None and delta >= 0 else (
+            f"{delta:.2f}" if delta is not None else "—"
+        )
+
+        if it.get("is_final_validation"):
+            status = "🏁 Final validation"
+        elif it.get("improvements_applied"):
+            status = "✅ Improvements applied"
+        elif it == iterations[-1] and stop_reason:
+            status = _STOP_LABELS.get(stop_reason, stop_reason)
+        else:
+            status = "—"
+
+        lines.append(f"| {turn} | {score_str} | {delta_str} | {status} |")
+
+    return lines
+
+
 def _print_summary(iterations: list[dict], stop_reason: str | None) -> None:
     """Print a score progression table."""
     click.echo(f"\n{'=' * 60}")
@@ -275,14 +304,16 @@ def _print_summary(iterations: list[dict], stop_reason: str | None) -> None:
             f"{delta:.1f}" if delta is not None else "—"
         )
 
-        if it.get("improvements_applied"):
+        if it.get("is_final_validation"):
+            status = "🏁 Final validation"
+        elif it.get("improvements_applied"):
             status = "✅ Improvements applied"
         elif it == iterations[-1] and stop_reason:
             status = _STOP_LABELS.get(stop_reason, stop_reason)
         else:
             status = "—"
 
-        click.echo(f"  {turn:4d}  {score_str:>8s}  {delta_str:>8s}  {status}")
+        click.echo(f"  {turn:>4}  {score_str:>8s}  {delta_str:>8s}  {status}")
 
     if stop_reason:
         click.echo(f"\n  Result: {_STOP_LABELS.get(stop_reason, stop_reason)}")
@@ -294,6 +325,191 @@ def _print_summary(iterations: list[dict], stop_reason: str | None) -> None:
             total_delta = last_score - first_score
             sign = "+" if total_delta >= 0 else ""
             click.echo(f"  Total improvement: {sign}{total_delta:.1f} ({first_score:.1f} → {last_score:.1f})")
+
+
+# ---------------------------------------------------------------------------
+# Results report (Markdown)
+# ---------------------------------------------------------------------------
+
+def _write_results_report(
+    report_path: Path,
+    config_name: str,
+    iterations: list[dict],
+    stop_reason: str | None,
+    total_seconds: float,
+    settings: dict,
+) -> None:
+    """Write a detailed auto-improve results report in Markdown.
+
+    Includes the score progression table, per-dimension analysis showing
+    which dimensions improved or regressed, and run settings.
+    """
+    lines: list[str] = []
+
+    # Header
+    lines.append("# Auto-Improve Results")
+    lines.append("")
+    lines.append(f"**Configuration:** {config_name}  ")
+    lines.append(f"**Date:** {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}  ")
+    mins, secs = divmod(int(total_seconds), 60)
+    hrs, mins_r = divmod(mins, 60)
+    time_str = f"{hrs}h {mins_r}m {secs}s" if hrs else f"{mins}m {secs}s"
+    lines.append(f"**Total time:** {time_str}  ")
+    lines.append(f"**Iterations:** {len([i for i in iterations if not i.get('is_final_validation')])}  ")
+    result_label = _STOP_LABELS.get(stop_reason, stop_reason) if stop_reason else "In progress"
+    lines.append(f"**Result:** {result_label}  ")
+    lines.append("")
+
+    # Overall score change
+    eval_iterations = [i for i in iterations if not i.get("is_final_validation")]
+    if eval_iterations:
+        first = eval_iterations[0].get("weighted_average")
+        last = eval_iterations[-1].get("weighted_average")
+        if first is not None and last is not None:
+            delta = last - first
+            sign = "+" if delta >= 0 else ""
+            lines.append("## Overall Score Change")
+            lines.append("")
+            lines.append(f"| Metric | Value |")
+            lines.append(f"|--------|------:|")
+            lines.append(f"| Starting score | {first:.2f} |")
+            lines.append(f"| Final score | {last:.2f} |")
+            lines.append(f"| Net change | {sign}{delta:.2f} |")
+            pct = (delta / first * 100) if first != 0 else 0
+            sign_pct = "+" if pct >= 0 else ""
+            lines.append(f"| Percent change | {sign_pct}{pct:.1f}% |")
+            lines.append("")
+
+    # Score progression table
+    lines.append("## Score Progression")
+    lines.append("")
+    lines.extend(_format_summary_table(iterations, stop_reason))
+    lines.append("")
+
+    # Per-dimension analysis
+    _write_dimension_analysis(lines, iterations)
+
+    # Iteration details
+    _write_iteration_details(lines, iterations)
+
+    # Settings
+    lines.append("## Settings")
+    lines.append("")
+    lines.append("| Setting | Value |")
+    lines.append("|---------|-------|")
+    for key, val in settings.items():
+        lines.append(f"| {key} | {val} |")
+    lines.append("")
+
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text("\n".join(lines), encoding="utf-8")
+
+
+def _write_dimension_analysis(lines: list[str], iterations: list[dict]) -> None:
+    """Analyze per-dimension score changes across iterations."""
+    eval_iters = [i for i in iterations if not i.get("is_final_validation")]
+    if len(eval_iters) < 1:
+        return
+
+    first_dims = eval_iters[0].get("per_dimension", {})
+    last_dims = eval_iters[-1].get("per_dimension", {})
+
+    if not first_dims and not last_dims:
+        return
+
+    all_dims = list(dict.fromkeys(list(first_dims.keys()) + list(last_dims.keys())))
+
+    improved: list[tuple[str, float, float, float]] = []
+    regressed: list[tuple[str, float, float, float]] = []
+    unchanged: list[tuple[str, float, float, float]] = []
+
+    for dim in all_dims:
+        first_val = first_dims.get(dim)
+        last_val = last_dims.get(dim)
+        if first_val is None or last_val is None:
+            continue
+        delta = last_val - first_val
+        entry = (dim, first_val, last_val, delta)
+        if delta > 0.1:
+            improved.append(entry)
+        elif delta < -0.1:
+            regressed.append(entry)
+        else:
+            unchanged.append(entry)
+
+    lines.append("## Per-Dimension Analysis")
+    lines.append("")
+
+    if improved:
+        improved.sort(key=lambda x: x[3], reverse=True)
+        lines.append("### ✅ Improved Dimensions")
+        lines.append("")
+        lines.append("| Dimension | Start | End | Change |")
+        lines.append("|-----------|------:|----:|-------:|")
+        for dim, start, end, delta in improved:
+            lines.append(f"| {dim} | {start:.2f} | {end:.2f} | +{delta:.2f} |")
+        lines.append("")
+
+    if regressed:
+        regressed.sort(key=lambda x: x[3])
+        lines.append("### ⚠️ Regressed Dimensions")
+        lines.append("")
+        lines.append("| Dimension | Start | End | Change |")
+        lines.append("|-----------|------:|----:|-------:|")
+        for dim, start, end, delta in regressed:
+            lines.append(f"| {dim} | {start:.2f} | {end:.2f} | {delta:.2f} |")
+        lines.append("")
+
+    if unchanged:
+        lines.append("### ➡️ Unchanged Dimensions")
+        lines.append("")
+        lines.append("| Dimension | Start | End | Change |")
+        lines.append("|-----------|------:|----:|-------:|")
+        for dim, start, end, delta in unchanged:
+            sign = "+" if delta >= 0 else ""
+            lines.append(f"| {dim} | {start:.2f} | {end:.2f} | {sign}{delta:.2f} |")
+        lines.append("")
+
+    if not improved and not regressed and not unchanged:
+        lines.append("No per-dimension data available.")
+        lines.append("")
+
+
+def _write_iteration_details(lines: list[str], iterations: list[dict]) -> None:
+    """Write per-iteration dimension scores as a detailed breakdown."""
+    eval_iters = [i for i in iterations if not i.get("is_final_validation")]
+    if len(eval_iters) < 2:
+        return
+
+    # Collect all dimension names
+    all_dims: list[str] = []
+    seen: set[str] = set()
+    for it in eval_iters:
+        for dim in it.get("per_dimension", {}):
+            if dim not in seen:
+                all_dims.append(dim)
+                seen.add(dim)
+
+    if not all_dims:
+        return
+
+    lines.append("## Per-Iteration Dimension Scores")
+    lines.append("")
+
+    # Build header
+    turn_headers = " | ".join(f"Turn {it['turn']}" for it in eval_iters)
+    lines.append(f"| Dimension | {turn_headers} |")
+    separator = " | ".join("-----:" for _ in eval_iters)
+    lines.append(f"|-----------|{separator}|")
+
+    for dim in all_dims:
+        vals = []
+        for it in eval_iters:
+            v = it.get("per_dimension", {}).get(dim)
+            vals.append(f"{v:.2f}" if v is not None else "—")
+        lines.append(f"| {dim} | {' | '.join(vals)} |")
+
+    lines.append("")
 
 
 # ---------------------------------------------------------------------------
@@ -581,10 +797,32 @@ def run_auto_improve(
     _write_history(history_path, target_config_name, iterations, stop_reason)
     _print_summary(iterations, stop_reason)
 
+    # Write the Markdown results report
+    results_path = reports_dir / "auto-improve-results.md"
+    _write_results_report(
+        results_path,
+        target_config_name,
+        iterations,
+        stop_reason,
+        total_time,
+        settings={
+            "Max turns": max_turns,
+            "Target score": target_score,
+            "Min improvement": min_improvement,
+            "Runs per iteration": runs_per_iteration,
+            "Final runs": final_runs or runs_per_iteration,
+            "Generation model": config.generation_model,
+            "Analysis model": config.analysis_model,
+            "Improvement model": imp_model,
+            "Rollback enabled": not no_rollback,
+        },
+    )
+    click.echo(f"\n  📄 Results report: {results_path}")
+
     if hrs:
-        click.echo(f"\n  Total time: {hrs}h {mins}m {secs}s")
+        click.echo(f"  Total time: {hrs}h {mins}m {secs}s")
     else:
-        click.echo(f"\n  Total time: {mins}m {secs}s")
+        click.echo(f"  Total time: {mins}m {secs}s")
 
     click.echo(f"  History: {history_path}")
 
