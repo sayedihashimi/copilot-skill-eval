@@ -33,6 +33,8 @@ The framework then runs a four-stage pipeline:
 3. **Analyze** — Scores quality across weighted dimensions and produces a comparative report
 4. **Suggest Improvements** — For skills marked with `suggest_improvements: true`, generates actionable improvement suggestions based on evaluation results and skill source analysis
 
+For hands-off iterative improvement, use `skill-eval auto-improve` to loop through the pipeline automatically — applying suggestions, re-evaluating, and stopping when the target score is reached or improvement plateaus.
+
 ## Quick Start
 
 ### 1. Initialize a project
@@ -194,6 +196,60 @@ skill-eval validate-config                  # Check config is valid, sources res
 skill-eval ci-setup                         # Generate GitHub Actions workflow
 skill-eval ci-setup --schedule "0 6 * * 1"  # With weekly schedule
 ```
+
+### Auto-improve
+
+Iteratively improve a skill/plugin through automated evaluation loops. Runs the full pipeline, generates improvement suggestions, applies them via Copilot CLI, and repeats until the target score is reached, improvement plateaus, or the maximum number of turns is exhausted.
+
+The target configuration must have `suggest_improvements: true` in `eval.yaml`.
+
+```bash
+# Basic usage — improve the my-skill configuration
+skill-eval auto-improve -c my-skill
+
+# Tune stopping criteria
+skill-eval auto-improve -c my-skill \
+  --max-turns 5 \
+  --target-score 9.0 \
+  --min-improvement 0.5
+
+# Fast iteration with a robust final validation
+skill-eval auto-improve -c my-skill \
+  --runs-per-iteration 1 \
+  --final-runs 3
+
+# Focus on specific weak dimensions
+skill-eval auto-improve -c my-skill \
+  --dimensions "Error Handling,Performance"
+
+# Auto-select the 3 lowest-scoring dimensions
+skill-eval auto-improve -c my-skill \
+  --focus-lowest 3
+```
+
+| Option | Default | Purpose |
+|--------|---------|---------|
+| `-c`, `--configuration` | (required) | Configuration to improve |
+| `--max-turns` | 5 | Maximum improvement iterations |
+| `--target-score` | 9.0 | Stop when weighted average reaches this |
+| `--min-improvement` | 0.5 | Stop if improvement is below this threshold |
+| `--runs-per-iteration` | 1 | Runs per iteration (1 for fast feedback) |
+| `--final-runs` | same as above | Runs for final validation pass |
+| `--dimensions` | all | Comma-separated dimensions to focus on |
+| `--focus-lowest` | — | Auto-select N lowest-scoring dimensions |
+| `--no-rollback` | off | Disable rollback on score regression |
+
+**How it works:**
+1. Each turn runs generate → verify → analyze → suggest-improvements
+2. Copilot CLI applies the suggested changes to the skill/plugin source files
+3. Scores are tracked across iterations; skill files are backed up before each change
+4. If a score regresses, changes are rolled back to the last known-good state
+5. Stops when target score is reached, improvement plateaus, scores regress repeatedly, or max turns exhausted
+
+**Output files:**
+- `reports/auto-improve-results.md` — Detailed results with score progression and per-dimension analysis
+- `reports/auto-improve-history.json` — Machine-readable iteration history
+- `reports/auto-improve-<config>.patch` — Unified diff of all changes made to the skill/plugin
 
 ### Global options
 
