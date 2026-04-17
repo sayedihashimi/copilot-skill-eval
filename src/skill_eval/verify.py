@@ -24,7 +24,8 @@ def _find_build_directory(project_dir: Path, working_directory: str) -> Path:
     """Find the best directory to run the build command from.
 
     If the configured working_directory contains a project/solution file, use it.
-    Otherwise, search for a .sln or .csproj file and use its parent directory.
+    Otherwise, search for a .sln or .csproj file and use its parent directory,
+    preferring the shallowest match to avoid picking a deeply nested test project.
     """
     cwd = project_dir / working_directory
 
@@ -33,12 +34,13 @@ def _find_build_directory(project_dir: Path, working_directory: str) -> Path:
         if list(cwd.glob("*.sln")) or list(cwd.glob("*.csproj")):
             return cwd
 
-    # Search for .sln first (preferred), then .csproj
-    sln_files = list(project_dir.rglob("*.sln"))
+    # Search for .sln first (preferred), then .csproj.
+    # Sort by depth (shallowest first) to pick the most likely "main" project.
+    sln_files = sorted(project_dir.rglob("*.sln"), key=lambda p: len(p.parts))
     if sln_files:
         return sln_files[0].parent
 
-    csproj_files = list(project_dir.rglob("*.csproj"))
+    csproj_files = sorted(project_dir.rglob("*.csproj"), key=lambda p: len(p.parts))
     if csproj_files:
         return csproj_files[0].parent
 
@@ -164,9 +166,25 @@ def _run_build(
 ) -> tuple[bool, str]:
     """Run the build command and return (success, output)."""
     cwd = _find_build_directory(project_dir, working_directory)
+
+    # If the build command is 'dotnet build' and the cwd has no project file
+    # at the top level, find and pass the project file explicitly to avoid
+    # MSB1003 errors when the project is nested inside a subdirectory.
+    effective_cmd = command
+    if command.strip().startswith("dotnet build") or command.strip().startswith("dotnet restore"):
+        has_proj = list(cwd.glob("*.sln")) or list(cwd.glob("*.csproj"))
+        if not has_proj:
+            # Search deeper for a project file
+            proj = sorted(cwd.rglob("*.sln"), key=lambda p: len(p.parts))
+            if not proj:
+                proj = sorted(cwd.rglob("*.csproj"), key=lambda p: len(p.parts))
+            if proj:
+                proj_rel = proj[0].relative_to(cwd)
+                effective_cmd = f'{command} "{proj_rel}"'
+
     try:
         result = subprocess.run(
-            command,
+            effective_cmd,
             shell=True,
             cwd=cwd,
             capture_output=True,
@@ -491,8 +509,13 @@ def _write_build_notes(
                 skills_str = ", ".join(skill_names) if skill_names else "—"
                 plugins_str = ", ".join(plugin_names) if plugin_names else "—"
                 comp = u.get("resource_comparison", {})
-                match = comp.get("match", True) if comp else True
-                match_str = "✅" if match else "⚠️ Mismatch"
+                match = comp.get("match") if comp else None
+                if match is True:
+                    match_str = "✅"
+                elif match is False:
+                    match_str = "⚠️ Mismatch"
+                else:
+                    match_str = "❓ Unverified"
                 lines.append(
                     f"| {u.get('config', '?')} | {u.get('run_id', '?')} "
                     f"| {sid_short} | {model} | {skills_str} | {plugins_str} | {match_str} |"

@@ -1020,6 +1020,20 @@ def _write_dimension_analysis(lines: list[str], iterations: list[dict]) -> None:
         lines.append(f"*Dimensions marked with 🎯 were the focus of improvement.*")
         lines.append("")
 
+    # Warn if each iteration tested a different scenario (runs-per-iteration=1)
+    # — dimension changes may reflect scenario rotation, not skill improvement
+    scenarios_per_iter = [it.get("scenarios_tested") for it in eval_iters]
+    if len(eval_iters) >= 2 and all(s and len(s) == 1 for s in scenarios_per_iter):
+        unique_scenarios = set(s[0] for s in scenarios_per_iter if s)
+        if len(unique_scenarios) > 1:
+            lines.append(
+                "> ⚠️ **Note:** Each iteration tested a different scenario "
+                "(runs-per-iteration = 1). Dimension score changes below may "
+                "reflect scenario rotation rather than actual skill improvement. "
+                "Compare same-scenario turns for a reliable comparison."
+            )
+            lines.append("")
+
     if improved:
         improved.sort(key=lambda x: x[3], reverse=True)
         lines.append("### ✅ Improved Dimensions")
@@ -1105,11 +1119,11 @@ def _clean_previous_outputs(config: EvalConfig, project_root: Path) -> None:
     output_dir = project_root / config.output.directory
     reports_dir = project_root / config.output.reports_directory
 
-    # Remove generated output directories
+    # Remove all generated output (directories and files) to prevent
+    # stale data from prior iterations contaminating new runs.
     if output_dir.exists():
-        for child in output_dir.iterdir():
-            if child.is_dir():
-                shutil.rmtree(child, ignore_errors=True)
+        shutil.rmtree(output_dir, ignore_errors=True)
+        output_dir.mkdir(parents=True, exist_ok=True)
 
     # Remove per-run analysis files and aggregated analysis
     if reports_dir.exists():
@@ -1203,6 +1217,10 @@ def run_auto_improve(
     # generate/verify/analyze don't waste time on other configs.
     config.configurations = [target_cfg]
 
+    # Disable Token Efficiency auto-dimension during auto-improve — there's
+    # no baseline config to compare against, so it would add noise.
+    config.include_token_efficiency = False
+
     # Apply model overrides
     if generation_model:
         config.generation_model = generation_model
@@ -1283,10 +1301,12 @@ def run_auto_improve(
         click.echo(f"  Turn {turn}/{max_turns}")
         click.echo(f"{'─' * 60}")
 
-        # Clean outputs from previous iteration
+        # Clean outputs from previous iteration (or stale data from prior runs)
         if turn > 1:
             click.echo("  🧹 Cleaning previous outputs...")
-            _clean_previous_outputs(config, project_root)
+        else:
+            click.echo("  🧹 Cleaning stale outputs...")
+        _clean_previous_outputs(config, project_root)
 
         # --- Step 1: Run the pipeline ---
         config.runs = runs_per_iteration
@@ -1331,6 +1351,12 @@ def run_auto_improve(
                 for dim_name in active_focus:
                     score_val = per_dim.get(dim_name, 0)
                     click.echo(f"       • {dim_name}: {score_val:.2f}")
+                if runs_per_iteration == 1 and len(config.scenarios) > 1:
+                    click.echo(
+                        f"  ⚠️  With runs-per-iteration=1, only one scenario is "
+                        f"tested per turn. Focus dimensions tied to other "
+                        f"scenarios may not improve until their scenario runs."
+                    )
             else:
                 click.echo("  ⚠️  Could not auto-detect focus dimensions, using all")
 
@@ -1353,6 +1379,13 @@ def run_auto_improve(
         turn_elapsed = time.monotonic() - turn_start
         mins, secs = divmod(int(turn_elapsed), 60)
 
+        # Compute which scenarios were tested in this turn (for reporting)
+        total_scenarios = len(config.scenarios)
+        scenarios_tested = [
+            config.scenarios[(turn - 1 + rid) % total_scenarios].name
+            for rid in range(runs_per_iteration)
+        ]
+
         iteration_record = {
             "turn": turn,
             "weighted_average": round(weighted_avg, 2),
@@ -1361,6 +1394,7 @@ def run_auto_improve(
             "focused_score": round(focused_score, 2) if focused_score is not None else None,
             "focused_delta": round(focused_delta, 2) if focused_delta is not None else None,
             "focus_dimensions": active_focus,
+            "scenarios_tested": scenarios_tested,
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "elapsed_seconds": round(turn_elapsed, 1),
             "improvements_applied": False,
@@ -1403,13 +1437,18 @@ def run_auto_improve(
                     _rollback_skill_dirs(skill_paths, plugin_paths, prev_backup)
 
             retry_succeeded = False
+            # Track whether we've recorded a lesson for the initial failure
+            _initial_lesson_recorded = False
             for retry_num in range(1, max_retries + 1):
                 click.echo(f"\n  {'·' * 40}")
                 click.echo(f"  🔄 Retry {retry_num}/{max_retries} (turn {turn})")
                 click.echo(f"  {'·' * 40}")
 
-                # Generate a lesson from the failed attempt
-                if not no_lessons:
+                # Generate a lesson from the initial failed attempt (once)
+                # or from a previous retry that applied changes but didn't improve.
+                # Skip lesson generation if no changes were actually applied.
+                if not no_lessons and not _initial_lesson_recorded:
+                    _initial_lesson_recorded = True
                     click.echo("  📚 Generating lesson from failed attempt...")
                     improvements_file = config.output.improvements_file_pattern.format(
                         config=target_config_name
@@ -1443,7 +1482,18 @@ def run_auto_improve(
 
                 # Re-generate improvement suggestions with lessons context
                 click.echo("  💡 Generating new improvement suggestions (with lessons)...")
+                # Preserve analysis.md and scores-data.json before cleaning —
+                # run_suggest_improvements requires analysis.md to exist.
+                _analysis = reports_dir / config.output.analysis_file
+                _scores = reports_dir / config.output.scores_data_file
+                _saved_analysis = _analysis.read_bytes() if _analysis.exists() else None
+                _saved_scores = _scores.read_bytes() if _scores.exists() else None
                 _clean_previous_outputs(config, project_root)
+                # Restore analysis files so suggest-improvements can read them
+                if _saved_analysis is not None:
+                    _analysis.write_bytes(_saved_analysis)
+                if _saved_scores is not None:
+                    _scores.write_bytes(_saved_scores)
                 try:
                     run_suggest_improvements(
                         config, project_root, resolver, model_override=imp_model,
@@ -1541,7 +1591,25 @@ def run_auto_improve(
                     break
                 else:
                     click.echo(f"  ⚠️  Retry {retry_num} didn't meet threshold ({retry_delta:.2f} < {min_improvement})")
-                    # Update score state for next lesson
+                    # Record a lesson from this failed retry (changes were applied)
+                    if not no_lessons:
+                        click.echo("  📚 Generating lesson from retry attempt...")
+                        lesson = _generate_lesson(
+                            improvements_path=improvements_path,
+                            score_before=score_before,
+                            score_after=retry_avg,
+                            per_dim_before=per_dim_before,
+                            per_dim_after=retry_dim,
+                            turn=turn,
+                            retry=retry_num,
+                            model=imp_model,
+                        )
+                        lessons.add(lesson)
+                        lessons_ctx = lessons.format_for_prompt()
+                        click.echo(f"  📚 Lesson recorded (confidence: {lesson.confidence:.0%})")
+                        if lessons_path:
+                            lessons.save(lessons_path)
+                    # Update score state for next retry
                     weighted_avg = retry_avg
                     per_dim = retry_dim
 

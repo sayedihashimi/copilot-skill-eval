@@ -358,6 +358,8 @@ def _run_copilot(
             usage = {}
         if trace and trace.session_id:
             usage["session_id"] = trace.session_id
+        # Track exit code for diagnostics (exit code 1 is common with --yolo mode)
+        usage["exit_code"] = proc.returncode
         # On successful retry, rename events file to the canonical name
         if attempt > 0 and run_output:
             canonical = run_output / "events.jsonl"
