@@ -849,6 +849,10 @@ def run_auto_improve(
             f"Configuration '{target_config_name}' has no skills or plugins to improve."
         )
 
+    # Scope the pipeline to only the target configuration so that
+    # generate/verify/analyze don't waste time on other configs.
+    config.configurations = [target_cfg]
+
     # Apply model overrides
     if generation_model:
         config.generation_model = generation_model
