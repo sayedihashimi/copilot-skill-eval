@@ -646,6 +646,13 @@ def run_generate(
         click.echo(f"Generating: {label}")
         click.echo(f"Runs:       {num_runs}")
         click.echo(f"Scenarios:  {total_scenarios} available (1 selected per run, round-robin)")
+        if num_runs < total_scenarios:
+            untested = total_scenarios - num_runs
+            click.echo(
+                f"  ⚠️  Warning: --runs ({num_runs}) < scenarios ({total_scenarios}) — "
+                f"{untested} scenario(s) will NOT be tested. "
+                f"Set --runs ≥ {total_scenarios} for full scenario coverage."
+            )
         click.echo(f"{'=' * 60}")
 
         # Snapshot the global skill_directories so we can restore later.

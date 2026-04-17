@@ -504,7 +504,11 @@ def aggregate_results(config: EvalConfig, project_root: Path) -> None:
                     outlier_analyses[(cfg, rid)] = (summary, recommendation)
 
     # Inject automated Token Efficiency dimension if usage data exists
-    if generation_usage and _BASELINE_CONFIG in config_names:
+    if (
+        generation_usage
+        and _BASELINE_CONFIG in config_names
+        and config.include_token_efficiency
+    ):
         token_scores = _compute_token_efficiency_scores(
             generation_usage, config_names, parsed_run_ids,
             token_outliers=token_outliers,

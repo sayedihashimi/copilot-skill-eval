@@ -580,7 +580,15 @@ def _write_verification_json(
                 rr["plugin_name"] for rr in resources if rr.get("plugin_name")
             ))
             comp = trace_data.get("resource_comparison", {})
-            entry["asset_match"] = comp.get("match", True) if comp else True
+            if comp and "match" in comp:
+                entry["asset_match"] = comp["match"]
+            else:
+                # No resource comparison data available — mark as unverified
+                entry["asset_match"] = None
+        else:
+            entry["loaded_skills"] = []
+            entry["loaded_plugins"] = []
+            entry["asset_match"] = None
 
         json_results.append(entry)
     data = {"timestamp": datetime.now(timezone.utc).isoformat(), "results": json_results}

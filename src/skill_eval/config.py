@@ -191,6 +191,7 @@ class EvalConfig(BaseModel):
     analysis_model: str = "gpt-5.3-codex"
     improvement_model: str | None = None
     research_dir: str | None = None  # Path to research/best-practices files
+    include_token_efficiency: bool = True  # Whether to include auto-generated Token Efficiency dimension
 
     @field_validator("eval_type")
     @classmethod
