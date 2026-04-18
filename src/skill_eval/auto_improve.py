@@ -11,6 +11,7 @@ import json
 import os
 import shutil
 import subprocess
+import tempfile
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -472,13 +473,23 @@ def _apply_improvements(
         )
 
     lessons_directive = ""
+    lessons_tmpfile: tempfile.NamedTemporaryFile | None = None
     if lessons_context:
+        # Write lessons to a temp file to avoid exceeding Windows'
+        # ~8,191-char command-line limit (WinError 206).
+        lessons_tmpfile = tempfile.NamedTemporaryFile(
+            mode="w", suffix=".md", prefix="lessons-",
+            delete=False, encoding="utf-8",
+        )
+        lessons_tmpfile.write(lessons_context)
+        lessons_tmpfile.close()
         lessons_directive = (
             f"\n\nLESSONS FROM PREVIOUS ATTEMPTS:\n"
-            f"These approaches were previously tried and didn't help. The confidence "
-            f"scores indicate how certain we are about each lesson. Avoid repeating "
-            f"these approaches unless you have a clearly different angle.\n\n"
-            f"{lessons_context}\n"
+            f"Read the lessons-learned file at {lessons_tmpfile.name} for "
+            f"details on approaches that were previously tried and didn't help. "
+            f"The confidence scores indicate how certain we are about each lesson. "
+            f"Avoid repeating those approaches unless you have a clearly "
+            f"different angle.\n"
         )
 
     prompt = (
@@ -495,14 +506,18 @@ def _apply_improvements(
         cmd.extend(["--model", model])
 
     env = {**os.environ, "NODE_OPTIONS": "--max-old-space-size=8192"}
-    proc = subprocess.Popen(cmd, env=env)
+    try:
+        proc = subprocess.Popen(cmd, env=env)
 
-    timed_out = _watchdog_wait(proc, idle_timeout)
-    if timed_out:
-        _kill_process_tree(proc)
-        return False
+        timed_out = _watchdog_wait(proc, idle_timeout)
+        if timed_out:
+            _kill_process_tree(proc)
+            return False
 
-    return proc.returncode == 0 or proc.returncode is not None
+        return proc.returncode == 0 or proc.returncode is not None
+    finally:
+        if lessons_tmpfile is not None:
+            Path(lessons_tmpfile.name).unlink(missing_ok=True)
 
 
 # ---------------------------------------------------------------------------
