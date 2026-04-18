@@ -1110,11 +1110,20 @@ def _write_iteration_details(lines: list[str], iterations: list[dict]) -> None:
 # Clean previous run outputs
 # ---------------------------------------------------------------------------
 
-def _clean_previous_outputs(config: EvalConfig, project_root: Path) -> None:
+def _clean_previous_outputs(
+    config: EvalConfig,
+    project_root: Path,
+    preserve_analysis: bool = False,
+) -> None:
     """Remove output and per-run analysis files from a previous iteration.
 
     This ensures the pipeline produces fresh results rather than reusing
     stale data from the prior turn.
+
+    When *preserve_analysis* is True the aggregated analysis report and
+    scores data file are kept.  This is needed on the retry path where
+    ``run_suggest_improvements`` requires ``analysis.md`` but the retry
+    does not re-run the analyse step.
     """
     output_dir = project_root / config.output.directory
     reports_dir = project_root / config.output.reports_directory
@@ -1127,7 +1136,14 @@ def _clean_previous_outputs(config: EvalConfig, project_root: Path) -> None:
 
     # Remove per-run analysis files and aggregated analysis
     if reports_dir.exists():
+        skip_files: set[str] = set()
+        if preserve_analysis:
+            skip_files.add(config.output.analysis_file)
+            skip_files.add(config.output.scores_data_file)
+
         for f in reports_dir.iterdir():
+            if f.name in skip_files:
+                continue
             if f.name.startswith("analysis-run-") or f.name in (
                 config.output.analysis_file,
                 config.output.scores_data_file,
@@ -1482,18 +1498,7 @@ def run_auto_improve(
 
                 # Re-generate improvement suggestions with lessons context
                 click.echo("  💡 Generating new improvement suggestions (with lessons)...")
-                # Preserve analysis.md and scores-data.json before cleaning —
-                # run_suggest_improvements requires analysis.md to exist.
-                _analysis = reports_dir / config.output.analysis_file
-                _scores = reports_dir / config.output.scores_data_file
-                _saved_analysis = _analysis.read_bytes() if _analysis.exists() else None
-                _saved_scores = _scores.read_bytes() if _scores.exists() else None
-                _clean_previous_outputs(config, project_root)
-                # Restore analysis files so suggest-improvements can read them
-                if _saved_analysis is not None:
-                    _analysis.write_bytes(_saved_analysis)
-                if _saved_scores is not None:
-                    _scores.write_bytes(_saved_scores)
+                _clean_previous_outputs(config, project_root, preserve_analysis=True)
                 try:
                     run_suggest_improvements(
                         config, project_root, resolver, model_override=imp_model,
