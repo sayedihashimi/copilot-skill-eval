@@ -905,18 +905,39 @@ def _write_results_report(
 
     # Overall score change
     eval_iterations = [i for i in iterations if not i.get("is_final_validation")]
+    rollback_enabled = settings.get("Rollback enabled", False)
     if eval_iterations:
         first = eval_iterations[0].get("weighted_average")
         last = eval_iterations[-1].get("weighted_average")
+
+        # When rollback occurred, the effective final score is the best
+        # score before the regression (the state we rolled back to).
+        effective = last
+        rolled_back = False
+        if (
+            rollback_enabled
+            and stop_reason in (StopReason.PLATEAU_EXHAUSTED, StopReason.PLATEAU, StopReason.REGRESSION)
+            and len(eval_iterations) >= 2
+            and last is not None
+        ):
+            prev = eval_iterations[-2].get("weighted_average")
+            if prev is not None and prev > last:
+                effective = prev
+                rolled_back = True
+
         if first is not None and last is not None:
-            delta = last - first
+            delta = (effective if effective is not None else last) - first
             sign = "+" if delta >= 0 else ""
             lines.append("## Overall Score Change")
             lines.append("")
             lines.append(f"| Metric | Value |")
             lines.append(f"|--------|------:|")
             lines.append(f"| Starting score | {first:.2f} |")
-            lines.append(f"| Final score | {last:.2f} |")
+            if rolled_back:
+                lines.append(f"| Final score (before rollback) | {last:.2f} |")
+                lines.append(f"| Effective score (after rollback) | {effective:.2f} |")
+            else:
+                lines.append(f"| Final score | {last:.2f} |")
             lines.append(f"| Net change | {sign}{delta:.2f} |")
             pct = (delta / first * 100) if first != 0 else 0
             sign_pct = "+" if pct >= 0 else ""
@@ -1635,6 +1656,14 @@ def run_auto_improve(
 
             if not retry_succeeded:
                 click.echo(f"  ❌ All {max_retries} retries exhausted")
+                # Roll back to the best known state (before this turn's changes)
+                if not no_rollback:
+                    pre_turn_backup = backup_root / f"turn-{turn}"
+                    if not pre_turn_backup.exists() and turn > 1:
+                        pre_turn_backup = backup_root / f"turn-{turn - 1}"
+                    if pre_turn_backup.exists():
+                        click.echo(f"  ↩️  Rolling back to best known state (before turn {turn})")
+                        _rollback_skill_dirs(skill_paths, plugin_paths, pre_turn_backup)
                 stop_reason = StopReason.PLATEAU_EXHAUSTED
                 _write_history(history_path, target_config_name, iterations, stop_reason)
                 break
